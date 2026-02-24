@@ -1,3 +1,4 @@
+# _config.yml
 title: Enciclopedia Universitaria
 description: La enciclopedia colaborativa universitaria más avanzada de habla hispana
 baseurl: "/enciclopedia-universitaria-frontend"
@@ -9,7 +10,8 @@ backend_url: "https://tu-backend-dominio.com"
 # Build
 markdown: kramdown
 highlighter: rouge
-permalink: pretty
+# Cambiado: asegurar que las páginas salgan con su .html final
+permalink: "/:path/:basename:output_ext"
 
 # Exclude
 exclude:
@@ -33,7 +35,7 @@ lang: es
 # Navegación
 navigation:
   - title: Inicio
-    url: /
+    url: /index.html
   - title: Categorías
     url: /categorias.html
   - title: Sobre nosotros
