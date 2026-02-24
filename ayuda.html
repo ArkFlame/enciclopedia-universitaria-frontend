@@ -5,7 +5,10 @@ title: Guía completa para publicar artículos
 <div class="eu-main" style="font-family:var(--eu-font-body);">
   <div class="eu-card p-4 mb-5">
     <h1 class="eu-section-title" style="font-size: clamp(2rem, 4vw, 3rem);">Guía práctica de shortcodes y publicación</h1>
-    <p class="eu-article-content">Domina la creación de artículos en la Enciclopedia Universitaria con ejemplos reales que se renderizan igual que en una página aprobada.</p>
+    <p class="eu-article-content">Domina la creación de artículos con ejemplos reales que se renderizan igual que en una página aprobada de la Enciclopedia Universitaria.</p>
+    <button id="copyForLLMBtn" class="eu-btn-outline eu-btn-sm" style="margin-top:12px;">
+      <i class="bi bi-clipboard"></i> Copiar para LLM
+    </button>
   </div>
 
   <div class="eu-card p-4 mb-5">
@@ -34,23 +37,22 @@ title: Guía completa para publicar artículos
 
   <section id="markdown" class="mb-5">
     <h2 class="eu-section-title">📝 Markdown básico</h2>
-    <p class="eu-article-content text-muted mb-4">Todo el contenido se escribe en Markdown estándar, lo cual permite conservar seguridad y formato.</p>
+    <p class="eu-article-content text-muted mb-4">Escribís en Markdown estándar y el backend lo transforma sin permitir HTML arbitrario.</p>
     <div class="row g-4">
       <div class="col-md-6">
         <div class="eu-card p-3">
           <div class="eu-label mb-2">Código:</div>
           <pre style="background:var(--eu-code-bg);padding:12px;border-radius:8px;font-size:0.85rem;line-height:1.4">
 # Título principal
-## Sección
-**Texto en negrita**
-_Texto en cursiva_
-- Item 1
-- Item 2
-  - Subitem
-1. Primero
-2. Segundo
+## Sección introductoria
+**Texto en negrita** y _cursiva_ para énfasis.
+- Lista
+- Lista
+  - Sublista
+1. Ordenado
+2. Ordenado
 [Enlace](https://url.com)
-> Cita o referencia
+> Cita académica
 `código inline`
 ```
 bloque de código
@@ -63,20 +65,10 @@ bloque de código
           <div class="eu-article-content">
             <h2 style="font-size:1.1rem">Título principal</h2>
             <p><strong>Texto en negrita</strong> y <em>cursiva</em></p>
-            <ul>
-              <li>Item 1</li>
-              <li>Item 2
-                <ul>
-                  <li>Subitem</li>
-                </ul>
-              </li>
-            </ul>
-            <ol>
-              <li>Primero</li>
-              <li>Segundo</li>
-            </ol>
+            <ul><li>Lista</li><li>Lista<ul><li>Sublista</li></ul></li></ul>
+            <ol><li>Ordenado</li><li>Ordenado</li></ol>
             <p><a href="https://url.com">Enlace</a></p>
-            <blockquote>Cita o referencia</blockquote>
+            <blockquote>Cita académica</blockquote>
             <p><code>código inline</code></p>
             <pre style="background:var(--eu-bg-secondary);padding:12px;border-radius:6px;border:1px solid var(--eu-border);">bloque de código</pre>
           </div>
@@ -87,24 +79,24 @@ bloque de código
 
   <section id="tooltip" class="mb-5">
     <h2 class="eu-section-title">💬 Tooltips</h2>
-    <p class="text-muted mb-2">Añadí definiciones sin romper la lectura.</p>
+    <p class="text-muted mb-3">Aclarás definiciones sin romper la lectura.</p>
     <div class="eu-card p-4">
       <div class="eu-label mb-1">Código:</div>
       <pre class="mb-3" style="background:var(--eu-code-bg);padding:12px;border-radius:8px;">
 La <strong>mitocondria</strong> produce energía.
-[tooltip text="Orgánulo responsable de la respiración celular"]mitocondria[/tooltip] es vital.
+[tooltip text="Orgánulo responsable de la respiración celular y producción de ATP"]mitocondria[/tooltip] es vital.
       </pre>
       <div class="eu-label mb-1">Resultado:</div>
       <p class="eu-article-content">
-        La <strong>mitocondria</strong> produce energía. 
-        <span class="eu-tooltip" title="Orgánulo responsable de la respiración celular y producción de ATP" style="border-bottom:1px dashed var(--eu-text-muted);cursor:help">mitocondria</span> es vital.
+        La <strong>mitocondria</strong> produce energía.
+        <span class="eu-tooltip" title="Orgánulo responsable de la respiración celular y producción de ATP" style="border-bottom:1px dashed var(--eu-text-muted);cursor:help">mitocondria</span> es vital para las células musculares.
       </p>
     </div>
   </section>
 
   <section id="alert" class="mb-5">
     <h2 class="eu-section-title">⚠️ Alertas</h2>
-    <p class="text-muted mb-2">Mostrá distintas intensidades de mensajes.</p>
+    <p class="text-muted mb-3">Mensajes importantes con distintos niveles de intensidad.</p>
     <div class="eu-card p-4">
       <div class="eu-label mb-1">Código:</div>
       <pre style="background:var(--eu-code-bg);padding:12px;border-radius:8px;">
@@ -114,16 +106,16 @@ La <strong>mitocondria</strong> produce energía.
 [alert type="success"]Resultado esperado confirmado[/alert]
       </pre>
       <div class="eu-label mt-3 mb-1">Resultado:</div>
-      <div class="alert alert-info">Información clave para el experimento</div>
-      <div class="alert alert-warning">Precaución con sustancias reactivas</div>
-      <div class="alert alert-danger">Evitar mezclar sin autorización</div>
+      <div class="alert alert-info mb-2">Información clave para el experimento</div>
+      <div class="alert alert-warning mb-2">Precaución con sustancias reactivas</div>
+      <div class="alert alert-danger mb-2">Evitar mezclar sin autorización</div>
       <div class="alert alert-success">Resultado esperado confirmado</div>
     </div>
   </section>
 
   <section id="callout" class="mb-5">
     <h2 class="eu-section-title">📌 Callouts</h2>
-    <p class="text-muted mb-2">Resaltá ideas o notas de interés.</p>
+    <p class="text-muted mb-3">Notas destacadas con iconos.</p>
     <div class="eu-card p-4">
       <div class="eu-label mb-1">Código:</div>
       <pre style="background:var(--eu-code-bg);padding:12px;border-radius:8px;">
@@ -140,7 +132,7 @@ La <strong>mitocondria</strong> produce energía.
       <div class="eu-callout">
         <span class="eu-callout-icon">⚠️</span>
         <div class="eu-callout-body">
-          Advertencia de seguridad: utilizá guantes y protección ocular al manipular reactivos ácidos.
+          Advertencia de seguridad: utilizá protección al manipular reactivos ácidos.
         </div>
       </div>
     </div>
@@ -148,7 +140,7 @@ La <strong>mitocondria</strong> produce energía.
 
   <section id="accordion" class="mb-5">
     <h2 class="eu-section-title">📂 Acordeón</h2>
-    <p class="text-muted mb-2">Explicá procedimientos paso a paso.</p>
+    <p class="text-muted mb-3">Organizá preguntas frecuentes o explicaciones detalladas.</p>
     <div class="eu-card p-4">
       <div class="eu-label mb-1">Código:</div>
       <pre style="background:var(--eu-code-bg);padding:12px;border-radius:8px;">
@@ -162,7 +154,7 @@ La planta fija CO₂ en compuestos de cuatro carbonos antes del ciclo de Calvin.
           ¿Qué es la fotosíntesis C4?
         </button>
         <div class="accordion-body" id="faqFotosintesis" style="display:none;">
-          La planta fija CO₂ en compuestos de cuatro carbonos antes del ciclo de Calvin. Es común en gramíneas tropicales y mejora la eficiencia del uso del agua.
+          La fotosíntesis C4 fija CO₂ en compuestos de cuatro carbonos antes de entrar al ciclo de Calvin, reduciendo la fotorespiración y aprovechando mejor la luz en climas cálidos.
         </div>
       </div>
     </div>
@@ -170,7 +162,7 @@ La planta fija CO₂ en compuestos de cuatro carbonos antes del ciclo de Calvin.
 
   <section id="tabs" class="mb-5">
     <h2 class="eu-section-title">📑 Pestañas</h2>
-    <p class="text-muted mb-2">Organizá secciones relacionadas en un mismo bloque.</p>
+    <p class="text-muted mb-3">Secciones relacionadas sin recargar la vista.</p>
     <div class="eu-card p-4">
       <div class="eu-label mb-1">Código:</div>
       <pre style="background:var(--eu-code-bg);padding:12px;border-radius:8px;">
@@ -179,7 +171,7 @@ La planta fija CO₂ en compuestos de cuatro carbonos antes del ciclo de Calvin.
 La teoría del caos estudia sistemas sensibles a condiciones iniciales.
 [/tab]
 [tab title="Ejemplos"]
-Péndulo doble y clima.
+Péndulo doble, clima y cadenas logísticas.
 [/tab]
 [/tabs]
       </pre>
@@ -195,10 +187,10 @@ Péndulo doble y clima.
         </ul>
         <div class="tab-content mt-2">
           <div class="tab-pane" data-tab-panel="tabDefinicion">
-            La teoría del caos estudia sistemas deterministas con comportamiento impredecible frente a pequeñas variaciones.
+            La teoría del caos estudia sistemas deterministas cuyo comportamiento es muy sensible a pequeñas diferencias iniciales.
           </div>
           <div class="tab-pane" data-tab-panel="tabEjemplos" style="display:none;">
-            Ejemplos: péndulo doble, dinámica atmosférica y modelos económicos inestables.
+            Ejemplos: péndulo doble, dinámica atmosférica y modelos financieros con turbulencias inesperadas.
           </div>
         </div>
       </div>
@@ -207,13 +199,13 @@ Péndulo doble y clima.
 
   <section id="diagram" class="mb-5">
     <h2 class="eu-section-title">🔬 Diagrama interactivo</h2>
-    <p class="text-muted mb-2">Crea mapas con elementos clickeables que revelan contenido y referencias a otros artículos.</p>
+    <p class="text-muted mb-3">Mapas con elementos clickeables que muestran contenido o referencias.</p>
     <div class="eu-card p-4">
       <div class="eu-label mb-1">Código:</div>
       <pre style="background:var(--eu-code-bg);padding:12px;border-radius:8px;overflow-x:auto;">
 [interactive-diagram title="Célula eucariota"]
 [cell label="Núcleo" article="nucleo-celular" x="50" y="40" color="#6366f1"]
-Controla las funciones celulares y aloja el ADN.
+Controla las funciones celulares y alberga el ADN.
 [/cell]
 [cell label="Mitocondria" article="mitocondria" x="75" y="60" color="#f59e0b"]
 Central energética que produce ATP mediante respiración celular.
@@ -224,17 +216,26 @@ Regula el paso de sustancias y mantiene el equilibrio osmótico.
 [/interactive-diagram]
       </pre>
       <div class="eu-label mt-3 mb-1">Resultado interactivo:</div>
-      <div class="eu-interactive-diagram" id="diagramExample" style="position:relative;">
+      <div class="eu-interactive-diagram" id="diagramExample">
         <div class="eu-diagram-title">Célula eucariota</div>
         <div class="eu-diagram-canvas">
-          <button class="eu-diagram-cell" style="left:50%;top:40%;background:#6366f1;" data-label="Núcleo" data-desc="Controla las funciones celulares y aloja el ADN." data-article="nucleo-celular">Núcleo</button>
-          <button class="eu-diagram-cell" style="left:75%;top:60%;background:#f59e0b;" data-label="Mitocondria" data-desc="Central energética que produce ATP mediante respiración celular." data-article="mitocondria">Mitocondria</button>
-          <button class="eu-diagram-cell" style="left:20%;top:55%;background:#10b981;" data-label="Membrana" data-desc="Regula el paso de sustancias y mantiene el equilibrio osmótico." data-article="membrana-celular">Membrana</button>
+          <button class="eu-diagram-cell" style="left:50%;top:40%;background:#6366f1;"
+            data-label="Núcleo"
+            data-desc="Controla las funciones celulares y alberga el ADN."
+            data-article="nucleo-celular">Núcleo</button>
+          <button class="eu-diagram-cell" style="left:75%;top:60%;background:#f59e0b;"
+            data-label="Mitocondria"
+            data-desc="Central energética que produce ATP mediante respiración celular."
+            data-article="mitocondria">Mitocondria</button>
+          <button class="eu-diagram-cell" style="left:20%;top:55%;background:#10b981;"
+            data-label="Membrana"
+            data-desc="Regula el paso de sustancias y mantiene el equilibrio osmótico."
+            data-article="membrana-celular">Membrana</button>
         </div>
         <div class="eu-cell-popup" id="diagramPopupExample" aria-live="polite">
           <strong id="diagramPopupTitle">Título</strong>
           <p class="eu-cell-desc" id="diagramPopupDesc">Descripción</p>
-          <a href="#" class="eu-link" id="diagramPopupLink">Ver artículo relacionado</a>
+          <a href="#" class="eu-article-ref" id="diagramPopupLink">Ver artículo relacionado</a>
         </div>
       </div>
     </div>
@@ -242,52 +243,56 @@ Regula el paso de sustancias y mantiene el equilibrio osmótico.
 
   <section id="image" class="mb-5">
     <h2 class="eu-section-title">🖼️ Imágenes</h2>
-    <p class="text-muted mb-2">Insertá imágenes subidas desde el gestor multimedia o referencias públicas válidas.</p>
+    <p class="text-muted mb-3">Insertá imágenes subidas o públicas con caption opcional.</p>
     <div class="eu-card p-4">
       <div class="eu-label mb-1">Código:</div>
       <pre style="background:var(--eu-code-bg);padding:12px;border-radius:8px;">
-[image src="https://images.unsplash.com/photo-1581096311450-ec2072d1c0ef?auto=format&fit=crop&w=900&q=80" alt="Microfotografía de una célula" caption="Microfotografía de una célula eucariota."/]
+[image src="https://images.unsplash.com/photo-1581096311450-ec2072d1c0ef?auto=format&fit=crop&w=900&q=80" alt="Microfotografía de una célula" caption="Microfotografía de célula eucariota."]
       </pre>
       <div class="eu-label mt-3 mb-1">Resultado:</div>
       <figure class="eu-figure">
         <img src="https://images.unsplash.com/photo-1581096311450-ec2072d1c0ef?auto=format&fit=crop&w=900&q=80" alt="Microfotografía de una célula" class="eu-article-img">
-        <figcaption class="eu-caption small text-muted">Microfotografía de una célula eucariota.</figcaption>
+        <figcaption class="eu-caption">Microfotografía de una célula eucariota.</figcaption>
       </figure>
     </div>
   </section>
 
   <section id="ref" class="mb-5">
     <h2 class="eu-section-title">🔗 Referencias internas</h2>
-    <p class="text-muted mb-2">Conectá artículos relacionados para enriquecer el ecosistema de conocimiento.</p>
+    <p class="text-muted mb-3">Conectá artículos relacionados usando su slug.</p>
     <div class="eu-card p-4">
       <div class="eu-label mb-1">Código:</div>
       <pre style="background:var(--eu-code-bg);padding:12px;border-radius:8px;">
-[ref article="fotosintesis"]Ver artículo completo sobre fotosíntesis[/ref]
-[ref article="atp-energia-celular"]ATP y energía[/ref]
+[ref article="fotosintesis"]Ver artículo sobre fotosíntesis[/ref]
+[ref article="atp-energia-celular"]ATP y energía celular[/ref]
       </pre>
       <div class="eu-label mt-3 mb-1">Resultado:</div>
       <p class="eu-article-content">
-        Apoyate en el artículo <a href="{{ '/articulo.html?slug=fotosintesis' | relative_url }}" class="eu-article-ref">fotosíntesis</a> para ver el proceso completo, y en <a href="{{ '/articulo.html?slug=atp-energia-celular' | relative_url }}" class="eu-article-ref">ATP y energía</a> para comprender el rol del ATP.
+        Apoyate en <a href="{{ '/articulo.html?slug=fotosintesis' | relative_url }}" class="eu-article-ref">fotosíntesis</a> y en <a href="{{ '/articulo.html?slug=atp-energia-celular' | relative_url }}" class="eu-article-ref">ATP y energía celular</a> para complementar conceptos.
       </p>
     </div>
   </section>
 
   <section id="publicar" class="mb-5">
     <h2 class="eu-section-title">🚀 Publicar y seguimiento</h2>
-    <p class="eu-article-content">
-      Una vez listo, completá metadatos, escribí el contenido en Markdown con shortcodes y cargá imágenes. Luego hacé clic en <strong>Enviar para revisión</strong>.
-    </p>
+    <p class="eu-article-content">Completá metadatos, redactá en Markdown y sumá shortcodes/multimedia antes de enviar para revisión.</p>
     <ol class="eu-article-content" style="margin-left:1rem;">
-      <li>Verificá ortografía, referencias y formato.</li>
-      <li>Insertá shortcodes con propósito pedagógico.</li>
-      <li>Agregá multimedia relevante desde el panel lateral.</li>
-      <li>Enviá a revisión: el artículo queda como <strong>PENDIENTE</strong>.</li>
-      <li>Cuando se apruebe, los lectores verán el artículo con todos los componentes interactivos.</li>
+      <li>Verificá ortografía, formato y fuentes.</li>
+      <li>Insertá shortcodes con intención pedagógica.</li>
+      <li>Agregá imágenes desde el panel lateral.</li>
+      <li>Presioná <strong>Enviar para revisión</strong>; el artículo queda como <strong>PENDIENTE</strong>.</li>
+      <li>Recibirás notificaciones cuando se apruebe o rechace.</li>
     </ol>
     <p class="text-muted">
-      Free tiene límites de publicaciones/ediciones, mensual es ilimitado. Si llegás al cupo gratuito, aparece el paywall con la opción de suscribir a $1.000 ARS/mes.
+      Los usuarios FREE están limitados a 1 artículo/edición por hora; MONTHLY tiene prioridad, límites mayores y acceso ilimitado. Si llegás al cupo gratuito verás el paywall con opción de suscripción por $1.000 ARS/mes.
     </p>
   </section>
+
+  <div class="text-center mt-4">
+    <a href="{{ '/nuevo-articulo.html' | relative_url }}" class="eu-btn-primary eu-btn-lg">
+      <i class="bi bi-plus-lg"></i> Publicar artículo
+    </a>
+  </div>
 </div>
 
 <script>
@@ -297,10 +302,9 @@ Regula el paso de sustancias y mantiene el equilibrio osmótico.
     button.addEventListener('click', () => {
       const targetId = button.dataset.accordionTarget;
       const panel = document.getElementById(targetId);
-      if (!panel) return;
       const isOpen = panel.style.display === 'block';
       panel.style.display = isOpen ? 'none' : 'block';
-      button.classList.toggle('collapsed', !isOpen);
+      button.classList.toggle('collapsed', isOpen);
     });
   });
 
@@ -314,8 +318,8 @@ Regula el paso de sustancias y mantiene el equilibrio osmótico.
         panels.forEach(panel => panel.style.display = 'none');
         btn.classList.add('active');
         const targetId = btn.dataset.tabTarget;
-        const targetPanel = container.querySelector(`[data-tab-panel="${targetId}"]`);
-        if (targetPanel) targetPanel.style.display = 'block';
+        const panel = container.querySelector(`[data-tab-panel="${targetId}"]`);
+        if (panel) panel.style.display = 'block';
       });
     });
   });
@@ -328,29 +332,109 @@ Regula el paso de sustancias y mantiene el equilibrio osmótico.
     cells.forEach(cell => {
       cell.addEventListener('click', event => {
         event.stopPropagation();
-        const label = cell.dataset.label;
-        const desc = cell.dataset.desc;
-        const article = cell.dataset.article;
         const rect = cell.getBoundingClientRect();
         const containerRect = diagram.getBoundingClientRect();
-        popup.style.display = 'block';
-        popup.style.opacity = '1';
-        popup.querySelector('#diagramPopupTitle').textContent = label;
-        popup.querySelector('#diagramPopupDesc').textContent = desc;
+        popup.querySelector('#diagramPopupTitle').textContent = cell.dataset.label;
+        popup.querySelector('#diagramPopupDesc').textContent = cell.dataset.desc;
         const link = popup.querySelector('#diagramPopupLink');
-        link.setAttribute('href', `${base}/articulo.html?slug=${article}`);
-        link.textContent = 'Ver artículo relacionado';
-        const offsetTop = rect.top - containerRect.top + rect.height + 6;
-        const offsetLeft = rect.left - containerRect.left;
-        popup.style.top = `${Math.min(offsetTop, diagram.clientHeight - popup.offsetHeight - 16)}px`;
-        popup.style.left = `${Math.min(Math.max(offsetLeft, 12), diagram.clientWidth - popup.offsetWidth - 12)}px`;
+        link.href = `${base}/articulo.html?slug=${cell.dataset.article}`;
+        popup.style.display = 'block';
+        const top = rect.top - containerRect.top + rect.height + 6;
+        const left = rect.left - containerRect.left;
+        popup.style.top = `${Math.min(top, diagram.clientHeight - popup.offsetHeight - 16)}px`;
+        popup.style.left = `${Math.min(Math.max(left, 12), diagram.clientWidth - popup.offsetWidth - 12)}px`;
       });
     });
-    document.addEventListener('click', e => {
-      if (!diagram.contains(e.target)) {
+    document.addEventListener('click', event => {
+      if (!diagram.contains(event.target)) {
         popup.style.display = 'none';
       }
     });
+  }
+
+  const copyBtn = document.getElementById('copyForLLMBtn');
+  if (copyBtn) {
+    copyBtn.addEventListener('click', () => {
+      const markdown = buildLLMTemplate();
+      navigator.clipboard.writeText(markdown).then(() => {
+        showToast('Versión Markdown copiada para LLM ✅', 'success');
+      }).catch(() => {
+        showToast('No se pudo copiar. Intentá otra vez.', 'error');
+      });
+    });
+  }
+
+  function buildLLMTemplate() {
+    return [
+      '# Guía rápida para crear artículos en Enciclopedia Universitaria',
+      '',
+      '## Resumen',
+      '1. Registrar usuario y acceder al editor.',
+      '2. Completar metadatos (título, resumen, categoría).',
+      '3. Escribir contenido en Markdown reforzado con shortcodes seguros.',
+      '4. Subir multimedia y enviar a revisión.',
+      '',
+      '## Shortcodes destacados',
+      '### Tooltip',
+      '```markdown',
+      'La mitocondria produce energía.',
+      '[tooltip text="Orgánulo responsable de la respiración celular y producción de ATP"]mitocondria[/tooltip]',
+      '```',
+      '### Alert',
+      '```markdown',
+      '[alert type="warning"]Precaución con sustancias reactivas[/alert]',
+      '```',
+      '### Callout',
+      '```markdown',
+      '[callout icon="💡"]Nota importante o curiosidad científica[/callout]',
+      '```',
+      '### Accordion',
+      '```markdown',
+      '[accordion title="¿Qué es la fotosíntesis C4?"]\nLa planta fija CO₂ en compuestos de cuatro carbonos antes del ciclo de Calvin.\n[/accordion]',
+      '```',
+      '### Tabs',
+      '```markdown',
+      '[tabs]\n[tab title="Definición"]La teoría del caos estudia sistemas sobre sensibilidad a condiciones iniciales.[/tab]\n[tab title="Ejemplos"]Péndulo doble, clima y logística.[/tab]\n[/tabs]',
+      '```',
+      '### Diagrama interactivo',
+      '```markdown',
+      '[interactive-diagram title="Célula eucariota"]\n[cell label="Núcleo" article="nucleo-celular" x="50" y="40" color="#6366f1"]Controla funciones celulares y aloja el ADN[/cell]\n[cell label="Mitocondria" article="mitocondria" x="75" y="60" color="#f59e0b"]Produce ATP mediante respiración celular[/cell]\n[/interactive-diagram]',
+      '```',
+      '### Ref',
+      '```markdown',
+      '[ref article="fotosintesis"]Artículo sobre fotosíntesis[/ref]',
+      '```',
+      '### Image',
+      '```markdown',
+      '[image src="https://example.com/celula.jpg" alt="Célula eucariota" caption="Microfotografía de célula eucariota."]',
+      '```',
+      '',
+      '## Publicación segura',
+      '- Sanitizar Markdown antes de almacenar.',
+      '- Los artículos se guardan como PENDIENTES y requieren aprobación de moderadores/ADMIN.',
+      '- Los FREE tienen limitaciones de edición/publicación (1 por hora).',
+      '- Los MONTHLY tienen acceso ilimitado y prioridad.',
+      '',
+      '## Flujo de trabajo',
+      '1. Escribir con Markdown + shortcodes.',
+      '2. Subir imágenes desde el panel multimedia.',
+      '3. Enviar para revisión; recibir notificaciones.',
+      '4. Si se rechaza, corregir la versión y reenviar.',
+      '',
+      '## Resultado',
+      'El artículo aprobado muestra exactamente los componentes interactivos de esta guía, incluyendo tooltip, alertas, acordeones, tabs, diagramas con popups y referencias internas.'
+    ].join('\n');
+  }
+
+  function showToast(message, type) {
+    const container = document.createElement('div');
+    container.className = `eu-toast ${type || ''}`;
+    container.textContent = message;
+    document.body.appendChild(container);
+    setTimeout(() => {
+      container.style.opacity = '0';
+      setTimeout(() => container.remove(), 300);
+    }, 2500);
   }
 })();
 </script>
