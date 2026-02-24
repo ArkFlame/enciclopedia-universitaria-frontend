@@ -1,7 +1,7 @@
 title: Enciclopedia Universitaria
 description: La enciclopedia colaborativa universitaria más avanzada de habla hispana
-baseurl: "/enciclopedia-universitaria"
-url: "https://tuusuario.github.io"
+baseurl: "/enciclopedia-universitaria-frontend"
+url: "https://arkflame.github.io"
 
 # Configuración del backend
 backend_url: "https://tu-backend-dominio.com"
