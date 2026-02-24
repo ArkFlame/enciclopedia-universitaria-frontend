@@ -2,11 +2,13 @@
 layout: default
 title: Ayuda para crear artículos
 ---
-<div class="eu-main">
-  <div class="eu-hero mb-4">
+<div class="eu-main" style="font-family:var(--eu-font-body);">
+  <div class="eu-hero mb-4" style="font-family:var(--eu-font-body);">
     <div style="max-width:900px">
       <p class="eu-hero-subtitle">Guía paso a paso para contribuir a la Enciclopedia Universitaria.</p>
-      <h1 class="eu-hero-title">Cómo crear un artículo completo y aprobado</h1>
+      <h1 class="eu-hero-title" style="font-family:var(--eu-font-body); font-size: clamp(2rem, 4vw, 3rem);">
+        Cómo crear un artículo completo y aprobado
+      </h1>
       <p class="eu-hero-subtitle">Desde redactar el contenido inicial hasta lograr la aprobación: todo lo que necesitás saber.</p>
     </div>
   </div>
@@ -22,47 +24,161 @@ title: Ayuda para crear artículos
       <li>Imágenes propias o libres de uso para acompañar el texto.</li>
     </ul>
     <p class="eu-article-content">
-      Necesitás una cuenta activa. Si todavía no tenés una, registrate <a href="{{ '/registro.html' | relative_url }}">aquí</a>. Una vez logueado, podés acceder al editor desde el botón <strong>Nuevo artículo</strong>.
+      Necesitás una cuenta activa. Si todavía no tenés una, registrate <a href="{{ '/registro.html' | relative_url }}">aquí</a>.
+      Una vez logueado, podés acceder al editor desde el botón <strong>Nuevo artículo</strong>.
     </p>
   </div>
 
-  <div class="row g-3">
+  <div class="row g-3 mb-4">
     <div class="col-lg-4">
       <div class="eu-card p-4 h-100">
         <h5>1. Metadatos clave</h5>
-        <p>
-          Completa título (máx. 500 caracteres), resumen descriptivo (máx. 2000) y categoría. Si lo deseás, podés dejar la categoría vacía y asignarla más tarde con colaboración.
+        <p class="eu-article-content">
+          Título claro y específico (máximo 500 caracteres), resumen descriptivo (máximo 2000) y categoría relevante.
         </p>
-        <ul style="list-style:none;padding-left:0">
-          <li><i class="bi bi-check-circle"></i> Título claro y específico.</li>
-          <li><i class="bi bi-check-circle"></i> Resumen que resuma el núcleo del artículo.</li>
-          <li><i class="bi bi-check-circle"></i> Categoría relevante para que el buscador lo indexe.</li>
+        <ul class="eu-article-content" style="list-style:none;padding-left:0">
+          <li><i class="bi bi-check-circle"></i> Título definido.</li>
+          <li><i class="bi bi-check-circle"></i> Resumen que explique el núcleo del artículo.</li>
+          <li><i class="bi bi-check-circle"></i> Categoría sugerida para búsquedas.</li>
         </ul>
       </div>
     </div>
     <div class="col-lg-4">
       <div class="eu-card p-4 h-100">
         <h5>2. Redacción en Markdown</h5>
-        <p>
-          Usa el editor principal para escribir en Markdown. Podés insertar títulos, listas, citas y código. La vista previa te ayuda a verificar el formato antes de enviar.
+        <p class="eu-article-content">
+          Usa el editor principal para escribir en Markdown. La vista previa te permite validar formato antes de enviar.
         </p>
-        <p class="text-muted small">Insertá texto, párrafos y bloques con saltos de línea; los atajos de negrita/cursiva están en la barra superior.</p>
+        <p class="text-muted small">Insertá títulos, listas y bloques. Los atajos de negrita y cursiva están en la barra superior.</p>
       </div>
     </div>
     <div class="col-lg-4">
       <div class="eu-card p-4 h-100">
         <h5>3. Shortcodes interactivos</h5>
-        <p>
-          Aprovechá los componentes disponibles para lograr interactividad segura. Algunos ejemplos:
+        <p class="eu-article-content">
+          Aprovechá los componentes que se transforman en HTML seguro al enviarlos. Se controlan desde el backend y se sanitizan.
         </p>
-        <ul style="list-style:none;padding-left:0">
-          <li><code>[tooltip text="definición"]palabra[/tooltip]</code></li>
-          <li><code>[accordion title="Pregunta"]Respuesta aquí[/accordion]</code></li>
-          <li><code>[tabs]...[/tabs]</code> para secciones con pestañas.</li>
-          <li><code>[interactive-diagram]...</interactive-diagram]</code> para diagramas clickeables.</li>
-          <li><code>[ref article="slug"]Nombre del artículo[/ref]</code> para enlazar internamente.</li>
+        <ul class="eu-article-content" style="list-style:none;padding-left:0">
+          <li>Tooltip, alertas, acordeones y tabs.</li>
+          <li>Diagramas interactivos y callouts.</li>
+          <li>Referencias internas y multimedia.</li>
         </ul>
-        <p class="text-muted small">Todos los shortcodes se procesan en el backend y se limpian con sanitización antes de almacenarse.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="eu-card p-4 mb-4">
+    <h2 class="eu-section-title">Shortcodes disponibles</h2>
+
+    <div class="eu-divider"></div>
+
+    <div class="mb-3">
+      <h3 class="eu-section-title" style="font-size:1.2rem;">Tooltip</h3>
+      <p class="eu-article-content">Muestra definiciones al pasar el cursor.</p>
+      <pre class="eu-article-content" style="margin-top:0;background:var(--eu-bg-secondary);border:1px solid var(--eu-border);padding:12px;">
+[tooltip text="Estructura de datos"]Árbol[/tooltip]
+      </pre>
+      <div class="eu-shortcode-example" style="padding:12px;border:1px dashed var(--eu-border);font-family:var(--eu-font-body);">
+        Ejemplo renderizado: <span class="eu-tooltip">Árbol</span> (hover para ver "Estructura de datos").
+      </div>
+    </div>
+
+    <div class="eu-divider"></div>
+
+    <div class="mb-3">
+      <h3 class="eu-section-title" style="font-size:1.2rem;">Alert</h3>
+      <p class="eu-article-content">Destaca avisos: tipos <strong>info</strong>, <strong>warning</strong> o <strong>danger</strong>.</p>
+      <pre class="eu-article-content" style="background:var(--eu-bg-secondary);border:1px solid var(--eu-border);padding:12px;">
+[alert type="warning"]Este concepto es clave para entender el avance tecnológico.[/alert]
+      </pre>
+      <div class="eu-shortcode-example" style="padding:12px;border:1px dashed var(--eu-border);">
+        Ejemplo renderizado: aviso con borde prominente y fondo suave según el tipo.
+      </div>
+    </div>
+
+    <div class="eu-divider"></div>
+
+    <div class="mb-3">
+      <h3 class="eu-section-title" style="font-size:1.2rem;">Accordion</h3>
+      <p class="eu-article-content">Agrupa preguntas frecuentes o definiciones extensas.</p>
+      <pre class="eu-article-content" style="background:var(--eu-bg-secondary);border:1px solid var(--eu-border);padding:12px;">
+[accordion title="¿Qué es un neutrón?"]
+Un neutrón es una partícula sin carga eléctrica...
+[/accordion]
+      </pre>
+      <div class="eu-shortcode-example" style="padding:12px;border:1px dashed var(--eu-border);">
+        Ejemplo: cabezal plegable que muestra contenido al hacer clic.
+      </div>
+    </div>
+
+    <div class="eu-divider"></div>
+
+    <div class="mb-3">
+      <h3 class="eu-section-title" style="font-size:1.2rem;">Tabs</h3>
+      <p class="eu-article-content">Separa secciones sin recargar la vista.</p>
+      <pre class="eu-article-content" style="background:var(--eu-bg-secondary);border:1px solid var(--eu-border);padding:12px;">
+[tabs]
+[tab title="Definición"]Texto introductorio[/tab]
+[tab title="Aplicaciones"]Ejemplos prácticos[/tab]
+[/tabs]
+      </pre>
+      <div class="eu-shortcode-example" style="padding:12px;border:1px dashed var(--eu-border);">
+        Ejemplo: pestañas con contenido activado al hacer clic sobre cada título.
+      </div>
+    </div>
+
+    <div class="eu-divider"></div>
+
+    <div class="mb-3">
+      <h3 class="eu-section-title" style="font-size:1.2rem;">Callout</h3>
+      <p class="eu-article-content">Caja de atención con ícono opcional para notas importantes.</p>
+      <pre class="eu-article-content" style="background:var(--eu-bg-secondary);border:1px solid var(--eu-border);padding:12px;">
+[callout icon="💡"]Dato curioso o recomendación[/callout]
+      </pre>
+      <div class="eu-shortcode-example" style="padding:12px;border:1px dashed var(--eu-border);">
+        Ejemplo: cuadro con fondo ligeramente tonal y borde marcado.
+      </div>
+    </div>
+
+    <div class="eu-divider"></div>
+
+    <div class="mb-3">
+      <h3 class="eu-section-title" style="font-size:1.2rem;">Interactive Diagram</h3>
+      <p class="eu-article-content">Crea mapas con celdas clickeables que muestran contenido adicional y referencias a otros artículos.</p>
+      <pre class="eu-article-content" style="background:var(--eu-bg-secondary);border:1px solid var(--eu-border);padding:12px;">
+[interactive-diagram title="Célula eucariota"]
+[cell label="Núcleo" article="nucleo-celular"]Controla funciones vitales[/cell]
+[cell label="Mitocondria" article="mitocondria"]Genera energía[/cell]
+[/interactive-diagram]
+      </pre>
+      <div class="eu-shortcode-example" style="padding:12px;border:1px dashed var(--eu-border);">
+        Ejemplo: diagrama con burbujas posicionadas según coordenadas y popups con información detallada.
+      </div>
+    </div>
+
+    <div class="eu-divider"></div>
+
+    <div class="mb-3">
+      <h3 class="eu-section-title" style="font-size:1.2rem;">Ref</h3>
+      <p class="eu-article-content">Enlaza a otro artículo de la enciclopedia.</p>
+      <pre class="eu-article-content" style="background:var(--eu-bg-secondary);border:1px solid var(--eu-border);padding:12px;">
+[ref article="atomo"]Átomo[/ref]
+      </pre>
+      <div class="eu-shortcode-example" style="padding:12px;border:1px dashed var(--eu-border);">
+        Ejemplo: enlace contextual con estilo distintivo y subrayado ondulado.
+      </div>
+    </div>
+
+    <div class="eu-divider"></div>
+
+    <div class="mb-3">
+      <h3 class="eu-section-title" style="font-size:1.2rem;">Image</h3>
+      <p class="eu-article-content">Inserta imágenes subidas al gestor multimedia.</p>
+      <pre class="eu-article-content" style="background:var(--eu-bg-secondary);border:1px solid var(--eu-border);padding:12px;">
+[image src="https://tuservidor/assets/images/123456/portada.jpg" alt="Célula" caption="Microfotografía de célula"]
+      </pre>
+      <div class="eu-shortcode-example" style="padding:12px;border:1px dashed var(--eu-border);">
+        Ejemplo: imagen fluida con caption discreto debajo.
       </div>
     </div>
   </div>
@@ -70,55 +186,37 @@ title: Ayuda para crear artículos
   <div class="eu-card p-4 mb-4">
     <h2 class="eu-section-title">Carga de multimedia</h2>
     <p class="eu-article-content">
-      Subí imágenes desde el panel lateral. Cada archivo debe ser menor a 5 MB y se almacena en una carpeta única vinculada al artículo.
-      Luego podés insertarlas en tu contenido con:
+      Subí imágenes desde el panel lateral. Cada archivo debe ser menor a 5 MB y se almacena en la carpeta asociada al artículo.
+      Insertalas en Markdown con el shortcode <code>[image]</code>.
     </p>
-    <pre class="eu-article-content" style="background:var(--eu-bg-secondary);padding:16px;border-radius:8px;border:1px solid var(--eu-border);">
-[image src="https://tuservidor/assets/images/{articleId}/foto.jpg" alt="Descripción" caption="Pie opcional"]
-    </pre>
-    <p class="text-muted small">Se comprimen en el backend y se generan URLs públicas con acceso controlado.</p>
+    <p class="text-muted small">
+      Se comprimen automáticamente y se generan URLs públicas seguras con límites de uso.
+    </p>
+  </div>
 
-    <div class="eu-divider"></div>
-
-    <h3 class="eu-section-title">Controles de calidad</h3>
+  <div class="eu-card p-4 mb-4">
+    <h2 class="eu-section-title">Controles de calidad</h2>
     <p class="eu-article-content">
-      - El contenido pasa a una cola con estado <strong>PENDIENTE</strong>. Sólo moderadores o administradores pueden aprobar o rechazar.
-      - Si el artículo es rechazado, recibirás el motivo junto al enlace para actualizarlo.
-      - Podés trabajar en nuevas versiones: cada envío incrementa el número de versión.
+      El artículo queda en cola <strong>PENDIENTE</strong> hasta que un moderador o administrador lo apruebe o rechace.
     </p>
-  </div>
-
-  <div class="eu-card p-4 mb-4">
-    <h2 class="eu-section-title">Publicar y hacer seguimiento</h2>
-    <ol class="eu-article-content" style="margin-left:1rem">
-      <li>Revisá ortografía y referencias.</li>
-      <li>Incluí shortcodes necesarios para interactividad (tooltip, callouts, diagramas).</li>
-      <li>Agregá imágenes subidas usando el gestor multimedia.</li>
-      <li>Presioná <strong>Enviar para revisión</strong>. El sistema guarda el artículo como <em>pending</em>.</li>
-      <li>Recibirás notificaciones en la campana del navbar cuando cambie el estado.</li>
-      <li>Si querés volver a editar antes de la aprobación, podés cargar el artículo y enviar una nueva propuesta.</li>
-    </ol>
-  </div>
-
-  <div class="eu-card p-4 mb-4">
-    <h2 class="eu-section-title">Consejos de estilo y seguridad</h2>
     <ul class="eu-article-content" style="margin-left:1rem;list-style:disc">
-      <li>Evita contenido duplicado o sin fuente.</li>
-      <li>No uses HTML arbitrario: el sistema sólo permite shortcodes definidos.</li>
-      <li>Si querés enlaces internos, usá <code>[ref article="slug"]Texto[/ref]</code>.</li>
-      <li>Para diagramas interactivos, cada célula puede enlazar un artículo diferente y mostrar más información al hacer clic.</li>
-      <li>Revisá la guía completa de shortcodes desde el botón <a href="{{ '/shortcodes.html' | relative_url }}" class="eu-link">Guía de shortcodes</a>.</li>
+      <li>Si se rechaza recibís la razón y podés reenviarlo con correcciones.</li>
+      <li>Cada envío incrementa la versión del artículo.</li>
+      <li>Se aplica rate limit: usuarios FREE 1 artículo/edición por hora.</li>
     </ul>
   </div>
 
   <div class="eu-card p-4">
-    <h2 class="eu-section-title">¿Qué sucede después de publicar?</h2>
-    <p class="eu-article-content">
-      Una vez aprobado, el artículo se publica públicamente. Podés crear contenido adicional, agregar más multimedia y seguir haciendo mejoras.
-      Si llegás al límite de lecturas gratis, el paywall te mostrará un CTA para suscribirte a $1.000 ARS/mes y desbloquear acceso ilimitado.
-    </p>
+    <h2 class="eu-section-title">Publicar y seguimiento</h2>
+    <ol class="eu-article-content" style="margin-left:1rem">
+      <li>Revisá ortografía y fuentes.</li>
+      <li>Agregá shortcodes y multimedia.</li>
+      <li>Presioná <strong>Enviar para revisión</strong>.</li>
+      <li>Recibirás notificaciones en el ícono de campana del navbar.</li>
+      <li>Si querés continuar editando, podés cargar el artículo y mandar una nueva propuesta.</li>
+    </ol>
     <p class="text-muted small">
-      Recordá que los usuarios FREE tienen límites de edición y publicación (1 artículo/edición por hora). Los usuarios MONTHLY tienen acceso prioritario y sin límites.
+      Los usuarios MONTHLY tienen espacios prioritarios y pueden subir más contenido. Si alcanzás el límite FREE, verás el paywall y el CTA para suscribirte a $1.000 ARS/mes.
     </p>
   </div>
 </div>
