@@ -1,0 +1,121 @@
+---
+layout: default
+title: Suscripción — Acceso Completo
+use_mercadopago: true
+---
+
+<div style="min-height:70vh;padding:40px 0">
+  <div style="max-width:680px;margin:0 auto;text-align:center">
+    
+    <div class="mb-4">
+      <span style="font-size:3rem">📚</span>
+      <h1 style="font-family:var(--eu-font-display);font-size:2.2rem;font-weight:700;margin-top:12px">
+        Acceso completo a la Enciclopedia
+      </h1>
+      <p class="text-muted" style="font-size:1.05rem;margin-top:8px">
+        Desbloquea conocimiento ilimitado por solo $1.000 ARS al mes
+      </p>
+    </div>
+
+    <!-- Card de precio -->
+    <div class="eu-stat-card p-5 mb-4" style="background:var(--eu-surface);border:2px solid var(--eu-text)">
+      <div class="eu-paywall-price mb-4">$1.000 <small style="font-size:1rem;color:var(--eu-text-muted);font-weight:400">ARS/mes</small></div>
+      
+      <ul class="eu-paywall-features mb-5">
+        <li>Artículos ilimitados todos los meses</li>
+        <li>Acceso a contenido pendiente de aprobación</li>
+        <li>Mayor límite de publicaciones (10/hora)</li>
+        <li>Soporte a la comunidad universitaria</li>
+        <li>Sin restricciones de lectura</li>
+        <li>Cancela cuando quieras</li>
+      </ul>
+
+      <div id="paymentSection">
+        <!-- Se renderiza dinámicamente -->
+        <div class="eu-loading">
+          <div class="eu-spinner"></div>
+          <span>Cargando opciones de pago...</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Info adicional -->
+    <div class="text-muted small">
+      <i class="bi bi-shield-check me-1"></i> Pago seguro via MercadoPago · 
+      <i class="bi bi-calendar-check me-1"></i> Renovación automática mensual ·
+      <i class="bi bi-x-circle me-1"></i> Cancela fácilmente desde tu cuenta
+    </div>
+
+    <div class="mt-4 text-muted small">
+      ¿Tienes preguntas? <a href="mailto:contacto@enciclopedia.edu">Contáctanos</a>
+    </div>
+  </div>
+</div>
+
+<script>
+(async function() {
+  const API = window.EU_CONFIG.backendUrl;
+  const BASE = window.EU_CONFIG.baseUrl;
+  const section = document.getElementById('paymentSection');
+
+  document.addEventListener('DOMContentLoaded', async () => {
+    const user = Auth.getUser();
+    
+    if (!Auth.isLoggedIn()) {
+      section.innerHTML = `
+        <p class="text-muted mb-3">Para suscribirte necesitas una cuenta</p>
+        <a href="${BASE}/login.html?redirect=${encodeURIComponent(window.location.href)}" class="eu-btn-primary btn-lg">
+          <i class="bi bi-person-fill"></i> Iniciar sesión
+        </a>
+        <div class="mt-2">
+          <a href="${BASE}/login.html" class="text-muted small">¿No tienes cuenta? Regístrate gratis</a>
+        </div>`;
+      return;
+    }
+
+    if (['MONTHLY','ADMIN','MOD'].includes(user?.role)) {
+      section.innerHTML = `
+        <div class="alert alert-success">
+          <i class="bi bi-check-circle-fill me-2"></i>
+          <strong>¡Ya tienes acceso completo!</strong> Tu cuenta tiene rol <strong>${user.role}</strong>.
+        </div>
+        <a href="${BASE}/" class="eu-btn-primary">Ver enciclopedia</a>`;
+      return;
+    }
+
+    // Crear preferencia de pago
+    try {
+      const res = await Auth.authFetch(`${API}/api/payments/create-preference`, { method: 'POST' });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+
+      // Renderizar botón de MercadoPago
+      const mpPublicKey = '{{ site.mp_public_key }}' || '';
+      
+      section.innerHTML = `
+        <div id="walletBrick_container" class="mb-3"></div>
+        <div class="text-muted small mt-2">
+          Al completar el pago, tu cuenta se actualizará automáticamente en segundos.
+        </div>`;
+
+      if (typeof MercadoPago !== 'undefined') {
+        const mp = new MercadoPago('{{ site.mp_public_key }}');
+        const bricksBuilder = mp.bricks();
+        await bricksBuilder.create('wallet', 'walletBrick_container', {
+          initialization: { preferenceId: data.preferenceId },
+          customization: { texts: { valueProp: 'smart_option' } }
+        });
+      } else {
+        // Fallback: botón directo
+        section.innerHTML = `
+          <a href="${data.initPoint}" class="eu-btn-primary btn-lg w-100 justify-content-center" style="font-size:1.1rem;padding:14px">
+            <i class="bi bi-credit-card me-2"></i> Pagar con MercadoPago
+          </a>
+          <div class="text-muted small mt-2">Serás redirigido a MercadoPago de forma segura</div>`;
+      }
+    } catch (err) {
+      section.innerHTML = `<div class="alert alert-danger">Error al cargar el pago: ${err.message}</div>`;
+    }
+  });
+})();
+</script>

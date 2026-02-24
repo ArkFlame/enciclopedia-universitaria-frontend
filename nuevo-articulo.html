@@ -1,0 +1,324 @@
+---
+layout: default
+title: Nuevo artículo
+---
+
+<div id="editorPage">
+  <div class="eu-loading" style="min-height:60vh">
+    <div class="eu-spinner"></div>
+    <span>Cargando editor...</span>
+  </div>
+</div>
+
+<script>
+(function() {
+  const API = window.EU_CONFIG.backendUrl;
+  const BASE = window.EU_CONFIG.baseUrl;
+
+  document.addEventListener('DOMContentLoaded', () => {
+    if (!Auth.isLoggedIn()) {
+      window.location.href = `${BASE}/login.html?redirect=${encodeURIComponent(window.location.href)}`;
+      return;
+    }
+    renderEditor();
+  });
+
+  async function loadCategories() {
+    try {
+      const res = await fetch(`${API}/api/articles/meta/categories`);
+      if (!res.ok) return [];
+      return await res.json();
+    } catch { return []; }
+  }
+
+  async function renderEditor() {
+    const cats = await loadCategories();
+    const catOptions = cats.map(c => `<option value="${c.slug}">${c.name}</option>`).join('');
+
+    document.getElementById('editorPage').innerHTML = `
+      <div style="max-width:1100px;margin:0 auto">
+        <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-3">
+          <div>
+            <h1 class="eu-section-title">Nuevo artículo</h1>
+            <p class="eu-section-subtitle">Usa Markdown y shortcodes para crear contenido interactivo.</p>
+          </div>
+          <div class="d-flex gap-2">
+            <a href="${BASE}/shortcodes.html" class="eu-btn-outline eu-btn-sm" target="_blank">
+              <i class="bi bi-code-slash"></i> Guía de shortcodes
+            </a>
+          </div>
+        </div>
+
+        <div id="publishAlert" class="alert d-none mb-4"></div>
+
+        <div class="row g-4">
+          <div class="col-lg-8">
+            <!-- Metadatos -->
+            <div class="eu-card p-4 mb-4">
+              <h5 class="mb-3">Información del artículo</h5>
+              <div class="eu-form-group">
+                <label class="eu-label" for="artTitle">Título <span class="text-danger">*</span></label>
+                <input type="text" id="artTitle" class="eu-input" placeholder="Ej: La fotosíntesis en plantas C4" maxlength="500">
+              </div>
+              <div class="eu-form-group">
+                <label class="eu-label" for="artSummary">Resumen / Introducción <span class="text-danger">*</span></label>
+                <textarea id="artSummary" class="eu-textarea" placeholder="Breve descripción del artículo (1-3 oraciones)..." maxlength="2000" rows="3"></textarea>
+                <div class="text-muted small mt-1"><span id="summaryCount">0</span>/2000 caracteres</div>
+              </div>
+              <div class="row g-3">
+                <div class="col-md-6">
+                  <label class="eu-label" for="artCategory">Categoría</label>
+                  <select id="artCategory" class="eu-select">
+                    <option value="">Sin categoría</option>
+                    ${catOptions}
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <!-- Editor Markdown -->
+            <div class="eu-card p-4 mb-4">
+              <div class="d-flex align-items-center justify-content-between mb-3">
+                <h5 class="m-0">Contenido</h5>
+                <div class="d-flex gap-2">
+                  <button class="eu-btn-outline eu-btn-sm" id="previewBtn" onclick="togglePreview()">
+                    <i class="bi bi-eye"></i> Vista previa
+                  </button>
+                </div>
+              </div>
+
+              <!-- Barra de herramientas -->
+              <div class="eu-editor-toolbar" id="editorToolbar">
+                <button class="eu-editor-btn" onclick="insertMd('**', '**')" title="Negrita"><b>B</b></button>
+                <button class="eu-editor-btn" onclick="insertMd('*', '*')" title="Cursiva"><i>I</i></button>
+                <button class="eu-editor-btn" onclick="insertMd('\n## ', '')" title="Título">H2</button>
+                <button class="eu-editor-btn" onclick="insertMd('\n### ', '')" title="Subtítulo">H3</button>
+                <button class="eu-editor-btn" onclick="insertMd('\n- ', '')" title="Lista">• Lista</button>
+                <button class="eu-editor-btn" onclick="insertMd('\`', '\`')" title="Código">Code</button>
+                <button class="eu-editor-btn" onclick="insertMd('\n> ', '')" title="Cita">❝</button>
+                <span style="border-left:1px solid var(--eu-border);margin:0 4px"></span>
+                <!-- Shortcodes frecuentes -->
+                <button class="eu-editor-btn" onclick="insertShortcode('tooltip')" title="Tooltip">[tooltip]</button>
+                <button class="eu-editor-btn" onclick="insertShortcode('alert')" title="Alerta">[alert]</button>
+                <button class="eu-editor-btn" onclick="insertShortcode('accordion')" title="Acordeón">[accordion]</button>
+                <button class="eu-editor-btn" onclick="insertShortcode('tabs')" title="Pestañas">[tabs]</button>
+                <button class="eu-editor-btn" onclick="insertShortcode('callout')" title="Callout">[callout]</button>
+                <button class="eu-editor-btn" onclick="insertShortcode('diagram')" title="Diagrama interactivo">[diagram]</button>
+                <button class="eu-editor-btn" onclick="insertShortcode('ref')" title="Referencia">[ref]</button>
+              </div>
+
+              <textarea id="artContent" class="eu-input eu-editor-area" 
+                placeholder="# Título principal&#10;&#10;Escribe aquí el contenido de tu artículo usando Markdown...&#10;&#10;Puedes usar [tooltip text=&quot;Definición&quot;]términos técnicos[/tooltip] y otros shortcodes."></textarea>
+              
+              <!-- Vista previa -->
+              <div id="previewContainer" class="d-none mt-3">
+                <div class="eu-label mb-2">Vista previa (aproximada):</div>
+                <div class="eu-preview-area eu-article-content" id="previewArea">
+                  <div class="text-muted">La vista previa se mostrará aquí...</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="d-flex gap-3 justify-content-end">
+              <a href="${BASE}/" class="eu-btn-outline">Cancelar</a>
+              <button class="eu-btn-primary" id="publishBtn" onclick="publishArticle()">
+                <i class="bi bi-send"></i> Enviar para revisión
+              </button>
+            </div>
+          </div>
+
+          <!-- Sidebar del editor -->
+          <div class="col-lg-4">
+            <!-- Subir imágenes -->
+            <div class="eu-card p-4 mb-4">
+              <h5 class="mb-3"><i class="bi bi-images me-2"></i>Multimedia</h5>
+              <div id="uploadArea" class="border-2 border-dashed rounded-2 p-4 text-center mb-3" 
+                   style="border-color:var(--eu-border);cursor:pointer;transition:all .2s"
+                   ondragover="event.preventDefault();this.style.borderColor='var(--eu-text)'"
+                   ondragleave="this.style.borderColor='var(--eu-border)'"
+                   ondrop="handleDrop(event)">
+                <i class="bi bi-cloud-upload fs-3 mb-2 d-block text-muted"></i>
+                <div class="small text-muted">Arrastra imágenes aquí o</div>
+                <label for="imageInput" class="eu-btn-outline eu-btn-sm mt-2" style="cursor:pointer">
+                  Seleccionar archivos
+                </label>
+                <input type="file" id="imageInput" multiple accept="image/*" class="d-none" onchange="uploadImages(this.files)">
+                <div class="text-muted" style="font-size:0.72rem;margin-top:6px">PNG, JPG, GIF, WebP · Máx 5MB</div>
+              </div>
+              <div id="uploadedImages" class="d-flex flex-wrap gap-2"></div>
+            </div>
+
+            <!-- Ayuda rápida -->
+            <div class="eu-card p-4">
+              <h5 class="mb-3"><i class="bi bi-question-circle me-2"></i>Referencia rápida</h5>
+              <div style="font-size:0.8rem;line-height:1.8;font-family:monospace;color:var(--eu-text-secondary)">
+                <div><strong>**negrita**</strong></div>
+                <div><em>*cursiva*</em></div>
+                <div>## Título</div>
+                <div>### Subtítulo</div>
+                <div>- Item de lista</div>
+                <div>[enlace](url)</div>
+                <div class="mt-2"><strong>Shortcodes:</strong></div>
+                <div>[tooltip text="def"]palabra[/tooltip]</div>
+                <div>[alert type="info"]msg[/alert]</div>
+                <div>[ref article="slug"]texto[/ref]</div>
+              </div>
+              <a href="${BASE}/shortcodes.html" class="eu-btn-outline eu-btn-sm w-100 mt-3 text-center">
+                Ver guía completa
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>`;
+
+    // Contador resumen
+    document.getElementById('artSummary').addEventListener('input', function() {
+      document.getElementById('summaryCount').textContent = this.value.length;
+    });
+  }
+
+  // Insertar Markdown
+  window.insertMd = function(before, after) {
+    const ta = document.getElementById('artContent');
+    const start = ta.selectionStart, end = ta.selectionEnd;
+    const sel = ta.value.slice(start, end) || 'texto';
+    ta.value = ta.value.slice(0, start) + before + sel + after + ta.value.slice(end);
+    ta.focus();
+    ta.setSelectionRange(start + before.length, start + before.length + sel.length);
+  };
+
+  // Insertar shortcodes con plantillas
+  const shortcodeTemplates = {
+    tooltip: '[tooltip text="Definición aquí"]término técnico[/tooltip]',
+    alert: '[alert type="info"]Mensaje importante aquí[/alert]',
+    accordion: '[accordion title="¿Pregunta frecuente?"]\nRespuesta detallada aquí.\n[/accordion]',
+    tabs: '[tabs]\n[tab title="Pestaña 1"]Contenido de la primera pestaña[/tab]\n[tab title="Pestaña 2"]Contenido de la segunda pestaña[/tab]\n[/tabs]',
+    callout: '[callout icon="💡"]Nota importante o curiosidad científica[/callout]',
+    diagram: '[interactive-diagram title="Estructura celular"]\n[cell label="Núcleo" article="nucleo-celular" x="50" y="50" color="#6366f1"]El núcleo controla las funciones celulares[/cell]\n[cell label="Mitocondria" article="mitocondria" x="70" y="30" color="#f59e0b"]Genera energía (ATP)[/cell]\n[/interactive-diagram]',
+    ref: '[ref article="slug-del-articulo"]Texto del enlace[/ref]'
+  };
+
+  window.insertShortcode = function(type) {
+    const ta = document.getElementById('artContent');
+    const template = shortcodeTemplates[type] || '';
+    const pos = ta.selectionStart;
+    ta.value = ta.value.slice(0, pos) + '\n' + template + '\n' + ta.value.slice(pos);
+    ta.focus();
+  };
+
+  // Toggle preview
+  window.togglePreview = function() {
+    const container = document.getElementById('previewContainer');
+    const area = document.getElementById('previewArea');
+    const content = document.getElementById('artContent').value;
+
+    if (container.classList.contains('d-none')) {
+      container.classList.remove('d-none');
+      // Preview aproximado sin shortcodes
+      const simplified = content
+        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+        .replace(/\*(.*?)\*/g, '<em>$1</em>')
+        .replace(/^## (.*)/gm, '<h2>$1</h2>')
+        .replace(/^### (.*)/gm, '<h3>$1</h3>')
+        .replace(/^- (.*)/gm, '<li>$1</li>')
+        .replace(/\[(.*?)\]\((.*?)\)/g, '<a href="$2">$1</a>')
+        .replace(/\[\/?\w[^\]]*\]/g, '<em class="text-muted">[shortcode]</em>')
+        .replace(/\n/g, '<br>');
+      area.innerHTML = `<div class="text-muted small mb-2">Vista previa aproximada (los shortcodes se renderizan en el servidor)</div>${simplified}`;
+      document.getElementById('previewBtn').innerHTML = '<i class="bi bi-pencil"></i> Editar';
+    } else {
+      container.classList.add('d-none');
+      document.getElementById('previewBtn').innerHTML = '<i class="bi bi-eye"></i> Vista previa';
+    }
+  };
+
+  // Subir imágenes
+  let articleIdForUpload = null;
+
+  window.uploadImages = async function(files) {
+    const formData = new FormData();
+    for (const f of files) formData.append('images', f);
+    if (articleIdForUpload) formData.append('articleId', articleIdForUpload);
+
+    const token = Auth.getToken();
+    try {
+      const res = await fetch(`${API}/api/media/upload`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+
+      const container = document.getElementById('uploadedImages');
+      data.files.forEach(f => {
+        const div = document.createElement('div');
+        div.style.position = 'relative';
+        div.innerHTML = `
+          <img src="${f.publicUrl}" style="width:80px;height:80px;object-fit:cover;border-radius:6px;cursor:pointer" 
+               onclick="insertImageShortcode('${f.publicUrl}', '${f.filename.replace(/\.[^.]+$/,'')}')" 
+               title="Click para insertar en el artículo">
+          <div style="font-size:0.65rem;text-align:center;color:var(--eu-text-muted);margin-top:2px">Insertar</div>`;
+        container.appendChild(div);
+      });
+      window.showToast(`${data.files.length} imagen(s) subida(s)`, 'success');
+    } catch (err) {
+      window.showToast(err.message, 'error');
+    }
+  };
+
+  window.insertImageShortcode = function(url, alt) {
+    const ta = document.getElementById('artContent');
+    const pos = ta.selectionStart;
+    const shortcode = `\n[image src="${url}" alt="${alt}" caption=""]\n`;
+    ta.value = ta.value.slice(0, pos) + shortcode + ta.value.slice(pos);
+    ta.focus();
+  };
+
+  window.handleDrop = function(e) {
+    e.preventDefault();
+    document.getElementById('uploadArea').style.borderColor = 'var(--eu-border)';
+    if (e.dataTransfer.files.length) uploadImages(e.dataTransfer.files);
+  };
+
+  // Publicar artículo
+  window.publishArticle = async function() {
+    const title = document.getElementById('artTitle').value.trim();
+    const summary = document.getElementById('artSummary').value.trim();
+    const content = document.getElementById('artContent').value.trim();
+    const category = document.getElementById('artCategory').value;
+    const btn = document.getElementById('publishBtn');
+    const alert = document.getElementById('publishAlert');
+
+    if (!title || !summary || !content) {
+      alert.className = 'alert alert-danger';
+      alert.textContent = 'El título, resumen y contenido son obligatorios';
+      alert.classList.remove('d-none');
+      return;
+    }
+
+    btn.disabled = true;
+    btn.innerHTML = '<span class="eu-spinner" style="width:18px;height:18px;border-width:2px"></span> Enviando...';
+
+    try {
+      const res = await Auth.authFetch(`${API}/api/articles`, {
+        method: 'POST',
+        body: JSON.stringify({ title, summary, content, category })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+
+      alert.className = 'alert alert-success';
+      alert.innerHTML = `✓ <strong>Artículo enviado exitosamente.</strong> Quedará visible cuando un moderador lo apruebe. <a href="${BASE}/articulo.html?slug=${data.slug}" class="alert-link">Ver artículo</a>`;
+      alert.classList.remove('d-none');
+      btn.innerHTML = '<i class="bi bi-check-lg"></i> Enviado';
+    } catch (err) {
+      alert.className = 'alert alert-danger';
+      alert.textContent = err.message;
+      alert.classList.remove('d-none');
+      btn.disabled = false;
+      btn.innerHTML = '<i class="bi bi-send"></i> Enviar para revisión';
+    }
+  };
+})();
+</script>

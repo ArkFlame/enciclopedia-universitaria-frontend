@@ -1,0 +1,154 @@
+---
+layout: default
+title: Iniciar sesión
+---
+
+<div style="min-height:70vh;display:flex;align-items:center;justify-content:center;padding:20px">
+  <div style="width:100%;max-width:420px">
+    
+    <!-- Tabs login/registro -->
+    <div class="text-center mb-6" style="margin-bottom:32px">
+      <span class="eu-logo-icon" style="font-size:2.5rem;display:block;margin-bottom:12px">Σ</span>
+      <h1 style="font-family:var(--eu-font-display);font-size:1.6rem;font-weight:700">Enciclopedia Universitaria</h1>
+    </div>
+
+    <div class="eu-tabs mb-4">
+      <ul class="nav nav-tabs" role="tablist">
+        <li class="nav-item" role="presentation">
+          <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#loginTab" type="button">Iniciar sesión</button>
+        </li>
+        <li class="nav-item" role="presentation">
+          <button class="nav-link" data-bs-toggle="tab" data-bs-target="#registerTab" type="button">Crear cuenta</button>
+        </li>
+      </ul>
+      <div class="tab-content p-4 border border-top-0 rounded-bottom">
+        
+        <!-- LOGIN -->
+        <div class="tab-pane fade show active" id="loginTab" role="tabpanel">
+          <div id="loginError" class="alert alert-danger d-none"></div>
+          <div class="eu-form-group">
+            <label class="eu-label" for="loginEmail">Correo electrónico</label>
+            <input type="email" id="loginEmail" class="eu-input" placeholder="tu@email.com" autocomplete="email">
+          </div>
+          <div class="eu-form-group">
+            <label class="eu-label" for="loginPassword">Contraseña</label>
+            <div class="position-relative">
+              <input type="password" id="loginPassword" class="eu-input pe-5" placeholder="••••••••" autocomplete="current-password">
+              <button type="button" class="eu-icon-btn position-absolute end-0 top-50 translate-middle-y me-1" onclick="togglePassword('loginPassword', this)">
+                <i class="bi bi-eye"></i>
+              </button>
+            </div>
+          </div>
+          <button class="eu-btn-primary w-100 justify-content-center" id="loginBtn" style="height:44px">
+            Iniciar sesión
+          </button>
+        </div>
+        
+        <!-- REGISTRO -->
+        <div class="tab-pane fade" id="registerTab" role="tabpanel">
+          <div id="registerError" class="alert alert-danger d-none"></div>
+          <div id="registerSuccess" class="alert alert-success d-none"></div>
+          <div class="eu-form-group">
+            <label class="eu-label" for="regUsername">Nombre de usuario</label>
+            <input type="text" id="regUsername" class="eu-input" placeholder="mi_usuario" autocomplete="username">
+            <div class="text-muted small mt-1">Solo letras, números, puntos, guiones y guiones bajos</div>
+          </div>
+          <div class="eu-form-group">
+            <label class="eu-label" for="regEmail">Correo electrónico</label>
+            <input type="email" id="regEmail" class="eu-input" placeholder="tu@email.com" autocomplete="email">
+          </div>
+          <div class="eu-form-group">
+            <label class="eu-label" for="regPassword">Contraseña</label>
+            <div class="position-relative">
+              <input type="password" id="regPassword" class="eu-input pe-5" placeholder="Mínimo 6 caracteres" autocomplete="new-password">
+              <button type="button" class="eu-icon-btn position-absolute end-0 top-50 translate-middle-y me-1" onclick="togglePassword('regPassword', this)">
+                <i class="bi bi-eye"></i>
+              </button>
+            </div>
+          </div>
+          <div class="small text-muted mb-3">
+            Al registrarte aceptas los <a href="#">términos de uso</a>. Cuenta gratuita con 5 artículos/mes.
+          </div>
+          <button class="eu-btn-primary w-100 justify-content-center" id="registerBtn" style="height:44px">
+            Crear cuenta gratis
+          </button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+const BASE = window.EU_CONFIG.baseUrl;
+
+function togglePassword(inputId, btn) {
+  const input = document.getElementById(inputId);
+  const isPass = input.type === 'password';
+  input.type = isPass ? 'text' : 'password';
+  btn.querySelector('i').className = isPass ? 'bi bi-eye-slash' : 'bi bi-eye';
+}
+
+function setLoading(btn, loading) {
+  btn.disabled = loading;
+  btn.innerHTML = loading 
+    ? '<span class="eu-spinner" style="width:18px;height:18px;border-width:2px"></span>' 
+    : (btn.id === 'loginBtn' ? 'Iniciar sesión' : 'Crear cuenta gratis');
+}
+
+function showError(id, msg) {
+  const el = document.getElementById(id);
+  el.textContent = msg;
+  el.classList.remove('d-none');
+  setTimeout(() => el.classList.add('d-none'), 5000);
+}
+
+// LOGIN
+document.getElementById('loginBtn').addEventListener('click', async () => {
+  const email = document.getElementById('loginEmail').value.trim();
+  const password = document.getElementById('loginPassword').value;
+  const btn = document.getElementById('loginBtn');
+
+  if (!email || !password) { showError('loginError', 'Completa todos los campos'); return; }
+
+  setLoading(btn, true);
+  try {
+    await Auth.login(email, password);
+    const redirect = new URLSearchParams(window.location.search).get('redirect') || BASE + '/';
+    window.location.href = redirect;
+  } catch (err) {
+    showError('loginError', err.message);
+    setLoading(btn, false);
+  }
+});
+
+// REGISTRO
+document.getElementById('registerBtn').addEventListener('click', async () => {
+  const username = document.getElementById('regUsername').value.trim();
+  const email = document.getElementById('regEmail').value.trim();
+  const password = document.getElementById('regPassword').value;
+  const btn = document.getElementById('registerBtn');
+
+  if (!username || !email || !password) { showError('registerError', 'Completa todos los campos'); return; }
+
+  setLoading(btn, true);
+  try {
+    await Auth.register(username, email, password);
+    const succ = document.getElementById('registerSuccess');
+    succ.textContent = '¡Cuenta creada! Redirigiendo...';
+    succ.classList.remove('d-none');
+    setTimeout(() => window.location.href = BASE + '/', 1500);
+  } catch (err) {
+    showError('registerError', err.message);
+    setLoading(btn, false);
+  }
+});
+
+// Enter para enviar
+document.getElementById('loginPassword').addEventListener('keydown', e => {
+  if (e.key === 'Enter') document.getElementById('loginBtn').click();
+});
+
+// Redirigir si ya está logueado
+if (Auth.isLoggedIn()) window.location.href = BASE + '/';
+</script>

@@ -1,0 +1,391 @@
+---
+layout: default
+title: Panel de Moderación
+---
+
+<div id="adminPage" style="padding:0;max-width:100%;min-height:80vh">
+  <div class="eu-loading" style="min-height:60vh">
+    <div class="eu-spinner"></div>
+    <span>Verificando permisos...</span>
+  </div>
+</div>
+
+<style>
+.eu-main { padding: 0; max-width: 100%; }
+</style>
+
+<script>
+(function() {
+  const API = window.EU_CONFIG.backendUrl;
+  const BASE = window.EU_CONFIG.baseUrl;
+
+  document.addEventListener('DOMContentLoaded', async () => {
+    if (!Auth.isLoggedIn()) { window.location.href = `${BASE}/login.html`; return; }
+    const user = Auth.getUser();
+    if (!['MOD','ADMIN'].includes(user?.role)) {
+      document.getElementById('adminPage').innerHTML = `<div class="eu-empty-state text-danger" style="min-height:60vh"><i class="bi bi-shield-exclamation fs-1"></i><h3>Acceso denegado</h3><p>Solo moderadores y administradores.</p><a href="${BASE}/" class="eu-btn-primary mt-3">Inicio</a></div>`;
+      return;
+    }
+    renderAdmin(user);
+  });
+
+  function renderAdmin(user) {
+    document.getElementById('adminPage').innerHTML = `
+      <div class="eu-admin-layout">
+        <aside class="eu-admin-sidebar">
+          <div class="px-4 py-3 border-bottom" style="border-color:var(--eu-border)!important">
+            <div class="fw-bold">${user.role === 'ADMIN' ? '⚙ Administración' : '🛡 Moderación'}</div>
+            <div class="small text-muted">${escapeHtml(user.username)}</div>
+          </div>
+          <nav class="eu-admin-nav pt-2">
+            <a href="#" onclick="showSection('dashboard');return false"><i class="bi bi-grid-1x2"></i> Panel</a>
+            <a href="#" onclick="showSection('pending');return false"><i class="bi bi-hourglass-split"></i> Pendientes <span id="pendingCount" class="badge bg-warning text-dark ms-auto"></span></a>
+            <a href="#" onclick="showSection('approved');return false"><i class="bi bi-check-circle"></i> Aprobados</a>
+            <a href="#" onclick="showSection('rejected');return false"><i class="bi bi-x-circle"></i> Rechazados</a>
+            <a href="#" onclick="showSection('edits');return false"><i class="bi bi-pencil-square"></i> Ediciones</a>
+            ${user.role==='ADMIN'?`<a href="#" onclick="showSection('users');return false"><i class="bi bi-people"></i> Usuarios</a><a href="#" onclick="showSection('logs');return false"><i class="bi bi-list-check"></i> Logs</a>`:''}
+            <div class="eu-sidebar-divider mx-3"></div>
+            <a href="${BASE}/"><i class="bi bi-house"></i> Ver sitio</a>
+          </nav>
+        </aside>
+        <main class="eu-admin-main" id="adminMain">
+          <div class="eu-loading"><div class="eu-spinner"></div></div>
+        </main>
+      </div>`;
+    showSection('dashboard');
+  }
+
+  window.showSection = function(section) {
+    document.querySelectorAll('.eu-admin-nav a').forEach(a => {
+      a.classList.toggle('active', a.getAttribute('onclick')?.includes(`'${section}'`));
+    });
+    const main = document.getElementById('adminMain');
+    main.innerHTML = '<div class="eu-loading"><div class="eu-spinner"></div></div>';
+    const fns = { dashboard: loadDashboard, pending: () => loadArticles('PENDING'), approved: () => loadArticles('APPROVED'), rejected: () => loadArticles('REJECTED'), edits: loadEdits, users: loadUsers, logs: loadLogs };
+    (fns[section] || loadDashboard)();
+  };
+
+  // ── DASHBOARD ──────────────────────────────────────────────────
+  async function loadDashboard() {
+    try {
+      const res = await Auth.authFetch(`${API}/api/admin/stats`);
+      const data = await res.json();
+      const { articles, edits, users, payments } = data;
+
+      if (articles.pending > 0) {
+        const badge = document.getElementById('pendingCount');
+        if (badge) { badge.textContent = articles.pending; badge.classList.remove('d-none'); }
+      }
+
+      document.getElementById('adminMain').innerHTML = `
+        <h2 class="eu-section-title mb-1">Panel general</h2>
+        <p class="eu-section-subtitle mb-4">Resumen de actividad de la enciclopedia</p>
+
+        <div class="row g-3 mb-5">
+          ${statCard('Pendientes', articles.pending || 0, 'bi-hourglass-split', '#d97706', "showSection('pending')")}
+          ${statCard('Aprobados', articles.approved || 0, 'bi-check-circle-fill', '#15803d', "showSection('approved')")}
+          ${statCard('Rechazados', articles.rejected || 0, 'bi-x-circle-fill', '#b91c1c', "showSection('rejected')")}
+          ${statCard('Ediciones pend.', edits.pending || 0, 'bi-pencil-square', '#7c3aed', "showSection('edits')")}
+        </div>
+
+        <div class="row g-4 mb-4">
+          <div class="col-md-6">
+            <div class="eu-stat-card">
+              <div class="eu-stat-label mb-3">Usuarios por tipo</div>
+              <div class="d-flex flex-column gap-2">
+                ${userRow('FREE', users?.free_users || 0, '#6b7280')}
+                ${userRow('MONTHLY', users?.monthly_users || 0, '#15803d')}
+                ${userRow('MOD', users?.mod_users || 0, '#1d4ed8')}
+                ${userRow('ADMIN', users?.admin_users || 0, '#b91c1c')}
+              </div>
+              <div class="eu-divider"></div>
+              <div class="fw-semibold">Total: ${users?.total || 0} usuarios</div>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="eu-stat-card">
+              <div class="eu-stat-label mb-3">Ingresos</div>
+              <div class="eu-stat-number" style="color:var(--eu-success)">$${parseFloat(payments?.total_revenue||0).toLocaleString('es-AR')}</div>
+              <div class="text-muted small">ARS en pagos aprobados</div>
+              <div class="eu-divider"></div>
+              <div class="text-muted small">${payments?.total_payments || 0} pagos procesados</div>
+            </div>
+          </div>
+        </div>`;
+    } catch (err) {
+      document.getElementById('adminMain').innerHTML = `<div class="alert alert-danger">Error: ${err.message}</div>`;
+    }
+  }
+
+  function statCard(label, value, icon, color, onclick) {
+    return `<div class="col-6 col-md-3">
+      <div class="eu-stat-card" style="cursor:pointer" onclick="${onclick}">
+        <div class="d-flex align-items-center justify-content-between mb-2">
+          <i class="bi ${icon}" style="font-size:1.4rem;color:${color}"></i>
+        </div>
+        <div class="eu-stat-number" style="color:${color}">${value}</div>
+        <div class="eu-stat-label">${label}</div>
+      </div>
+    </div>`;
+  }
+
+  function userRow(role, count, color) {
+    return `<div class="d-flex justify-content-between align-items-center">
+      <span class="eu-status-badge eu-status-${role}" style="background:${color}22;color:${color}">${role}</span>
+      <strong>${count}</strong>
+    </div>`;
+  }
+
+  // ── ARTÍCULOS ──────────────────────────────────────────────────
+  async function loadArticles(status) {
+    try {
+      const res = await Auth.authFetch(`${API}/api/admin/articles?status=${status}&limit=30`);
+      const { articles, total } = await res.json();
+
+      const statusLabels = { PENDING: '⏳ Pendientes', APPROVED: '✓ Aprobados', REJECTED: '✕ Rechazados', ALL: 'Todos' };
+      const statusColors = { PENDING: '#d97706', APPROVED: '#15803d', REJECTED: '#b91c1c' };
+
+      document.getElementById('adminMain').innerHTML = `
+        <div class="d-flex align-items-center justify-content-between mb-4">
+          <div>
+            <h2 class="eu-section-title mb-0">Artículos ${statusLabels[status] || status}</h2>
+            <p class="text-muted small">${total} artículo(s)</p>
+          </div>
+        </div>
+
+        ${!articles.length ? '<div class="eu-empty-state"><i class="bi bi-journal-x"></i><p>No hay artículos en esta categoría</p></div>' : `
+        <div class="table-responsive">
+          <table class="eu-admin-table">
+            <thead>
+              <tr>
+                <th>Estado</th>
+                <th>Título</th>
+                <th>Autor</th>
+                <th>Fecha</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${articles.map(a => `
+              <tr>
+                <td>
+                  <span class="eu-status-badge eu-status-${a.status}">
+                    ${a.status === 'PENDING' ? '⏳ Pendiente' : a.status === 'APPROVED' ? '✓ Aprobado' : '✕ Rechazado'}
+                  </span>
+                </td>
+                <td>
+                  <div class="fw-semibold" style="max-width:300px">${escapeHtml(a.title)}</div>
+                  <div class="text-muted small" style="max-width:300px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${escapeHtml(a.summary)}</div>
+                  ${a.rejection_reason ? `<div class="small text-danger mt-1">Motivo: ${escapeHtml(a.rejection_reason)}</div>` : ''}
+                </td>
+                <td>
+                  <div>${escapeHtml(a.author_username)}</div>
+                  <div class="small text-muted">${a.author_email}</div>
+                  <span class="eu-status-badge" style="background:var(--eu-bg-secondary)">${a.author_role}</span>
+                </td>
+                <td class="text-muted small text-nowrap">${formatDate(a.created_at)}</td>
+                <td>
+                  <div class="d-flex gap-1 flex-wrap">
+                    <a href="${BASE}/articulo.html?slug=${encodeURIComponent(a.slug)}&includePending=true" 
+                       class="btn btn-sm btn-outline-secondary" target="_blank" title="Ver artículo">
+                       <i class="bi bi-eye"></i>
+                    </a>
+                    ${a.status !== 'APPROVED' ? `
+                    <button class="btn btn-sm btn-success" onclick="updateStatus(${a.id}, 'APPROVED')" title="Aprobar">
+                      <i class="bi bi-check-lg"></i>
+                    </button>` : ''}
+                    ${a.status !== 'REJECTED' ? `
+                    <button class="btn btn-sm btn-danger" onclick="rejectArticle(${a.id}, '${escapeHtml(a.title)}')" title="Rechazar">
+                      <i class="bi bi-x-lg"></i>
+                    </button>` : ''}
+                  </div>
+                </td>
+              </tr>`).join('')}
+            </tbody>
+          </table>
+        </div>`}`;
+    } catch (err) {
+      document.getElementById('adminMain').innerHTML = `<div class="alert alert-danger">Error: ${err.message}</div>`;
+    }
+  }
+
+  // ── EDICIONES ──────────────────────────────────────────────────
+  async function loadEdits() {
+    try {
+      const res = await Auth.authFetch(`${API}/api/admin/edits?status=PENDING`);
+      const edits = await res.json();
+
+      document.getElementById('adminMain').innerHTML = `
+        <h2 class="eu-section-title mb-4">Ediciones pendientes</h2>
+        ${!edits.length ? '<div class="eu-empty-state"><i class="bi bi-pencil"></i><p>No hay ediciones pendientes</p></div>' : `
+        <div class="table-responsive">
+          <table class="eu-admin-table">
+            <thead>
+              <tr><th>Artículo</th><th>Editor</th><th>Nota</th><th>Fecha</th><th>Acciones</th></tr>
+            </thead>
+            <tbody>
+              ${edits.map(e => `
+              <tr>
+                <td>
+                  <div class="fw-semibold">${escapeHtml(e.article_title)}</div>
+                  ${e.title ? `<div class="small text-muted">Nuevo título: ${escapeHtml(e.title)}</div>` : ''}
+                </td>
+                <td>${escapeHtml(e.editor_username)} <span class="badge bg-secondary">${e.editor_role}</span></td>
+                <td class="text-muted small" style="max-width:200px">${escapeHtml(e.edit_note || '—')}</td>
+                <td class="text-muted small text-nowrap">${formatDate(e.created_at)}</td>
+                <td>
+                  <div class="d-flex gap-1">
+                    <button class="btn btn-sm btn-outline-secondary" onclick="previewEdit(${e.id})" title="Vista previa"><i class="bi bi-eye"></i></button>
+                    <button class="btn btn-sm btn-success" onclick="updateEditStatus(${e.id}, 'APPROVED')"><i class="bi bi-check-lg"></i></button>
+                    <button class="btn btn-sm btn-danger" onclick="rejectEdit(${e.id})"><i class="bi bi-x-lg"></i></button>
+                  </div>
+                </td>
+              </tr>`).join('')}
+            </tbody>
+          </table>
+        </div>`}`;
+    } catch (err) {
+      document.getElementById('adminMain').innerHTML = `<div class="alert alert-danger">Error: ${err.message}</div>`;
+    }
+  }
+
+  // ── USUARIOS ──────────────────────────────────────────────────
+  async function loadUsers() {
+    try {
+      const res = await Auth.authFetch(`${API}/api/admin/users?limit=50`);
+      const { users, total } = await res.json();
+
+      document.getElementById('adminMain').innerHTML = `
+        <h2 class="eu-section-title mb-4">Usuarios (${total})</h2>
+        <div class="table-responsive">
+          <table class="eu-admin-table">
+            <thead>
+              <tr><th>Usuario</th><th>Rol</th><th>Email</th><th>Registrado</th><th>Suscripción</th></tr>
+            </thead>
+            <tbody>
+              ${users.map(u => `
+              <tr>
+                <td class="fw-semibold">${escapeHtml(u.username)}</td>
+                <td><span class="eu-status-badge eu-status-${u.role}">${u.role}</span></td>
+                <td class="text-muted small">${escapeHtml(u.email)}</td>
+                <td class="text-muted small">${formatDate(u.created_at)}</td>
+                <td class="small text-muted">${u.monthly_expires_at ? `Expira: ${formatDate(u.monthly_expires_at)}` : '—'}</td>
+              </tr>`).join('')}
+            </tbody>
+          </table>
+        </div>`;
+    } catch (err) {
+      document.getElementById('adminMain').innerHTML = `<div class="alert alert-danger">Error: ${err.message}</div>`;
+    }
+  }
+
+  // ── LOGS ──────────────────────────────────────────────────────
+  async function loadLogs() {
+    try {
+      const res = await Auth.authFetch(`${API}/api/admin/logs`);
+      const logs = await res.json();
+
+      document.getElementById('adminMain').innerHTML = `
+        <h2 class="eu-section-title mb-4">Logs de administración</h2>
+        <div class="table-responsive">
+          <table class="eu-admin-table">
+            <thead><tr><th>Admin</th><th>Acción</th><th>Tipo</th><th>Fecha</th></tr></thead>
+            <tbody>
+              ${logs.map(l => `<tr>
+                <td>${escapeHtml(l.admin_username)}</td>
+                <td><code>${escapeHtml(l.action)}</code></td>
+                <td class="text-muted">${l.target_type || '—'} #${l.target_id || '—'}</td>
+                <td class="text-muted small">${formatDate(l.created_at)}</td>
+              </tr>`).join('')}
+            </tbody>
+          </table>
+        </div>`;
+    } catch (err) {
+      document.getElementById('adminMain').innerHTML = `<div class="alert alert-danger">Error: ${err.message}</div>`;
+    }
+  }
+
+  // ── ACCIONES ──────────────────────────────────────────────────
+  window.updateStatus = async function(id, status) {
+    try {
+      const res = await Auth.authFetch(`${API}/api/admin/articles/${id}/status`, {
+        method: 'PUT',
+        body: JSON.stringify({ status })
+      });
+      if (!res.ok) { const d = await res.json(); throw new Error(d.error); }
+      window.showToast(`Artículo ${status === 'APPROVED' ? 'aprobado' : 'actualizado'}`, 'success');
+      showSection('pending');
+    } catch (err) { window.showToast(err.message, 'error'); }
+  };
+
+  window.rejectArticle = function(id, title) {
+    const reason = prompt(`Motivo de rechazo para "${title}" (opcional):`);
+    if (reason === null) return;
+    Auth.authFetch(`${API}/api/admin/articles/${id}/status`, {
+      method: 'PUT',
+      body: JSON.stringify({ status: 'REJECTED', reason })
+    }).then(res => {
+      if (res.ok) { window.showToast('Artículo rechazado', 'warning'); showSection('pending'); }
+      else res.json().then(d => window.showToast(d.error, 'error'));
+    });
+  };
+
+  window.updateEditStatus = async function(id, status) {
+    try {
+      const res = await Auth.authFetch(`${API}/api/admin/edits/${id}/status`, {
+        method: 'PUT',
+        body: JSON.stringify({ status })
+      });
+      if (!res.ok) { const d = await res.json(); throw new Error(d.error); }
+      window.showToast('Edición procesada', 'success');
+      loadEdits();
+    } catch (err) { window.showToast(err.message, 'error'); }
+  };
+
+  window.rejectEdit = function(id) {
+    const reason = prompt('Motivo de rechazo (opcional):');
+    if (reason === null) return;
+    window.updateEditStatus(id, 'REJECTED');
+  };
+
+  window.previewEdit = async function(editId) {
+    try {
+      const res = await Auth.authFetch(`${API}/api/admin/edit-preview/${editId}`);
+      const { html, markdown } = await res.json();
+      
+      const modal = document.createElement('div');
+      modal.innerHTML = `
+        <div class="modal fade" id="editPreviewModal" tabindex="-1">
+          <div class="modal-dialog modal-xl modal-dialog-scrollable">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title">Vista previa de edición</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+              </div>
+              <div class="modal-body">
+                <ul class="nav nav-tabs mb-3" role="tablist">
+                  <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#previewTab">Renderizado</button></li>
+                  <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#markdownTab">Markdown</button></li>
+                </ul>
+                <div class="tab-content">
+                  <div class="tab-pane fade show active" id="previewTab">
+                    <div class="eu-article-content">${html}</div>
+                  </div>
+                  <div class="tab-pane fade" id="markdownTab">
+                    <pre class="p-3 rounded" style="background:var(--eu-code-bg);overflow-x:auto"><code>${escapeHtml(markdown)}</code></pre>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>`;
+      document.body.appendChild(modal.firstElementChild);
+      const m = new bootstrap.Modal(document.getElementById('editPreviewModal'));
+      m.show();
+      document.getElementById('editPreviewModal').addEventListener('hidden.bs.modal', function() { this.remove(); });
+    } catch (err) { window.showToast(err.message, 'error'); }
+  };
+
+  function escapeHtml(s) { return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+})();
+</script>

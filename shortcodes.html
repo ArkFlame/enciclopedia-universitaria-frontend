@@ -1,0 +1,221 @@
+---
+layout: default
+title: Guía de Shortcodes
+description: Aprende a crear contenido interactivo en la Enciclopedia Universitaria
+---
+
+<div style="max-width:900px;margin:0 auto">
+  <div class="mb-5">
+    <h1 class="eu-hero-title">Guía de Shortcodes</h1>
+    <p class="text-muted" style="font-size:1.05rem">Aprende a crear artículos interactivos y profesionales usando nuestros componentes predefinidos.</p>
+  </div>
+
+  <!-- TOC -->
+  <div class="eu-card p-4 mb-5">
+    <h4>Contenido de esta guía</h4>
+    <div class="row">
+      <div class="col-md-6">
+        <ul class="mb-0">
+          <li><a href="#markdown">Markdown básico</a></li>
+          <li><a href="#tooltip">Tooltips</a></li>
+          <li><a href="#alert">Alertas</a></li>
+          <li><a href="#callout">Callouts</a></li>
+          <li><a href="#accordion">Acordeón</a></li>
+        </ul>
+      </div>
+      <div class="col-md-6">
+        <ul class="mb-0">
+          <li><a href="#tabs">Pestañas</a></li>
+          <li><a href="#card">Tarjetas</a></li>
+          <li><a href="#diagram">Diagrama interactivo</a></li>
+          <li><a href="#image">Imágenes</a></li>
+          <li><a href="#ref">Referencias</a></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- MARKDOWN -->
+  <section id="markdown" class="mb-5">
+    <h2 class="eu-section-title">📝 Markdown básico</h2>
+    <p class="text-muted mb-4">Todo el contenido se escribe en Markdown estándar.</p>
+    <div class="row g-4">
+      <div class="col-md-6">
+        <div class="eu-card p-3">
+          <div class="eu-label mb-2">Código:</div>
+          <pre class="mb-0" style="background:var(--eu-code-bg);padding:12px;border-radius:6px;font-size:0.85rem"># Título principal
+## Sección
+### Subsección
+
+**Texto en negrita**
+*Texto en cursiva*
+
+- Item 1
+- Item 2
+  - Subitem
+
+1. Primero
+2. Segundo
+
+[Enlace](https://url.com)
+
+> Cita o referencia importante
+
+`código inline`
+
+```
+bloque de código
+```</pre>
+        </div>
+      </div>
+      <div class="col-md-6">
+        <div class="eu-card p-3">
+          <div class="eu-label mb-2">Resultado:</div>
+          <div class="eu-article-content">
+            <h2 style="font-size:1.1rem">Título principal</h2>
+            <p><strong>Texto en negrita</strong> y <em>cursiva</em></p>
+            <ul><li>Item 1</li><li>Item 2</li></ul>
+            <blockquote>Cita importante</blockquote>
+            <p><code>código inline</code></p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- TOOLTIP -->
+  <section id="tooltip" class="mb-5">
+    <h2 class="eu-section-title">💬 Tooltips</h2>
+    <p class="text-muted mb-3">Añade definiciones que aparecen al pasar el mouse sobre términos técnicos.</p>
+    <div class="eu-card p-4">
+      <div class="eu-label mb-1">Código:</div>
+      <pre style="background:var(--eu-code-bg);padding:12px;border-radius:6px;font-size:0.85rem">[tooltip text="Orgánulo responsable de la respiración celular y producción de ATP"]mitocondria[/tooltip]</pre>
+      <div class="eu-label mt-3 mb-1">Resultado:</div>
+      <p>La <span class="eu-tooltip" data-bs-toggle="tooltip" data-bs-placement="top" title="Orgánulo responsable de la respiración celular y producción de ATP" style="border-bottom:1px dashed #666;cursor:help">mitocondria</span> es esencial para la vida celular.</p>
+    </div>
+  </section>
+
+  <!-- ALERT -->
+  <section id="alert" class="mb-5">
+    <h2 class="eu-section-title">⚠️ Alertas</h2>
+    <p class="text-muted mb-3">Muestra mensajes importantes con diferentes niveles de urgencia.</p>
+    <div class="eu-card p-4">
+      <div class="eu-label mb-1">Código:</div>
+      <pre style="background:var(--eu-code-bg);padding:12px;border-radius:6px;font-size:0.85rem">[alert type="info"]Información importante[/alert]
+[alert type="warning"]Precaución con este procedimiento[/alert]
+[alert type="danger"]Peligroso para la salud[/alert]
+[alert type="success"]Resultado exitoso[/alert]</pre>
+      <div class="eu-label mt-3 mb-1">Resultado:</div>
+      <div class="alert alert-info">Información importante</div>
+      <div class="alert alert-warning">Precaución con este procedimiento</div>
+      <div class="alert alert-danger">Peligroso para la salud</div>
+      <div class="alert alert-success">Resultado exitoso</div>
+    </div>
+  </section>
+
+  <!-- DIAGRAM -->
+  <section id="diagram" class="mb-5">
+    <h2 class="eu-section-title">🔬 Diagrama interactivo</h2>
+    <p class="text-muted mb-3">El componente más poderoso. Crea diagramas donde cada elemento es clickeable y muestra información detallada con opción de enlazar a artículos relacionados.</p>
+    <div class="eu-card p-4">
+      <div class="eu-label mb-1">Código:</div>
+      <pre style="background:var(--eu-code-bg);padding:12px;border-radius:6px;font-size:0.82rem;overflow-x:auto">[interactive-diagram title="Estructura de la célula animal"]
+[cell label="Núcleo" article="nucleo-celular" x="50" y="45" color="#6366f1"]
+  El núcleo contiene el ADN y controla todas las funciones celulares.
+[/cell]
+[cell label="Mitocondria" article="mitocondria" x="75" y="30" color="#f59e0b"]
+  Central energética de la célula. Produce ATP mediante respiración celular.
+[/cell]
+[cell label="Membrana" article="membrana-celular" x="20" y="50" color="#10b981"]
+  Regula el paso de sustancias dentro y fuera de la célula.
+[/cell]
+[/interactive-diagram]</pre>
+      <div class="eu-label mt-3 mb-1">Parámetros de [cell]:</div>
+      <ul class="small text-muted">
+        <li><strong>label</strong>: Nombre del elemento que aparece en el diagrama</li>
+        <li><strong>article</strong>: Slug del artículo relacionado (opcional)</li>
+        <li><strong>x</strong>: Posición horizontal en % (0-95)</li>
+        <li><strong>y</strong>: Posición vertical en % (0-95)</li>
+        <li><strong>color</strong>: Color hexadecimal del elemento</li>
+        <li><strong>Contenido interno</strong>: Descripción que aparece en el popup</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ACCORDION -->
+  <section id="accordion" class="mb-5">
+    <h2 class="eu-section-title">📂 Acordeón</h2>
+    <div class="eu-card p-4">
+      <pre style="background:var(--eu-code-bg);padding:12px;border-radius:6px;font-size:0.85rem">[accordion title="¿Por qué ocurre la fotosíntesis?"]
+La fotosíntesis ocurre porque las plantas necesitan convertir energía lumínica en energía química para sobrevivir...
+[/accordion]</pre>
+    </div>
+  </section>
+
+  <!-- TABS -->
+  <section id="tabs" class="mb-5">
+    <h2 class="eu-section-title">📑 Pestañas</h2>
+    <div class="eu-card p-4">
+      <pre style="background:var(--eu-code-bg);padding:12px;border-radius:6px;font-size:0.85rem">[tabs]
+[tab title="Definición"]
+Contenido de la primera pestaña...
+[/tab]
+[tab title="Historia"]
+Contenido histórico aquí...
+[/tab]
+[tab title="Aplicaciones"]
+Aplicaciones prácticas...
+[/tab]
+[/tabs]</pre>
+    </div>
+  </section>
+
+  <!-- IMAGE -->
+  <section id="image" class="mb-5">
+    <h2 class="eu-section-title">🖼️ Imágenes</h2>
+    <div class="eu-card p-4">
+      <pre style="background:var(--eu-code-bg);padding:12px;border-radius:6px;font-size:0.85rem">[image src="URL_DE_LA_IMAGEN" alt="Descripción" caption="Pie de foto opcional"]</pre>
+      <div class="small text-muted mt-2">
+        Sube tus imágenes desde el editor de artículos y el shortcode se generará automáticamente.
+        También puedes referenciar imágenes de otros artículos usando su URL pública.
+      </div>
+    </div>
+  </section>
+
+  <!-- REF -->
+  <section id="ref" class="mb-5">
+    <h2 class="eu-section-title">🔗 Referencias a artículos</h2>
+    <div class="eu-card p-4">
+      <pre style="background:var(--eu-code-bg);padding:12px;border-radius:6px;font-size:0.85rem">[ref article="fotosintesis"]Ver artículo completo sobre fotosíntesis[/ref]
+[ref article="atp-energia-celular"]ATP y energía celular[/ref]</pre>
+      <div class="small text-muted mt-2">
+        El <strong>article</strong> es el "slug" del artículo destino (el identificador en la URL).
+      </div>
+    </div>
+  </section>
+
+  <!-- CALLOUT -->
+  <section id="callout" class="mb-5">
+    <h2 class="eu-section-title">📌 Callouts</h2>
+    <div class="eu-card p-4">
+      <pre style="background:var(--eu-code-bg);padding:12px;border-radius:6px;font-size:0.85rem">[callout icon="💡"]Dato curioso o nota científica importante aquí[/callout]
+[callout icon="⚠️"]Advertencia importante[/callout]
+[callout icon="🔬"]Nota experimental[/callout]</pre>
+    </div>
+  </section>
+
+  <div class="text-center mt-5 p-5" style="background:var(--eu-bg-secondary);border-radius:var(--eu-radius-lg)">
+    <h3>¿Listo para publicar?</h3>
+    <p class="text-muted mb-4">Crea tu primer artículo y comparte tu conocimiento con la comunidad universitaria.</p>
+    <a href="{{ '/nuevo-articulo.html' | relative_url }}" class="eu-btn-primary">
+      <i class="bi bi-plus-lg"></i> Crear artículo
+    </a>
+  </div>
+</div>
+
+<script>
+// Inicializar tooltips de la guía
+document.addEventListener('DOMContentLoaded', () => {
+  document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(el => new bootstrap.Tooltip(el));
+});
+</script>

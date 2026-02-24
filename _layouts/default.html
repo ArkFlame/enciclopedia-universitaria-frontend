@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="{{ page.description | default: site.description }}">
+  <title>{% if page.title %}{{ page.title }} — {% endif %}{{ site.title }}</title>
+
+  <!-- Bootstrap 5 -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Bootstrap Icons -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Source+Sans+3:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <!-- Main CSS -->
+  <link rel="stylesheet" href="{{ '/assets/css/main.css' | relative_url }}">
+  
+  {% if page.custom_css %}<link rel="stylesheet" href="{{ page.custom_css | relative_url }}">{% endif %}
+  
+  <!-- MercadoPago JS (solo en páginas de pago) -->
+  {% if page.use_mercadopago %}
+  <script src="https://sdk.mercadopago.com/js/v2" defer></script>
+  {% endif %}
+
+  <!-- Config global -->
+  <script>
+    window.EU_CONFIG = {
+      backendUrl: "{{ site.backend_url }}",
+      baseUrl: "{{ site.url }}{{ site.baseurl }}"
+    };
+  </script>
+</head>
+<body>
+
+  <!-- NAVBAR -->
+  <nav class="eu-navbar" id="mainNavbar">
+    <div class="eu-navbar-inner">
+      
+      <!-- Logo -->
+      <a href="{{ '/' | relative_url }}" class="eu-logo">
+        <span class="eu-logo-icon">Σ</span>
+        <span class="eu-logo-text">Enciclopedia<br><strong>Universitaria</strong></span>
+      </a>
+
+      <!-- Búsqueda (desktop) -->
+      <div class="eu-search-wrapper d-none d-md-flex">
+        <div class="eu-search-box">
+          <i class="bi bi-search eu-search-icon"></i>
+          <input type="text" id="globalSearch" placeholder="Buscar artículos..." 
+                 class="eu-search-input" autocomplete="off" aria-label="Buscar artículos">
+          <div class="eu-search-dropdown" id="searchDropdown"></div>
+        </div>
+      </div>
+
+      <!-- Controles derechos -->
+      <div class="eu-navbar-right">
+        
+        <!-- Toggle ver sin aprobación -->
+        <div class="eu-toggle-wrap d-none d-sm-flex align-items-center gap-2">
+          <label class="eu-ios-toggle" title="Ver artículos sin aprobación">
+            <input type="checkbox" id="togglePending">
+            <span class="eu-toggle-slider"></span>
+          </label>
+          <span class="eu-toggle-label d-none d-lg-inline">Sin aprobación</span>
+        </div>
+
+        <!-- Dark mode -->
+        <button class="eu-icon-btn" id="themeToggle" title="Cambiar tema" aria-label="Cambiar entre modo claro y oscuro">
+          <i class="bi bi-moon-fill" id="themeIcon"></i>
+        </button>
+
+        <!-- Notificaciones (solo logueados) -->
+        <div class="eu-notif-wrap d-none" id="notifWrapper">
+          <button class="eu-icon-btn eu-notif-btn" id="notifBtn" aria-label="Notificaciones">
+            <i class="bi bi-bell-fill"></i>
+            <span class="eu-notif-badge d-none" id="notifBadge">0</span>
+          </button>
+          <div class="eu-notif-dropdown" id="notifDropdown">
+            <div class="eu-notif-header">
+              <span>Notificaciones</span>
+              <button class="btn btn-sm btn-link" id="markAllRead">Marcar todas como leídas</button>
+            </div>
+            <div class="eu-notif-list" id="notifList">
+              <div class="eu-notif-empty">No hay notificaciones</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Contador artículos FREE -->
+        <div class="eu-read-counter d-none" id="readCounter" title="Artículos leídos este mes">
+          <i class="bi bi-journal-text"></i>
+          <span id="readCountText">0/5</span>
+        </div>
+
+        <!-- Usuario logueado / botón login -->
+        <div id="authSection">
+          <a href="{{ '/login.html' | relative_url }}" class="eu-btn-primary" id="loginBtn">
+            Iniciar sesión
+          </a>
+        </div>
+
+        <!-- Menú hamburguesa móvil -->
+        <button class="eu-hamburger d-md-none" id="hamburgerBtn" aria-label="Menú">
+          <span></span><span></span><span></span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Búsqueda móvil -->
+    <div class="eu-mobile-search d-md-none px-3 pb-2">
+      <div class="eu-search-box w-100">
+        <i class="bi bi-search eu-search-icon"></i>
+        <input type="text" id="mobileSearch" placeholder="Buscar artículos..." 
+               class="eu-search-input" autocomplete="off">
+        <div class="eu-search-dropdown" id="mobileSearchDropdown"></div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- SIDEBAR MÓVIL -->
+  <div class="eu-sidebar-overlay d-md-none" id="sidebarOverlay"></div>
+  <aside class="eu-mobile-sidebar d-md-none" id="mobileSidebar">
+    <div class="eu-sidebar-header">
+      <span class="eu-logo-text">Menú</span>
+      <button class="eu-icon-btn" id="closeSidebar"><i class="bi bi-x-lg"></i></button>
+    </div>
+    <nav class="eu-sidebar-nav">
+      <a href="{{ '/' | relative_url }}"><i class="bi bi-house"></i> Inicio</a>
+      <a href="{{ '/categorias.html' | relative_url }}"><i class="bi bi-grid"></i> Categorías</a>
+      <a href="{{ '/ayuda.html' | relative_url }}"><i class="bi bi-question-circle"></i> Ayuda</a>
+      <div class="eu-sidebar-divider"></div>
+      <a href="{{ '/nuevo-articulo.html' | relative_url }}" id="sidebarNewArticle" class="d-none">
+        <i class="bi bi-plus-circle"></i> Nuevo artículo
+      </a>
+      <div class="eu-sidebar-toggle-row">
+        <span>Ver sin aprobación</span>
+        <label class="eu-ios-toggle">
+          <input type="checkbox" id="togglePendingMobile">
+          <span class="eu-toggle-slider"></span>
+        </label>
+      </div>
+      <div class="eu-sidebar-divider"></div>
+      <div id="sidebarAuthSection"></div>
+    </nav>
+  </aside>
+
+  <!-- CONTENIDO PRINCIPAL -->
+  <main class="eu-main">
+    {{ content }}
+  </main>
+
+  <!-- FOOTER -->
+  <footer class="eu-footer">
+    <div class="container">
+      <div class="row">
+        <div class="col-md-4 mb-4">
+          <div class="eu-logo mb-3">
+            <span class="eu-logo-icon">Σ</span>
+            <span class="eu-logo-text">Enciclopedia<br><strong>Universitaria</strong></span>
+          </div>
+          <p class="text-muted small">La enciclopedia colaborativa universitaria más avanzada de habla hispana.</p>
+        </div>
+        <div class="col-md-2 mb-4">
+          <h6 class="eu-footer-heading">Navegación</h6>
+          <ul class="eu-footer-links">
+            <li><a href="{{ '/' | relative_url }}">Inicio</a></li>
+            <li><a href="{{ '/categorias.html' | relative_url }}">Categorías</a></li>
+            <li><a href="{{ '/acerca.html' | relative_url }}">Acerca de</a></li>
+          </ul>
+        </div>
+        <div class="col-md-2 mb-4">
+          <h6 class="eu-footer-heading">Comunidad</h6>
+          <ul class="eu-footer-links">
+            <li><a href="{{ '/nuevo-articulo.html' | relative_url }}">Publicar artículo</a></li>
+            <li><a href="{{ '/ayuda.html' | relative_url }}">Ayuda y tutoriales</a></li>
+            <li><a href="{{ '/shortcodes.html' | relative_url }}">Guía de shortcodes</a></li>
+          </ul>
+        </div>
+        <div class="col-md-4 mb-4">
+          <h6 class="eu-footer-heading">Suscripción</h6>
+          <p class="small text-muted">Accede a artículos ilimitados por solo <strong>$1.000 ARS/mes</strong></p>
+          <a href="{{ '/suscripcion.html' | relative_url }}" class="eu-btn-primary eu-btn-sm">Ver planes</a>
+        </div>
+      </div>
+      <div class="eu-footer-bottom">
+        <span class="text-muted small">© {{ 'now' | date: "%Y" }} Enciclopedia Universitaria. Contenido bajo licencia CC BY-SA.</span>
+      </div>
+    </div>
+  </footer>
+
+  <!-- MODAL TOAST -->
+  <div class="eu-toast-container" id="toastContainer"></div>
+
+  <!-- Bootstrap JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <!-- Auth & Core JS -->
+  <script src="{{ '/assets/js/auth.js' | relative_url }}"></script>
+  <script src="{{ '/assets/js/search.js' | relative_url }}"></script>
+  <script src="{{ '/assets/js/theme.js' | relative_url }}"></script>
+  <script src="{{ '/assets/js/app.js' | relative_url }}"></script>
+  
+  {% if page.extra_js %}<script src="{{ page.extra_js | relative_url }}"></script>{% endif %}
+</body>
+</html>

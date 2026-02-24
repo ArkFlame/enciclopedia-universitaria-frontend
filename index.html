@@ -1,0 +1,194 @@
+---
+layout: default
+title: Inicio
+description: Enciclopedia colaborativa universitaria en español
+---
+
+<div class="eu-hero mb-5">
+  <div style="max-width:700px">
+    <h1 class="eu-hero-title">La enciclopedia universitaria colaborativa</h1>
+    <p class="eu-hero-subtitle">Conocimiento académico verificado, creado por y para la comunidad universitaria hispanohablante.</p>
+    <div class="d-flex gap-3 flex-wrap mt-4">
+      <a href="{{ '/nuevo-articulo.html' | relative_url }}" class="eu-btn-primary"><i class="bi bi-plus-lg"></i> Publicar artículo</a>
+      <a href="{{ '/ayuda.html' | relative_url }}" class="eu-btn-outline"><i class="bi bi-question-circle"></i> Cómo contribuir</a>
+    </div>
+  </div>
+</div>
+
+<!-- Filtros y cabecera -->
+<div class="d-flex align-items-center justify-content-between flex-wrap gap-3 mb-4">
+  <div>
+    <h2 class="eu-section-title" id="articlesHeading">Artículos recientes</h2>
+    <p class="eu-section-subtitle" id="articlesSubtitle">Cargando artículos...</p>
+  </div>
+  <div class="d-flex gap-2 align-items-center">
+    <select class="eu-select" id="categoryFilter" style="width:auto;padding:6px 12px">
+      <option value="">Todas las categorías</option>
+    </select>
+    <select class="eu-select" id="sortFilter" style="width:auto;padding:6px 12px">
+      <option value="recent">Más recientes</option>
+      <option value="popular">Más vistos</option>
+    </select>
+  </div>
+</div>
+
+<!-- Grid de artículos -->
+<div id="articlesContainer">
+  <div class="eu-loading">
+    <div class="eu-spinner"></div>
+    <span>Cargando artículos...</span>
+  </div>
+</div>
+
+<!-- Paginación -->
+<div class="d-flex justify-content-center mt-5" id="paginationContainer"></div>
+
+<style>
+.eu-hero {
+  padding: 48px 0 32px;
+  border-bottom: 1px solid var(--eu-border);
+  margin-bottom: 40px;
+}
+.eu-hero-title {
+  font-family: var(--eu-font-display);
+  font-size: clamp(1.8rem, 4vw, 3rem);
+  font-weight: 700;
+  line-height: 1.15;
+  margin-bottom: 16px;
+}
+.eu-hero-subtitle {
+  font-size: 1.05rem;
+  color: var(--eu-text-secondary);
+  line-height: 1.6;
+}
+</style>
+
+<script>
+(async function() {
+  const API = window.EU_CONFIG.backendUrl;
+  const BASE = window.EU_CONFIG.baseUrl;
+  let currentPage = 1;
+  let currentCategory = '';
+
+  // Cargar categorías
+  async function loadCategories() {
+    try {
+      const res = await fetch(`${API}/api/articles/meta/categories`);
+      if (!res.ok) return;
+      const cats = await res.json();
+      const sel = document.getElementById('categoryFilter');
+      cats.forEach(c => {
+        const opt = document.createElement('option');
+        opt.value = c.slug;
+        opt.textContent = c.name;
+        sel.appendChild(opt);
+      });
+    } catch (e) {}
+  }
+
+  // Cargar artículos
+  async function loadArticles(page = 1) {
+    const container = document.getElementById('articlesContainer');
+    const subtitle = document.getElementById('articlesSubtitle');
+    container.innerHTML = '<div class="eu-loading"><div class="eu-spinner"></div><span>Cargando...</span></div>';
+
+    const includePending = localStorage.getItem('eu_show_pending') === 'true';
+    const url = new URL(`${API}/api/articles`);
+    url.searchParams.set('page', page);
+    url.searchParams.set('limit', '12');
+    if (includePending) url.searchParams.set('includePending', 'true');
+    if (currentCategory) url.searchParams.set('category', currentCategory);
+
+    try {
+      const res = await fetch(url);
+      if (!res.ok) throw new Error('Error al cargar artículos');
+      const { articles, total, pageSize } = await res.json();
+
+      const hasPending = includePending;
+      const totalPages = Math.ceil(total / pageSize);
+
+      subtitle.textContent = `${total} artículo${total !== 1 ? 's' : ''}${hasPending ? ' (incluyendo pendientes)' : ''}`;
+
+      if (!articles.length) {
+        container.innerHTML = `
+          <div class="eu-empty-state">
+            <i class="bi bi-journal-x"></i>
+            <h4>Sin artículos</h4>
+            <p class="text-muted">Sé el primero en contribuir a la enciclopedia.</p>
+            <a href="${BASE}/nuevo-articulo.html" class="eu-btn-primary mt-3">Publicar artículo</a>
+          </div>`;
+        return;
+      }
+
+      container.innerHTML = `<div class="eu-articles-grid">${articles.map(renderCard).join('')}</div>`;
+      renderPagination(page, totalPages);
+      window.dispatchEvent(new Event('eu:content-loaded'));
+    } catch (err) {
+      container.innerHTML = `<div class="eu-empty-state text-danger"><i class="bi bi-exclamation-triangle"></i><p>${err.message}</p></div>`;
+    }
+  }
+
+  function renderCard(a) {
+    const statusBadge = a.status !== 'APPROVED'
+      ? `<span class="eu-status-badge eu-status-${a.status}">${a.status === 'PENDING' ? '⏳ Pendiente' : '✕ Rechazado'}</span>`
+      : '';
+    const catBadge = a.category ? `<span class="eu-category-tag">${escapeHtml(a.category)}</span>` : '';
+
+    return `<a href="${BASE}/articulo.html?slug=${encodeURIComponent(a.slug)}" class="eu-article-card">
+      <div class="eu-card-meta">
+        ${statusBadge}${catBadge}
+      </div>
+      <h3 class="eu-card-title">${escapeHtml(a.title)}</h3>
+      <p class="eu-card-summary">${escapeHtml(a.summary)}</p>
+      <div class="eu-card-footer">
+        <span><i class="bi bi-person-fill"></i> ${escapeHtml(a.author_username)}</span>
+        <span><i class="bi bi-eye"></i> ${a.views.toLocaleString('es-AR')}</span>
+        <span>${timeAgo(a.created_at)}</span>
+      </div>
+    </a>`;
+  }
+
+  function renderPagination(current, total) {
+    const container = document.getElementById('paginationContainer');
+    if (total <= 1) { container.innerHTML = ''; return; }
+
+    let html = '<nav><ul class="pagination">';
+    html += `<li class="page-item ${current === 1 ? 'disabled' : ''}">
+      <button class="page-link" onclick="changePage(${current - 1})">‹ Anterior</button></li>`;
+
+    for (let i = 1; i <= Math.min(total, 7); i++) {
+      html += `<li class="page-item ${i === current ? 'active' : ''}">
+        <button class="page-link" onclick="changePage(${i})">${i}</button></li>`;
+    }
+
+    html += `<li class="page-item ${current === total ? 'disabled' : ''}">
+      <button class="page-link" onclick="changePage(${current + 1})">Siguiente ›</button></li>`;
+    html += '</ul></nav>';
+    container.innerHTML = html;
+  }
+
+  window.changePage = function(page) {
+    currentPage = page;
+    loadArticles(page);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  // Eventos
+  document.getElementById('categoryFilter')?.addEventListener('change', e => {
+    currentCategory = e.target.value;
+    currentPage = 1;
+    loadArticles(1);
+  });
+
+  document.getElementById('sortFilter')?.addEventListener('change', () => loadArticles(1));
+
+  window.addEventListener('eu:pending-toggle', () => loadArticles(currentPage));
+
+  function escapeHtml(s) {
+    return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+
+  await loadCategories();
+  await loadArticles(1);
+})();
+</script>

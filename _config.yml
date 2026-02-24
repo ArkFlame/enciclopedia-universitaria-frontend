@@ -1,0 +1,42 @@
+title: Enciclopedia Universitaria
+description: La enciclopedia colaborativa universitaria más avanzada de habla hispana
+baseurl: "/enciclopedia-universitaria"
+url: "https://tuusuario.github.io"
+
+# Configuración del backend
+backend_url: "https://tu-backend-dominio.com"
+
+# Build
+markdown: kramdown
+highlighter: rouge
+permalink: pretty
+
+# Exclude
+exclude:
+  - Gemfile
+  - Gemfile.lock
+  - node_modules
+  - README.md
+  - .env
+
+# Plugins
+plugins:
+  - jekyll-sitemap
+  - jekyll-seo-tag
+
+# SEO
+twitter:
+  username: enciclopediauniv
+author: Enciclopedia Universitaria
+lang: es
+
+# Navegación
+navigation:
+  - title: Inicio
+    url: /
+  - title: Categorías
+    url: /categorias.html
+  - title: Sobre nosotros
+    url: /acerca.html
+  - title: Ayuda
+    url: /ayuda.html
