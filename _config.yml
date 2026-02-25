@@ -2,7 +2,7 @@
 title: Enciclopedia Universitaria
 description: La enciclopedia colaborativa universitaria más avanzada de habla hispana
 baseurl: ""
-url: ""
+url: "https://enciclopedia.arkflame.com"
 
 # Configuración del backend
 backend_url: "https://enciclopedia.arkflame.com/api"
