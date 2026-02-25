@@ -27,8 +27,8 @@
   <!-- Config global -->
   <script>
     window.EU_CONFIG = {
-      backendUrl: "{{ site.backend_url }}",
-      baseUrl: "{{ site.url }}{{ site.baseurl }}"
+      backendUrl: window.location.origin,
+      baseUrl: window.location.origin
     };
   </script>
 </head>
