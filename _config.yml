@@ -1,8 +1,8 @@
 # _config.yml
 title: Enciclopedia Universitaria
 description: La enciclopedia colaborativa universitaria más avanzada de habla hispana
-baseurl: "/enciclopedia-universitaria-frontend"
-url: "https://arkflame.github.io"
+baseurl: ""
+url: ""
 
 # Configuración del backend
 backend_url: "https://enciclopedia.arkflame.com/api"
