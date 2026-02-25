@@ -5,7 +5,7 @@ baseurl: "/enciclopedia-universitaria-frontend"
 url: "https://arkflame.github.io"
 
 # Configuración del backend
-backend_url: "https://tu-backend-dominio.com"
+backend_url: "https://enciclopedia.arkflame.com"
 
 # Build
 markdown: kramdown
