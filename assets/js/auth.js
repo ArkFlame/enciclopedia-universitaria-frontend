@@ -131,9 +131,10 @@ const Auth = (() => {
 
       // Contador de artículos FREE
       if (readCounter && user.role === 'FREE') {
-        const limit = 5;
+        const limit = user.freeLimit || 30;
         const read = user.articlesReadThisMonth || 0;
         readCounter.classList.remove('d-none');
+        readCounter.title = `Artículos leídos este mes (límite: ${limit})`;
         const countText = document.getElementById('readCountText');
         if (countText) countText.textContent = `${read}/${limit}`;
         if (read >= limit) readCounter.classList.add('at-limit');

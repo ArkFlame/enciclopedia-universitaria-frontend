@@ -27,6 +27,8 @@
   <!-- Config global -->
   <script>
     window.EU_CONFIG = {
+      // backendUrl usa origin para que funcione en cualquier dominio sin hardcodear
+      // Las llamadas /api/ las intercepta nginx y las redirige al backend Node.js
       backendUrl: window.location.origin,
       baseUrl: window.location.origin
     };
@@ -91,7 +93,7 @@
         <!-- Contador artículos FREE -->
         <div class="eu-read-counter d-none" id="readCounter" title="Artículos leídos este mes">
           <i class="bi bi-journal-text"></i>
-          <span id="readCountText">0/5</span>
+          <span id="readCountText">0/30</span>
         </div>
 
         <!-- Usuario logueado / botón login -->
