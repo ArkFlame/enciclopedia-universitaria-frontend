@@ -53,30 +53,24 @@ function _appInit() {
   const notifBadge = document.getElementById('notifBadge');
   const notifWrapper = document.getElementById('notifWrapper');
 
-  function closeSearchDropdowns() {
-    document.querySelectorAll('.eu-search-dropdown').forEach(d => d.classList.remove('active'));
-  }
-
-  function closeActivePopups() {
-    document.querySelectorAll('.eu-cell-popup.active').forEach(p => p.classList.remove('active'));
-  }
-
-  if (notifWrapper && notifDropdown) {
+  // Prevent double-initialization
+  if (notifWrapper && notifDropdown && !notifWrapper._euNotifInit) {
+    notifWrapper._euNotifInit = true; // Mark as initialized
+    
     notifWrapper.addEventListener('click', (e) => {
-      e.preventDefault();        // Prevent default anchor behavior
-      e.stopPropagation();       // CRITICAL: Stop Bootstrap/other handlers
+      // Don't stop propagation entirely - just prevent default
+      e.preventDefault();
       
       const isOpen = notifDropdown.classList.contains('active');
       
-      // Close others first
-      closeSearchDropdowns();
-      closeActivePopups();
+      // Close other dropdowns/popups
+      document.querySelectorAll('.eu-search-dropdown.active').forEach(d => d.classList.remove('active'));
+      document.querySelectorAll('.eu-cell-popup.active').forEach(p => p.classList.remove('active'));
       
-      // Close all Bootstrap dropdowns manually to prevent conflicts
-      document.querySelectorAll('.dropdown-menu.show').forEach(el => {
+      // Close Bootstrap dropdowns
+      document.querySelectorAll('.dropdown-menu.show').forEach(el => el.classList.remove('show'));
+      document.querySelectorAll('[data-bs-toggle="dropdown"]').forEach(el => {
         el.classList.remove('show');
-      });
-      document.querySelectorAll('.dropdown-toggle[aria-expanded="true"]').forEach(el => {
         el.setAttribute('aria-expanded', 'false');
       });
 
@@ -86,6 +80,16 @@ function _appInit() {
         notifDropdown.classList.add('active');
         if (notifBadge) notifBadge.classList.add('d-none');
         loadNotifications();
+      }
+    });
+  }
+
+  // Move outside click handler to document level, but only once
+  if (!window._euDocClickInit) {
+    window._euDocClickInit = true;
+    document.addEventListener('click', (e) => {
+      if (notifDropdown?.classList.contains('active') && !notifWrapper?.contains(e.target)) {
+        notifDropdown.classList.remove('active');
       }
     });
   }
