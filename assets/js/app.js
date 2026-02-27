@@ -24,6 +24,7 @@ function _appInit() {
   hamburgerBtn?.addEventListener('click', openSidebar);
   closeSidebarBtn?.addEventListener('click', closeSidebarFn);
   overlay?.addEventListener('click', closeSidebarFn);
+
   // ── TOGGLE VER SIN APROBACIÓN ────────────────────────────────
   const togglePending       = document.getElementById('togglePending');
   const togglePendingMobile = document.getElementById('togglePendingMobile');
@@ -48,29 +49,55 @@ function _appInit() {
       if (togglePending) togglePending.checked = e.target.checked;
     });
   }
+
   // ── NOTIFICATIONS DROPDOWN ───────────────────────────────────
   const notifDropdown = document.getElementById('notifDropdown');
   const notifBadge = document.getElementById('notifBadge');
   const notifWrapper = document.getElementById('notifWrapper');
 
-  // Prevent double-initialization
+  function loadNotifications() {
+    const list = document.getElementById('notifList');
+    if (!list || list.dataset.loaded) return;
+    
+    list.innerHTML = '<div class="text-center p-3 text-muted"><div class="eu-spinner" style="width:20px;height:20px"></div></div>';
+    
+    Auth.authFetch(`${window.EU_CONFIG.backendUrl}/api/auth/notifications`)
+      .then(response => response.ok ? response.json() : [])
+      .then(notifications => {
+        list.dataset.loaded = 'true';
+        if (!notifications.length) {
+          list.innerHTML = '<div class="eu-notif-empty">No tienes notificaciones</div>';
+          return;
+        }
+        const recent = notifications.slice(0, 5);
+        list.innerHTML = recent.map(n => `
+          <div class="eu-notif-item ${n.read_at ? '' : 'unread'}">
+            <div class="eu-notif-icon">${n.type.includes('approved') ? '✓' : n.type.includes('rejected') ? '✕' : '•'}</div>
+            <div style="flex:1">
+              <div class="eu-notif-msg">${window.escapeHtml(n.message)}</div>
+              <div class="eu-notif-time">${window.timeAgo(n.created_at)}</div>
+            </div>
+          </div>
+        `).join('');
+      })
+      .catch(() => {
+        list.innerHTML = '<div class="eu-notif-empty text-danger">Error al cargar</div>';
+      });
+  }
+
+  // Initialize notifications
   if (notifWrapper && notifDropdown && !notifWrapper._euNotifInit) {
-    notifWrapper._euNotifInit = true; // Mark as initialized
+    notifWrapper._euNotifInit = true;
     
     notifWrapper.addEventListener('click', (e) => {
-      // Don't stop propagation entirely - just prevent default
       e.preventDefault();
+      e.stopPropagation(); // Prevent Bootstrap/other handlers
       
       const isOpen = notifDropdown.classList.contains('active');
       
-      // Close other dropdowns/popups
-      document.querySelectorAll('.eu-search-dropdown.active').forEach(d => d.classList.remove('active'));
-      document.querySelectorAll('.eu-cell-popup.active').forEach(p => p.classList.remove('active'));
-      
-      // Close Bootstrap dropdowns
+      // Close Bootstrap dropdowns if open
       document.querySelectorAll('.dropdown-menu.show').forEach(el => el.classList.remove('show'));
       document.querySelectorAll('[data-bs-toggle="dropdown"]').forEach(el => {
-        el.classList.remove('show');
         el.setAttribute('aria-expanded', 'false');
       });
 
@@ -84,22 +111,7 @@ function _appInit() {
     });
   }
 
-  // Move outside click handler to document level, but only once
-  if (!window._euDocClickInit) {
-    window._euDocClickInit = true;
-    document.addEventListener('click', (e) => {
-      if (notifDropdown?.classList.contains('active') && !notifWrapper?.contains(e.target)) {
-        notifDropdown.classList.remove('active');
-      }
-    });
-  }
-
-  // Close when clicking outside (simplified - check if click is outside wrapper)
-  document.addEventListener('click', (e) => {
-    if (notifDropdown?.classList.contains('active') && !notifWrapper?.contains(e.target)) {
-      notifDropdown.classList.remove('active');
-    }
-  });
+  // Mark all as read
   const markAllReadBtn = document.getElementById('markAllRead');
   markAllReadBtn?.addEventListener('click', async (e) => {
     e.stopPropagation();
@@ -108,63 +120,21 @@ function _appInit() {
         `${window.EU_CONFIG.backendUrl}/api/auth/notifications/read`,
         { method: 'PUT' }
       );
-      const unreadItems = document.querySelectorAll('.eu-notif-item.unread');
-      unreadItems.forEach(el => el.classList.remove('unread'));
+      document.querySelectorAll('.eu-notif-item.unread').forEach(el => el.classList.remove('unread'));
       if (notifBadge) notifBadge.classList.add('d-none');
     } catch (_) {}
   });
-  function loadNotifications() {
-    const list = document.getElementById('notifList');
-    if (!list || list.dataset.loaded) {
-      return;
-    }
-    const spinnerHtml = '<div class="text-center p-3 text-muted"><div class="eu-spinner" style="width:20px;height:20px"></div></div>';
-    list.innerHTML = spinnerHtml;
-    const endpoint = `${window.EU_CONFIG.backendUrl}/api/auth/notifications`;
-    const fetchPromise = Auth.authFetch(endpoint);
-    fetchPromise
-      .then(response => response.ok ? response.json() : [])
-      .then(notifications => {
-        list.dataset.loaded = 'true';
-        if (!notifications.length) {
-          list.innerHTML = '<div class="eu-notif-empty">No tienes notificaciones</div>';
-          return;
-        }
-        const recent = notifications.slice(0, 5);
-        const markup = recent.map(n => `
-          <div class="eu-notif-item ${n.read_at ? '' : 'unread'}">
-            <div class="eu-notif-icon">${n.type.includes('approved') ? '✓' : n.type.includes('rejected') ? '✕' : '•'}</div>
-            <div style="flex:1">
-              <div class="eu-notif-msg">${window.escapeHtml(n.message)}</div>
-              <div class="eu-notif-time">${window.timeAgo(n.created_at)}</div>
-            </div>
-          </div>
-        `).join('');
-        list.innerHTML = markup;
-      })
-      .catch(() => {
-        list.innerHTML = '<div class="eu-notif-empty text-danger">Error al cargar</div>';
-      });
+
+  // Close dropdown when clicking outside
+  if (!window._euNotifDocInit) {
+    window._euNotifDocInit = true;
+    document.addEventListener('click', (e) => {
+      if (notifDropdown?.classList.contains('active') && !notifWrapper?.contains(e.target)) {
+        notifDropdown.classList.remove('active');
+      }
+    });
   }
-  document.addEventListener('click', (e) => {
-    if (notifJustOpened) {
-      notifJustOpened = false;
-      return;
-    }
-    if (notifDropdown && !e.target.closest('#notifWrapper')) {
-      notifDropdown.classList.remove('active');
-    }
-    if (!e.target.closest('.eu-search-box')) {
-      closeSearchDropdowns();
-    }
-  });
-  document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') {
-      notifDropdown?.classList.remove('active');
-      closeActivePopups();
-      closeSidebarFn();
-    }
-  });
+
   // ── INTERACTIVE DIAGRAMS ─────────────────────────────────────
   function initDiagrams() {
     let activePopup = null;
@@ -176,7 +146,9 @@ function _appInit() {
         e.stopPropagation();
         if (activePopup && activePopup !== popup) activePopup.classList.remove('active');
         if (popup.classList.contains('active')) {
-          popup.classList.remove('active'); activePopup = null; return;
+          popup.classList.remove('active'); 
+          activePopup = null; 
+          return;
         }
         const rect = cell.getBoundingClientRect();
         let top  = rect.bottom + window.scrollY + 8;
@@ -192,11 +164,12 @@ function _appInit() {
     });
     document.addEventListener('click', (e) => {
       if (!e.target.closest('.eu-diagram-cell') && !e.target.closest('.eu-cell-popup')) {
-        closeActivePopups();
+        document.querySelectorAll('.eu-cell-popup.active').forEach(p => p.classList.remove('active'));
         activePopup = null;
       }
     });
   }
+
   // ── BOOTSTRAP TOOLTIPS ───────────────────────────────────────
   function initTooltips() {
     if (typeof bootstrap === 'undefined') return;
@@ -207,9 +180,11 @@ function _appInit() {
       }
     });
   }
+  
   initDiagrams();
   initTooltips();
   window.addEventListener('eu:content-loaded', () => { initDiagrams(); initTooltips(); });
+
   // ── TOAST SYSTEM ─────────────────────────────────────────────
   window.showToast = function (message, type = 'default', duration = 3500) {
     const container = document.getElementById('toastContainer');
@@ -225,6 +200,7 @@ function _appInit() {
     }, duration);
   };
 }
+
 // ── GLOBAL HELPERS ───────────────────────────────────────────────
 window.escapeHtml = function (str) {
   return String(str || '').replace(/[&<>"']/g, c =>
@@ -242,7 +218,8 @@ window.formatDate = function (dateStr) {
   return new Date(dateStr).toLocaleDateString('es-AR',
     { year: 'numeric', month: 'long', day: 'numeric' });
 };
-// Safe init — handles DOMContentLoaded already fired when scripts load at end of body
+
+// Safe init
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', _appInit);
 } else {
