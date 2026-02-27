@@ -1,19 +1,16 @@
 /**
- * APP.JS — Enciclopedia Universitaria
- * Sidebar, notifications, tooltips, toasts, diagrams.
- *
- * Scripts load at end of <body> — DOMContentLoaded may already have fired.
- * We use readyState to handle both cases safely.
- */
-
+* APP.JS — Enciclopedia Universitaria
+* Sidebar, notifications, tooltips, toasts, diagrams.
+*
+* Scripts load at end of <body> — DOMContentLoaded may already have fired.
+* We use readyState to handle both cases safely.
+*/
 function _appInit() {
-
   // ── SIDEBAR MÓVIL ────────────────────────────────────────────
   const hamburgerBtn    = document.getElementById('hamburgerBtn');
   const closeSidebarBtn = document.getElementById('closeSidebar');
   const sidebar         = document.getElementById('mobileSidebar');
   const overlay         = document.getElementById('sidebarOverlay');
-
   function openSidebar() {
     sidebar?.classList.add('open');
     overlay?.classList.add('active');
@@ -27,11 +24,9 @@ function _appInit() {
   hamburgerBtn?.addEventListener('click', openSidebar);
   closeSidebarBtn?.addEventListener('click', closeSidebarFn);
   overlay?.addEventListener('click', closeSidebarFn);
-
   // ── TOGGLE VER SIN APROBACIÓN ────────────────────────────────
   const togglePending       = document.getElementById('togglePending');
   const togglePendingMobile = document.getElementById('togglePendingMobile');
-
   function getIncludePending() {
     return localStorage.getItem('eu_show_pending') === 'true';
   }
@@ -53,72 +48,105 @@ function _appInit() {
       if (togglePending) togglePending.checked = e.target.checked;
     });
   }
-
   // ── NOTIFICATIONS DROPDOWN ───────────────────────────────────
-  // The bell button (#notifBtn) is inside #notifWrapper which is initially
-  // d-none. auth.js reveals it later. We use a flag to avoid the
-  // close-on-same-click race between the button listener and the
-  // document outside-click listener.
   const notifDropdown = document.getElementById('notifDropdown');
+  const notifBadge = document.getElementById('notifBadge');
+  function closeSearchDropdowns() {
+    const searchDropdowns = document.querySelectorAll('.eu-search-dropdown');
+    searchDropdowns.forEach(dropdown => dropdown.classList.remove('active'));
+  }
+  function closeActivePopups() {
+    const cellPopups = document.querySelectorAll('.eu-cell-popup.active');
+    cellPopups.forEach(popup => popup.classList.remove('active'));
+  }
   let notifJustOpened = false;
-
-  // Delegate to the static #notifWrapper element (always in DOM)
   const notifWrapper = document.getElementById('notifWrapper');
   if (notifWrapper && notifDropdown) {
     notifWrapper.addEventListener('click', (e) => {
-      // Only react to clicks on the bell button itself (not inside the dropdown panel)
       if (e.target.closest('#notifDropdown')) return;
       const isOpen = notifDropdown.classList.contains('active');
       if (isOpen) {
         notifDropdown.classList.remove('active');
       } else {
+        closeSearchDropdowns();
+        closeActivePopups();
         notifDropdown.classList.add('active');
-        notifJustOpened = true; // prevent the document listener from immediately closing it
-        document.getElementById('notifBadge')?.classList.add('d-none');
+        notifJustOpened = true;
+        if (notifBadge) notifBadge.classList.add('d-none');
+        loadNotifications();
       }
     });
   }
-
-  // Mark-all-read — inside the dropdown panel, stop propagation so panel stays open
-  document.getElementById('markAllRead')?.addEventListener('click', async (e) => {
+  const markAllReadBtn = document.getElementById('markAllRead');
+  markAllReadBtn?.addEventListener('click', async (e) => {
     e.stopPropagation();
     try {
       await Auth.authFetch(
         `${window.EU_CONFIG.backendUrl}/api/auth/notifications/read`,
         { method: 'PUT' }
       );
-      document.querySelectorAll('.eu-notif-item.unread').forEach(el => el.classList.remove('unread'));
-      document.getElementById('notifBadge')?.classList.add('d-none');
+      const unreadItems = document.querySelectorAll('.eu-notif-item.unread');
+      unreadItems.forEach(el => el.classList.remove('unread'));
+      if (notifBadge) notifBadge.classList.add('d-none');
     } catch (_) {}
   });
-
-  // Close dropdown when clicking outside — but not on the same click that opened it
+  function loadNotifications() {
+    const list = document.getElementById('notifList');
+    if (!list || list.dataset.loaded) {
+      return;
+    }
+    const spinnerHtml = '<div class="text-center p-3 text-muted"><div class="eu-spinner" style="width:20px;height:20px"></div></div>';
+    list.innerHTML = spinnerHtml;
+    const endpoint = `${window.EU_CONFIG.backendUrl}/api/auth/notifications`;
+    const fetchPromise = Auth.authFetch(endpoint);
+    fetchPromise
+      .then(response => response.ok ? response.json() : [])
+      .then(notifications => {
+        list.dataset.loaded = 'true';
+        if (!notifications.length) {
+          list.innerHTML = '<div class="eu-notif-empty">No tienes notificaciones</div>';
+          return;
+        }
+        const recent = notifications.slice(0, 5);
+        const markup = recent.map(n => `
+          <div class="eu-notif-item ${n.read_at ? '' : 'unread'}">
+            <div class="eu-notif-icon">${n.type.includes('approved') ? '✓' : n.type.includes('rejected') ? '✕' : '•'}</div>
+            <div style="flex:1">
+              <div class="eu-notif-msg">${window.escapeHtml(n.message)}</div>
+              <div class="eu-notif-time">${window.timeAgo(n.created_at)}</div>
+            </div>
+          </div>
+        `).join('');
+        list.innerHTML = markup;
+      })
+      .catch(() => {
+        list.innerHTML = '<div class="eu-notif-empty text-danger">Error al cargar</div>';
+      });
+  }
   document.addEventListener('click', (e) => {
     if (notifJustOpened) {
       notifJustOpened = false;
-      return; // skip: this is the same click that opened the dropdown
+      return;
     }
     if (notifDropdown && !e.target.closest('#notifWrapper')) {
       notifDropdown.classList.remove('active');
     }
     if (!e.target.closest('.eu-search-box')) {
-      document.querySelectorAll('.eu-search-dropdown').forEach(d => d.classList.remove('active'));
+      closeSearchDropdowns();
     }
   });
-
-  // ESC closes everything
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
       notifDropdown?.classList.remove('active');
-      document.querySelectorAll('.eu-cell-popup.active').forEach(p => p.classList.remove('active'));
+      closeActivePopups();
       closeSidebarFn();
     }
   });
-
   // ── INTERACTIVE DIAGRAMS ─────────────────────────────────────
   function initDiagrams() {
     let activePopup = null;
-    document.querySelectorAll('.eu-diagram-cell').forEach(cell => {
+    const diagramCells = document.querySelectorAll('.eu-diagram-cell');
+    diagramCells.forEach(cell => {
       const popup = document.getElementById(cell.dataset.cellId);
       if (!popup) return;
       cell.addEventListener('click', (e) => {
@@ -141,12 +169,11 @@ function _appInit() {
     });
     document.addEventListener('click', (e) => {
       if (!e.target.closest('.eu-diagram-cell') && !e.target.closest('.eu-cell-popup')) {
-        document.querySelectorAll('.eu-cell-popup.active').forEach(p => p.classList.remove('active'));
+        closeActivePopups();
         activePopup = null;
       }
     });
   }
-
   // ── BOOTSTRAP TOOLTIPS ───────────────────────────────────────
   function initTooltips() {
     if (typeof bootstrap === 'undefined') return;
@@ -157,11 +184,9 @@ function _appInit() {
       }
     });
   }
-
   initDiagrams();
   initTooltips();
   window.addEventListener('eu:content-loaded', () => { initDiagrams(); initTooltips(); });
-
   // ── TOAST SYSTEM ─────────────────────────────────────────────
   window.showToast = function (message, type = 'default', duration = 3500) {
     const container = document.getElementById('toastContainer');
@@ -177,7 +202,6 @@ function _appInit() {
     }, duration);
   };
 }
-
 // ── GLOBAL HELPERS ───────────────────────────────────────────────
 window.escapeHtml = function (str) {
   return String(str || '').replace(/[&<>"']/g, c =>
@@ -195,7 +219,6 @@ window.formatDate = function (dateStr) {
   return new Date(dateStr).toLocaleDateString('es-AR',
     { year: 'numeric', month: 'long', day: 'numeric' });
 };
-
 // Safe init — handles DOMContentLoaded already fired when scripts load at end of body
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', _appInit);
