@@ -51,32 +51,51 @@ function _appInit() {
   // ── NOTIFICATIONS DROPDOWN ───────────────────────────────────
   const notifDropdown = document.getElementById('notifDropdown');
   const notifBadge = document.getElementById('notifBadge');
-  function closeSearchDropdowns() {
-    const searchDropdowns = document.querySelectorAll('.eu-search-dropdown');
-    searchDropdowns.forEach(dropdown => dropdown.classList.remove('active'));
-  }
-  function closeActivePopups() {
-    const cellPopups = document.querySelectorAll('.eu-cell-popup.active');
-    cellPopups.forEach(popup => popup.classList.remove('active'));
-  }
-  let notifJustOpened = false;
   const notifWrapper = document.getElementById('notifWrapper');
+
+  function closeSearchDropdowns() {
+    document.querySelectorAll('.eu-search-dropdown').forEach(d => d.classList.remove('active'));
+  }
+
+  function closeActivePopups() {
+    document.querySelectorAll('.eu-cell-popup.active').forEach(p => p.classList.remove('active'));
+  }
+
   if (notifWrapper && notifDropdown) {
     notifWrapper.addEventListener('click', (e) => {
-      if (e.target.closest('#notifDropdown')) return;
+      e.preventDefault();        // Prevent default anchor behavior
+      e.stopPropagation();       // CRITICAL: Stop Bootstrap/other handlers
+      
       const isOpen = notifDropdown.classList.contains('active');
+      
+      // Close others first
+      closeSearchDropdowns();
+      closeActivePopups();
+      
+      // Close all Bootstrap dropdowns manually to prevent conflicts
+      document.querySelectorAll('.dropdown-menu.show').forEach(el => {
+        el.classList.remove('show');
+      });
+      document.querySelectorAll('.dropdown-toggle[aria-expanded="true"]').forEach(el => {
+        el.setAttribute('aria-expanded', 'false');
+      });
+
       if (isOpen) {
         notifDropdown.classList.remove('active');
       } else {
-        closeSearchDropdowns();
-        closeActivePopups();
         notifDropdown.classList.add('active');
-        notifJustOpened = true;
         if (notifBadge) notifBadge.classList.add('d-none');
         loadNotifications();
       }
     });
   }
+
+  // Close when clicking outside (simplified - check if click is outside wrapper)
+  document.addEventListener('click', (e) => {
+    if (notifDropdown?.classList.contains('active') && !notifWrapper?.contains(e.target)) {
+      notifDropdown.classList.remove('active');
+    }
+  });
   const markAllReadBtn = document.getElementById('markAllRead');
   markAllReadBtn?.addEventListener('click', async (e) => {
     e.stopPropagation();
