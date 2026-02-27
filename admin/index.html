@@ -212,11 +212,15 @@ title: Panel de Moderación
   // ── EDICIONES ──────────────────────────────────────────────────
   async function loadEdits() {
     try {
-      const res = await Auth.authFetch(`${API}/api/admin/edits?status=PENDING`);
-      const edits = await res.json();
+      const res  = await Auth.authFetch(`${API}/api/admin/edits?status=PENDING&limit=50`);
+      const data = await res.json();
+      const edits = data.edits || data; // handle both old array and new {edits,total}
 
       document.getElementById('adminMain').innerHTML = `
-        <h2 class="eu-section-title mb-4">Ediciones pendientes</h2>
+        <div class="d-flex justify-content-between align-items-center mb-4">
+          <h2 class="eu-section-title mb-0">Ediciones pendientes (${data.total || edits.length})</h2>
+          <a href="${BASE}/admin/edits.html" class="eu-btn-outline btn-sm"><i class="bi bi-arrow-up-right-square me-1"></i>Vista completa</a>
+        </div>
         ${!edits.length ? '<div class="eu-empty-state"><i class="bi bi-pencil"></i><p>No hay ediciones pendientes</p></div>' : `
         <div class="table-responsive">
           <table class="eu-admin-table">
@@ -345,13 +349,20 @@ title: Panel de Moderación
   window.rejectEdit = function(id) {
     const reason = prompt('Motivo de rechazo (opcional):');
     if (reason === null) return;
-    window.updateEditStatus(id, 'REJECTED');
+    Auth.authFetch(`${API}/api/admin/edits/${id}/status`, {
+      method: 'PUT',
+      body: JSON.stringify({ status: 'REJECTED', reason: reason || '' })
+    }).then(res => {
+      if (res.ok) { window.showToast('Edición rechazada', 'warning'); loadEdits(); }
+      else res.json().then(d => window.showToast(d.error, 'error'));
+    });
   };
 
   window.previewEdit = async function(editId) {
     try {
-      const res = await Auth.authFetch(`${API}/api/admin/edit-preview/${editId}`);
-      const { html, markdown } = await res.json();
+      const res  = await Auth.authFetch(`${API}/api/admin/edit-preview/${editId}`);
+      const data = await res.json();
+      const { originalContent, proposedContent: markdown, original_title, title, edit_note } = data;
       
       const modal = document.createElement('div');
       modal.innerHTML = `
