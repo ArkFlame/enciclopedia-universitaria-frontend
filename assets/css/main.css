@@ -15,7 +15,7 @@
 
   --eu-text: #1a1614;
   --eu-text-secondary: #4a443d;
-  --eu-text-muted: #8a8078;
+  --eu-text-muted: #c4b9a8;  /* Lighter tan ~77% brightness */
   --eu-text-inverse: #ffffff;
 
   --eu-accent: #1a1614;
@@ -1301,8 +1301,3 @@ a.eu-notif-item:hover,
   border-color: var(--eu-text); font-weight: 700;
 }
 .eu-pagination-inner span { display: flex; align-items: center; padding: 0 4px; color: var(--eu-text-muted); }
-
-/* Fix text-muted for dark mode */
-[data-theme="dark"] .text-muted {
-  color: var(--eu-text-muted) !important;
-}
