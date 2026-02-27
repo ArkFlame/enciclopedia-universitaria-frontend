@@ -1,39 +1,64 @@
 /**
  * THEME.JS — Dark / Light mode toggle
- *
- * NOTE: This file is loaded at the end of <body>, so DOMContentLoaded
- * may have already fired by the time this script runs. We use a
- * readyState check to handle both cases safely.
+ * Loaded synchronously at end of <body>. DOMContentLoaded has already fired.
  */
 (function () {
   const THEME_KEY = 'eu_theme';
+  const LOG = '[Theme]';
 
-  function getTheme() { return localStorage.getItem(THEME_KEY) || 'light'; }
+  function getTheme() {
+    return localStorage.getItem(THEME_KEY) || 'light';
+  }
 
   function applyTheme(t) {
+    console.log(LOG, 'applyTheme called with:', t);
     document.documentElement.setAttribute('data-theme', t);
     localStorage.setItem(THEME_KEY, t);
     const icon = document.getElementById('themeIcon');
-    if (icon) icon.className = t === 'dark' ? 'bi bi-sun-fill' : 'bi bi-moon-fill';
-  }
-
-  function attachToggle() {
-    applyTheme(getTheme()); // apply & update icon now that DOM is ready
-    const btn = document.getElementById('themeToggle');
-    if (btn) {
-      btn.addEventListener('click', () => {
-        applyTheme(getTheme() === 'dark' ? 'light' : 'dark');
-      });
+    if (icon) {
+      icon.className = t === 'dark' ? 'bi bi-sun-fill' : 'bi bi-moon-fill';
+      console.log(LOG, 'icon updated to:', icon.className);
+    } else {
+      console.warn(LOG, 'themeIcon element NOT FOUND in DOM');
     }
   }
 
-  // Apply theme immediately (avoids flash of wrong theme)
+  function init() {
+    console.log(LOG, 'init() called, readyState:', document.readyState);
+    const current = getTheme();
+    console.log(LOG, 'stored theme:', current);
+
+    // Apply stored theme immediately
+    applyTheme(current);
+
+    // Find and wire the button
+    const btn = document.getElementById('themeToggle');
+    if (!btn) {
+      console.error(LOG, 'CRITICAL: #themeToggle button NOT FOUND in DOM');
+      return;
+    }
+    console.log(LOG, '#themeToggle found:', btn);
+
+    btn.addEventListener('click', function (e) {
+      console.log(LOG, 'CLICK EVENT FIRED on themeToggle');
+      const next = getTheme() === 'dark' ? 'light' : 'dark';
+      console.log(LOG, 'switching to:', next);
+      applyTheme(next);
+    });
+
+    console.log(LOG, 'click listener attached successfully');
+  }
+
+  // Apply immediately to prevent flash of wrong theme
   document.documentElement.setAttribute('data-theme', getTheme());
 
-  // Attach toggle — safe whether DOMContentLoaded already fired or not
+  // Scripts at end of body: DOM is parsed, DOMContentLoaded already fired.
+  // readyState will be 'interactive' or 'complete' — NEVER 'loading' here.
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', attachToggle);
+    // Fallback: shouldn't happen for end-of-body scripts
+    console.warn(LOG, 'Unexpected: readyState is loading, using DOMContentLoaded');
+    document.addEventListener('DOMContentLoaded', init);
   } else {
-    attachToggle(); // DOM already ready
+    init();
   }
 })();

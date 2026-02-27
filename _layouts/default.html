@@ -23,16 +23,23 @@
   <script src="https://sdk.mercadopago.com/js/v2"></script>
   {% endif %}
 
-  <!-- EU_CONFIG — must be first script, before any other JS -->
+  <!-- EU_CONFIG + Theme init: inline, runs before any external script or Rocket Loader -->
   <script data-cfasync="false">
+    // Config
     window.EU_CONFIG = {
       backendUrl: window.location.origin,
       baseUrl:    window.location.origin
     };
+
+    // Theme: apply immediately to prevent flash
+    (function() {
+      var t = localStorage.getItem('eu_theme') || 'light';
+      document.documentElement.setAttribute('data-theme', t);
+    })();
   </script>
 
   <!--
-    IMPORTANT: auth.js, search.js, theme.js and app.js are loaded at the
+    IMPORTANT: auth.js, search.js, and app.js are loaded at the
     END of <body> as regular synchronous scripts (no defer/async).
     Page-specific inline scripts use DOMContentLoaded so they always run
     AFTER these files are parsed — regardless of Cloudflare Rocket Loader
@@ -198,15 +205,48 @@
   <!-- TOAST -->
   <div class="eu-toast-container" id="toastContainer"></div>
 
+  <!-- Theme toggle: inline so it cannot be deferred/intercepted by Rocket Loader or caching -->
+  <script data-cfasync="false">
+    (function() {
+      var LOG = '[Theme]';
+      function getTheme() { return localStorage.getItem('eu_theme') || 'light'; }
+      function applyTheme(t) {
+        console.log(LOG, 'applyTheme ->', t);
+        document.documentElement.setAttribute('data-theme', t);
+        localStorage.setItem('eu_theme', t);
+        var icon = document.getElementById('themeIcon');
+        if (icon) {
+          icon.className = t === 'dark' ? 'bi bi-sun-fill' : 'bi bi-moon-fill';
+        } else {
+          console.warn(LOG, '#themeIcon not found');
+        }
+      }
+
+      var btn = document.getElementById('themeToggle');
+      if (btn) {
+        console.log(LOG, '#themeToggle found, attaching listener');
+        btn.addEventListener('click', function() {
+          console.log(LOG, 'click! current theme:', getTheme());
+          applyTheme(getTheme() === 'dark' ? 'light' : 'dark');
+        });
+        // Apply current theme & update icon now
+        applyTheme(getTheme());
+      } else {
+        console.error(LOG, 'CRITICAL: #themeToggle not found! Cannot attach theme toggle.');
+      }
+
+      // Expose globally so other scripts can call applyTheme if needed
+      window._applyTheme = applyTheme;
+    })();
+  </script>
+
   <!--
-    Scripts loaded synchronously at end of body.
-    DO NOT add defer/async — Cloudflare Rocket Loader breaks load order.
-    Page inline scripts use DOMContentLoaded which fires after these.
+    External scripts loaded synchronously (no defer/async = predictable order).
+    data-cfasync="false" tells Cloudflare Rocket Loader to skip these.
   -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous" data-cfasync="false"></script>
   <script src="{{ '/assets/js/auth.js' | relative_url }}" data-cfasync="false"></script>
   <script src="{{ '/assets/js/search.js' | relative_url }}" data-cfasync="false"></script>
-  <script src="{{ '/assets/js/theme.js' | relative_url }}" data-cfasync="false"></script>
   <script src="{{ '/assets/js/app.js' | relative_url }}" data-cfasync="false"></script>
   {% if page.extra_js %}<script src="{{ page.extra_js | relative_url }}" data-cfasync="false"></script>{% endif %}
 </body>
