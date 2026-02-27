@@ -1301,3 +1301,8 @@ a.eu-notif-item:hover,
   border-color: var(--eu-text); font-weight: 700;
 }
 .eu-pagination-inner span { display: flex; align-items: center; padding: 0 4px; color: var(--eu-text-muted); }
+
+/* Fix text-muted for dark mode */
+[data-theme="dark"] .text-muted {
+  color: var(--eu-text-muted) !important;
+}
