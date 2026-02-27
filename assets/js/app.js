@@ -1,47 +1,44 @@
 /**
- * APP.JS - Enciclopedia Universitaria
- * Inicialización global: sidebar, notificaciones, tooltips, diagramas interactivos
+ * APP.JS — Enciclopedia Universitaria
+ * Sidebar, notifications, tooltips, toasts, diagrams.
+ *
+ * Scripts load at end of <body> — DOMContentLoaded may already have fired.
+ * We use readyState to handle both cases safely.
  */
 
-document.addEventListener('DOMContentLoaded', () => {
+function _appInit() {
 
-  // ── SIDEBAR MÓVIL ──────────────────────────────────────────
-  const hamburgerBtn = document.getElementById('hamburgerBtn');
-  const closeSidebar = document.getElementById('closeSidebar');
-  const sidebar = document.getElementById('mobileSidebar');
-  const overlay = document.getElementById('sidebarOverlay');
+  // ── SIDEBAR MÓVIL ────────────────────────────────────────────
+  const hamburgerBtn    = document.getElementById('hamburgerBtn');
+  const closeSidebarBtn = document.getElementById('closeSidebar');
+  const sidebar         = document.getElementById('mobileSidebar');
+  const overlay         = document.getElementById('sidebarOverlay');
 
   function openSidebar() {
     sidebar?.classList.add('open');
     overlay?.classList.add('active');
     document.body.style.overflow = 'hidden';
   }
-
   function closeSidebarFn() {
     sidebar?.classList.remove('open');
     overlay?.classList.remove('active');
     document.body.style.overflow = '';
   }
-
   hamburgerBtn?.addEventListener('click', openSidebar);
-  closeSidebar?.addEventListener('click', closeSidebarFn);
+  closeSidebarBtn?.addEventListener('click', closeSidebarFn);
   overlay?.addEventListener('click', closeSidebarFn);
 
-  // ── TOGGLE VER SIN APROBACIÓN ──────────────────────────────
-  const togglePending = document.getElementById('togglePending');
+  // ── TOGGLE VER SIN APROBACIÓN ────────────────────────────────
+  const togglePending       = document.getElementById('togglePending');
   const togglePendingMobile = document.getElementById('togglePendingMobile');
 
   function getIncludePending() {
     return localStorage.getItem('eu_show_pending') === 'true';
   }
-
   function setIncludePending(val) {
     localStorage.setItem('eu_show_pending', val);
-    // Disparar evento para que index.js y search.js lo escuchen
     window.dispatchEvent(new CustomEvent('eu:pending-toggle', { detail: { enabled: val } }));
   }
-
-  // Restaurar estado del toggle
   if (togglePending) {
     togglePending.checked = getIncludePending();
     togglePending.addEventListener('change', (e) => {
@@ -49,7 +46,6 @@ document.addEventListener('DOMContentLoaded', () => {
       if (togglePendingMobile) togglePendingMobile.checked = e.target.checked;
     });
   }
-
   if (togglePendingMobile) {
     togglePendingMobile.checked = getIncludePending();
     togglePendingMobile.addEventListener('change', (e) => {
@@ -58,133 +54,59 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // ── NOTIFICACIONES ─────────────────────────────────────────
-  const notifBtn = document.getElementById('notifBtn');
+  // ── NOTIFICATIONS DROPDOWN ───────────────────────────────────
+  // The bell button (#notifBtn) is inside #notifWrapper which is initially
+  // d-none. auth.js reveals it later. We use a flag to avoid the
+  // close-on-same-click race between the button listener and the
+  // document outside-click listener.
   const notifDropdown = document.getElementById('notifDropdown');
-  const markAllRead = document.getElementById('markAllRead');
+  let notifJustOpened = false;
 
-  notifBtn?.addEventListener('click', (e) => {
+  // Delegate to the static #notifWrapper element (always in DOM)
+  const notifWrapper = document.getElementById('notifWrapper');
+  if (notifWrapper && notifDropdown) {
+    notifWrapper.addEventListener('click', (e) => {
+      // Only react to clicks on the bell button itself (not inside the dropdown panel)
+      if (e.target.closest('#notifDropdown')) return;
+      const isOpen = notifDropdown.classList.contains('active');
+      if (isOpen) {
+        notifDropdown.classList.remove('active');
+      } else {
+        notifDropdown.classList.add('active');
+        notifJustOpened = true; // prevent the document listener from immediately closing it
+        document.getElementById('notifBadge')?.classList.add('d-none');
+      }
+    });
+  }
+
+  // Mark-all-read — inside the dropdown panel, stop propagation so panel stays open
+  document.getElementById('markAllRead')?.addEventListener('click', async (e) => {
     e.stopPropagation();
-    notifDropdown?.classList.toggle('active');
-    // Ocultar badge al abrir
-    const badge = document.getElementById('notifBadge');
-    if (badge && notifDropdown?.classList.contains('active')) {
-      badge.classList.add('d-none');
-    }
-  });
-
-  markAllRead?.addEventListener('click', async () => {
     try {
-      await Auth.authFetch(`${window.EU_CONFIG.backendUrl}/api/auth/notifications/read`, { method: 'PUT' });
+      await Auth.authFetch(
+        `${window.EU_CONFIG.backendUrl}/api/auth/notifications/read`,
+        { method: 'PUT' }
+      );
       document.querySelectorAll('.eu-notif-item.unread').forEach(el => el.classList.remove('unread'));
-      const badge = document.getElementById('notifBadge');
-      if (badge) badge.classList.add('d-none');
-    } catch (e) { /* silencioso */ }
+      document.getElementById('notifBadge')?.classList.add('d-none');
+    } catch (_) {}
   });
 
-  // ── DIAGRAMAS INTERACTIVOS ─────────────────────────────────
-  function initDiagrams() {
-    let activePopup = null;
-
-    document.querySelectorAll('.eu-diagram-cell').forEach(cell => {
-      const popupId = cell.dataset.cellId;
-      const popup = document.getElementById(popupId);
-      if (!popup) return;
-
-      cell.addEventListener('click', (e) => {
-        e.stopPropagation();
-
-        // Cerrar popup anterior
-        if (activePopup && activePopup !== popup) {
-          activePopup.classList.remove('active');
-        }
-
-        if (popup.classList.contains('active')) {
-          popup.classList.remove('active');
-          activePopup = null;
-          return;
-        }
-
-        // Posicionar popup
-        const rect = cell.getBoundingClientRect();
-        const popupW = 240;
-        const popupH = 180;
-        let top = rect.bottom + window.scrollY + 8;
-        let left = rect.left + window.scrollX;
-
-        // Evitar salirse de la pantalla
-        if (left + popupW > window.innerWidth - 16) {
-          left = window.innerWidth - popupW - 16;
-        }
-        if (top + popupH > window.scrollY + window.innerHeight - 16) {
-          top = rect.top + window.scrollY - popupH - 8;
-        }
-
-        popup.style.top = `${top}px`;
-        popup.style.left = `${left}px`;
-        popup.classList.add('active');
-        activePopup = popup;
-      });
-    });
-
-    // Cerrar al hacer click fuera
-    document.addEventListener('click', (e) => {
-      if (!e.target.closest('.eu-diagram-cell') && !e.target.closest('.eu-cell-popup')) {
-        document.querySelectorAll('.eu-cell-popup.active').forEach(p => p.classList.remove('active'));
-        activePopup = null;
-      }
-    });
-  }
-
-  initDiagrams();
-
-  // También inicializar cuando se cargue contenido dinámico
-  window.addEventListener('eu:content-loaded', () => {
-    initDiagrams();
-    initTooltips();
-  });
-
-  // ── TOOLTIPS BOOTSTRAP ─────────────────────────────────────
-  function initTooltips() {
-    const tooltipEls = document.querySelectorAll('[data-bs-toggle="tooltip"]');
-    tooltipEls.forEach(el => {
-      if (!el._bsTooltip) {
-        new bootstrap.Tooltip(el, { trigger: 'hover focus' });
-        el._bsTooltip = true;
-      }
-    });
-  }
-
-  initTooltips();
-
-  // ── TOAST SYSTEM ───────────────────────────────────────────
-  window.showToast = function(message, type = 'default', duration = 3500) {
-    const container = document.getElementById('toastContainer');
-    if (!container) return;
-
-    const icons = { success: '✓', error: '✕', warning: '⚠', default: 'ℹ' };
-    const toast = document.createElement('div');
-    toast.className = `eu-toast ${type}`;
-    toast.innerHTML = `<span>${icons[type] || icons.default}</span> ${message}`;
-    container.appendChild(toast);
-
-    setTimeout(() => {
-      toast.style.animation = 'eu-slide-in 250ms ease reverse';
-      setTimeout(() => toast.remove(), 250);
-    }, duration);
-  };
-
-  // ── CERRAR DROPDOWNS AL CLICK FUERA ────────────────────────
+  // Close dropdown when clicking outside — but not on the same click that opened it
   document.addEventListener('click', (e) => {
-    if (!e.target.closest('#notifWrapper')) {
-      notifDropdown?.classList.remove('active');
+    if (notifJustOpened) {
+      notifJustOpened = false;
+      return; // skip: this is the same click that opened the dropdown
+    }
+    if (notifDropdown && !e.target.closest('#notifWrapper')) {
+      notifDropdown.classList.remove('active');
     }
     if (!e.target.closest('.eu-search-box')) {
       document.querySelectorAll('.eu-search-dropdown').forEach(d => d.classList.remove('active'));
     }
   });
 
-  // ── KEYBOARD: ESC cierra modales y dropdowns ───────────────
+  // ESC closes everything
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
       notifDropdown?.classList.remove('active');
@@ -193,28 +115,90 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-});
+  // ── INTERACTIVE DIAGRAMS ─────────────────────────────────────
+  function initDiagrams() {
+    let activePopup = null;
+    document.querySelectorAll('.eu-diagram-cell').forEach(cell => {
+      const popup = document.getElementById(cell.dataset.cellId);
+      if (!popup) return;
+      cell.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (activePopup && activePopup !== popup) activePopup.classList.remove('active');
+        if (popup.classList.contains('active')) {
+          popup.classList.remove('active'); activePopup = null; return;
+        }
+        const rect = cell.getBoundingClientRect();
+        let top  = rect.bottom + window.scrollY + 8;
+        let left = rect.left + window.scrollX;
+        if (left + 240 > window.innerWidth - 16) left = window.innerWidth - 256;
+        if (top + 180 > window.scrollY + window.innerHeight - 16)
+          top = rect.top + window.scrollY - 188;
+        popup.style.top  = `${top}px`;
+        popup.style.left = `${left}px`;
+        popup.classList.add('active');
+        activePopup = popup;
+      });
+    });
+    document.addEventListener('click', (e) => {
+      if (!e.target.closest('.eu-diagram-cell') && !e.target.closest('.eu-cell-popup')) {
+        document.querySelectorAll('.eu-cell-popup.active').forEach(p => p.classList.remove('active'));
+        activePopup = null;
+      }
+    });
+  }
 
-// ── UTILIDAD GLOBAL ────────────────────────────────────────────
-window.escapeHtml = function(str) {
-  return String(str || '').replace(/[&<>"']/g, c => ({
-    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
-  }[c]));
+  // ── BOOTSTRAP TOOLTIPS ───────────────────────────────────────
+  function initTooltips() {
+    if (typeof bootstrap === 'undefined') return;
+    document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(el => {
+      if (!el._bsTooltip) {
+        new bootstrap.Tooltip(el, { trigger: 'hover focus' });
+        el._bsTooltip = true;
+      }
+    });
+  }
+
+  initDiagrams();
+  initTooltips();
+  window.addEventListener('eu:content-loaded', () => { initDiagrams(); initTooltips(); });
+
+  // ── TOAST SYSTEM ─────────────────────────────────────────────
+  window.showToast = function (message, type = 'default', duration = 3500) {
+    const container = document.getElementById('toastContainer');
+    if (!container) return;
+    const icons = { success: '✓', error: '✕', warning: '⚠', default: 'ℹ' };
+    const toast = document.createElement('div');
+    toast.className = `eu-toast ${type}`;
+    toast.innerHTML = `<span>${icons[type] || icons.default}</span> ${message}`;
+    container.appendChild(toast);
+    setTimeout(() => {
+      toast.style.animation = 'eu-slide-in 250ms ease reverse';
+      setTimeout(() => toast.remove(), 250);
+    }, duration);
+  };
+}
+
+// ── GLOBAL HELPERS ───────────────────────────────────────────────
+window.escapeHtml = function (str) {
+  return String(str || '').replace(/[&<>"']/g, c =>
+    ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 };
-
-window.timeAgo = function(dateStr) {
-  const d = new Date(dateStr);
-  const now = new Date();
-  const diff = Math.floor((now - d) / 1000);
-  if (diff < 60) return 'Hace un momento';
-  if (diff < 3600) return `Hace ${Math.floor(diff / 60)} min`;
-  if (diff < 86400) return `Hace ${Math.floor(diff / 3600)}h`;
+window.timeAgo = function (dateStr) {
+  const diff = Math.floor((Date.now() - new Date(dateStr)) / 1000);
+  if (diff < 60)     return 'Hace un momento';
+  if (diff < 3600)   return `Hace ${Math.floor(diff / 60)} min`;
+  if (diff < 86400)  return `Hace ${Math.floor(diff / 3600)}h`;
   if (diff < 604800) return `Hace ${Math.floor(diff / 86400)} días`;
-  return d.toLocaleDateString('es-AR');
+  return new Date(dateStr).toLocaleDateString('es-AR');
+};
+window.formatDate = function (dateStr) {
+  return new Date(dateStr).toLocaleDateString('es-AR',
+    { year: 'numeric', month: 'long', day: 'numeric' });
 };
 
-window.formatDate = function(dateStr) {
-  return new Date(dateStr).toLocaleDateString('es-AR', {
-    year: 'numeric', month: 'long', day: 'numeric'
-  });
-};
+// Safe init — handles DOMContentLoaded already fired when scripts load at end of body
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', _appInit);
+} else {
+  _appInit();
+}

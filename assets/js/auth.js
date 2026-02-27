@@ -20,27 +20,27 @@ const Auth = (() => {
 
   async function login(email, password) {
     const res  = await fetch(`${API}/api/auth/login`, {
-      method:  'POST',
+      method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify({ email, password })
+      body: JSON.stringify({ email, password })
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Error al iniciar sesión');
     localStorage.setItem(TOKEN_KEY, data.token);
-    localStorage.setItem(USER_KEY,  JSON.stringify(data.user));
+    localStorage.setItem(USER_KEY, JSON.stringify(data.user));
     return data;
   }
 
   async function register(username, email, password) {
     const res  = await fetch(`${API}/api/auth/register`, {
-      method:  'POST',
+      method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify({ username, email, password })
+      body: JSON.stringify({ username, email, password })
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Error al registrarse');
     localStorage.setItem(TOKEN_KEY, data.token);
-    localStorage.setItem(USER_KEY,  JSON.stringify(data.user));
+    localStorage.setItem(USER_KEY, JSON.stringify(data.user));
     return data;
   }
 
@@ -50,32 +50,62 @@ const Auth = (() => {
     window.location.href = window.EU_CONFIG.baseUrl + '/';
   }
 
+  /**
+   * authFetch — fetch with Authorization header.
+   * 
+   * IMPORTANT: Does NOT auto-logout on 401.
+   * Callers must check res?.ok and handle errors themselves.
+   * Auto-logout was removed because it caused session loss when any background
+   * request (notifications, refresh) returned 401 due to token expiry or
+   * a transient server error — logging the user out unexpectedly.
+   * 
+   * Pages that require auth should redirect to login themselves if needed.
+   */
   async function authFetch(url, options = {}) {
     const token   = getToken();
     const headers = { 'Content-Type': 'application/json', ...options.headers };
     if (token) headers['Authorization'] = `Bearer ${token}`;
-    const res = await fetch(url, { ...options, headers });
-    if (res.status === 401) { logout(); return; }
-    return res;
+    try {
+      const res = await fetch(url, { ...options, headers });
+      return res;
+    } catch (e) {
+      console.warn('authFetch network error:', e);
+      return null;
+    }
   }
 
-  // Pide un token nuevo al backend con el rol actual de la DB.
-  // Llamar cuando el rol puede haber cambiado externamente (ej: CLI promote).
+  /**
+   * refreshToken — gets a fresh JWT from the server with the current DB role.
+   * Uses raw fetch (never authFetch) so a 401 never triggers logout.
+   * Silently keeps the existing stored user if refresh fails.
+   */
   async function refreshToken() {
     if (!isLoggedIn()) return null;
     try {
-      const res = await authFetch(`${API}/api/auth/refresh`, { method: 'POST' });
-      if (res?.ok) {
+      const res = await fetch(`${API}/api/auth/refresh`, {
+        method: 'POST',
+        headers: {
+          'Content-Type':  'application/json',
+          'Authorization': `Bearer ${getToken()}`
+        }
+      });
+      if (res.ok) {
         const data = await res.json();
         localStorage.setItem(TOKEN_KEY, data.token);
-        localStorage.setItem(USER_KEY,  JSON.stringify(data.user));
+        localStorage.setItem(USER_KEY, JSON.stringify(data.user));
         return data.user;
       }
-    } catch (e) { console.warn('No se pudo refrescar el token:', e); }
+      // 401 = token expired/invalid — keep existing stored user, don't logout.
+      // The user will be prompted to login naturally when they hit a protected action.
+    } catch (e) {
+      console.warn('Token refresh failed (network?):', e);
+    }
     return getUser();
   }
 
-  // Actualiza solo los datos del usuario en localStorage (sin nuevo token).
+  /**
+   * refreshUser — updates just the user object in localStorage without new JWT.
+   */
   async function refreshUser() {
     if (!isLoggedIn()) return null;
     try {
@@ -85,7 +115,9 @@ const Auth = (() => {
         localStorage.setItem(USER_KEY, JSON.stringify(user));
         return user;
       }
-    } catch (e) { console.warn('No se pudo actualizar el usuario:', e); }
+    } catch (e) {
+      console.warn('refreshUser failed:', e);
+    }
     return getUser();
   }
 
@@ -106,14 +138,14 @@ const Auth = (() => {
         authSection.innerHTML = `
           <div class="dropdown">
             <button class="eu-btn-outline dropdown-toggle" id="userMenuBtn"
-                    data-bs-toggle="dropdown" aria-expanded="false">
+                    type="button" data-bs-toggle="dropdown" aria-expanded="false">
               <i class="bi bi-person-fill"></i>
               <span class="d-none d-lg-inline">${escapeHtml(user.username)}</span>
             </button>
-            <ul class="dropdown-menu dropdown-menu-end eu-dropdown-menu">
+            <ul class="dropdown-menu dropdown-menu-end eu-dropdown-menu" aria-labelledby="userMenuBtn">
               <li><div class="px-3 py-2 small">
                 <div class="fw-semibold">${escapeHtml(user.username)}</div>
-                <div class="${roleColors[user.role]} small">${roleLabels[user.role] || user.role}</div>
+                <div class="${roleColors[user.role] || 'text-muted'} small">${roleLabels[user.role] || user.role}</div>
               </div></li>
               <li><hr class="dropdown-divider"></li>
               <li><a class="dropdown-item" href="${BASE}/nuevo-articulo.html">
@@ -127,49 +159,55 @@ const Auth = (() => {
               <li><a class="dropdown-item" href="${BASE}/admin/index.html">
                     <i class="bi bi-shield-check me-2"></i>Panel moderación</a></li>` : ''}
               <li><hr class="dropdown-divider"></li>
-              <li><button class="dropdown-item text-danger" onclick="Auth.logout()">
-                    <i class="bi bi-box-arrow-right me-2"></i>Cerrar sesión</button></li>
+              <li><a class="dropdown-item text-danger" href="#" onclick="event.preventDefault(); Auth.logout();">
+                    <i class="bi bi-box-arrow-right me-2"></i>Cerrar sesión</a></li>
             </ul>
           </div>`;
+
+        // Bootstrap 5: manually initialize the dropdown since the button was injected
+        // after Bootstrap's initial DOM scan.
+        const btn = authSection.querySelector('[data-bs-toggle="dropdown"]');
+        if (btn && typeof bootstrap !== 'undefined') {
+          // Dispose old instance if any, then create new
+          const existing = bootstrap.Dropdown.getInstance(btn);
+          if (existing) existing.dispose();
+          new bootstrap.Dropdown(btn);
+        }
       }
 
       if (sidebarAuthSection) {
         sidebarAuthSection.innerHTML = `
           <a href="${BASE}/perfil.html"><i class="bi bi-person"></i> Mi perfil</a>
           <a href="${BASE}/nuevo-articulo.html"><i class="bi bi-plus-circle"></i> Nuevo artículo</a>
-          ${user.role === 'FREE' ? `<a href="${BASE}/suscripcion.html" class="text-success">
+          ${user.role === 'FREE' ? `<a href="${BASE}/suscripcion.html" style="color:var(--eu-success)">
             <i class="bi bi-star"></i> Mejorar plan</a>` : ''}
           ${['MOD','ADMIN'].includes(user.role) ? `<a href="${BASE}/admin/index.html">
             <i class="bi bi-shield-check"></i> Moderación</a>` : ''}
-          <a href="#" onclick="Auth.logout(); return false;">
+          <a href="#" onclick="event.preventDefault(); Auth.logout();">
             <i class="bi bi-box-arrow-right"></i> Cerrar sesión</a>`;
       }
 
-      // Notificaciones
+      // Show notification bell
       if (notifWrapper) {
         notifWrapper.classList.remove('d-none');
-        if (user.notificationCount > 0) {
-          const badge = document.getElementById('notifBadge');
-          if (badge) {
-            badge.textContent = user.notificationCount > 99 ? '99+' : user.notificationCount;
-            badge.classList.remove('d-none');
-          }
+        const badge = document.getElementById('notifBadge');
+        if (badge && user.notificationCount > 0) {
+          badge.textContent = user.notificationCount > 99 ? '99+' : String(user.notificationCount);
+          badge.classList.remove('d-none');
         }
       }
 
-      // Contador artículos FREE
+      // Read counter for FREE users
       if (readCounter) {
         if (user.role === 'FREE') {
           const limit = user.freeLimit || 30;
           const read  = user.articlesReadThisMonth || 0;
           readCounter.classList.remove('d-none');
-          readCounter.title = `Artículos leídos este mes (límite: ${limit})`;
           const countText = document.getElementById('readCountText');
           if (countText) countText.textContent = `${read}/${limit}`;
-          if (read >= limit)       readCounter.classList.add('at-limit');
-          else if (read >= limit - 3) readCounter.classList.add('near-limit');
+          if (read >= limit)        readCounter.classList.add('at-limit');
+          else if (read >= limit-3) readCounter.classList.add('near-limit');
         } else {
-          // Si ya no es FREE (ej: rol cambió via CLI), ocultar el contador
           readCounter.classList.add('d-none');
         }
       }
@@ -199,7 +237,7 @@ const Auth = (() => {
     if (!list) return;
     try {
       const res = await authFetch(`${API}/api/auth/notifications`);
-      if (!res?.ok) return;
+      if (!res?.ok) return; // silently skip — do NOT logout
       const notifs = await res.json();
       if (!notifs.length) {
         list.innerHTML = '<div class="eu-notif-empty">No hay notificaciones</div>';
@@ -219,15 +257,16 @@ const Auth = (() => {
           ? `<a href="${link}" class="eu-notif-item ${!n.read_at ? 'unread' : ''}">${inner}</a>`
           : `<div class="eu-notif-item ${!n.read_at ? 'unread' : ''}">${inner}</div>`;
       }).join('');
-    } catch (e) { console.warn('Error cargando notificaciones:', e); }
+    } catch (e) {
+      console.warn('Error cargando notificaciones:', e);
+    }
   }
 
   function getNotifLink(n, BASE) {
-    switch(n.type) {
+    switch (n.type) {
       case 'article_approved':
       case 'article_rejected':
       case 'new_submission':
-        // Use slug if available (returned by enriched query), fallback to id
         return n.article_slug
           ? `${BASE}/articulo.html?slug=${encodeURIComponent(n.article_slug)}`
           : n.reference_id ? `${BASE}/articulo.html?id=${n.reference_id}` : null;
@@ -246,35 +285,36 @@ const Auth = (() => {
 
   function getNotifIcon(type) {
     const icons = {
-      article_approved:      '✅',
-      article_rejected:      '❌',
-      edit_approved:         '✏️',
-      edit_rejected:         '✏️',
-      subscription_activated:'⭐',
-      subscription_expired:  '⚠️',
-      new_submission:        '📝'
+      article_approved: '✅', article_rejected: '❌',
+      edit_approved: '✏️', edit_rejected: '✏️',
+      subscription_activated: '⭐', subscription_expired: '⚠️',
+      new_submission: '📝'
     };
     return `<span style="font-size:1rem">${icons[type] || '🔔'}</span>`;
   }
 
   function timeAgo(dateStr) {
-    const d    = new Date(dateStr);
-    const diff = Math.floor((Date.now() - d) / 1000);
+    const diff = Math.floor((Date.now() - new Date(dateStr)) / 1000);
     if (diff < 60)    return 'Hace un momento';
     if (diff < 3600)  return `Hace ${Math.floor(diff / 60)} min`;
     if (diff < 86400) return `Hace ${Math.floor(diff / 3600)}h`;
-    return d.toLocaleDateString('es-AR');
+    return new Date(dateStr).toLocaleDateString('es-AR');
   }
 
-  // Al cargar cada página: refrescar token silenciosamente para que el rol
-  // siempre esté actualizado aunque haya cambiado via CLI en el servidor.
-  document.addEventListener('DOMContentLoaded', async () => {
+  async function _authInit() {
     if (isLoggedIn()) {
-      await refreshToken();   // obtiene rol actual de la DB + nuevo JWT
+      await refreshToken(); // silent — never logs out
     }
     updateNavbar();
     if (isLoggedIn()) loadNotifications();
-  });
+  }
+
+  // Scripts load at end of <body>; DOMContentLoaded may have already fired.
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', _authInit);
+  } else {
+    _authInit();
+  }
 
   return {
     getToken, getUser, isLoggedIn, hasRole,

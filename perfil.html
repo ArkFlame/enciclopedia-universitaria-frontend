@@ -33,12 +33,24 @@ title: Mi perfil
 .eu-article-row { display: grid; grid-template-columns: 1fr auto; gap: 12px; align-items: center; padding: 14px 0; border-bottom: 1px solid var(--eu-border); text-decoration: none; color: inherit; transition: background .15s; }
 .eu-article-row:hover { background: var(--eu-bg-secondary); padding-left: 8px; border-radius: 4px; }
 .eu-plan-card { border: 2px solid var(--eu-border); border-radius: var(--eu-radius-lg); padding: 28px; }
-.eu-plan-card.premium { border-color: #16a34a; background: #f0fdf4; }
-[data-theme="dark"] .eu-plan-card.premium { background: #052e16; }
+.eu-plan-card.premium {
+  border-color: var(--eu-success);
+  background: color-mix(in srgb, var(--eu-success) 8%, var(--eu-surface));
+}
 .eu-progress-bar { height: 8px; background: var(--eu-border); border-radius: 4px; overflow: hidden; margin-top: 8px; }
 .eu-progress-fill { height: 100%; background: var(--eu-text); border-radius: 4px; transition: width .5s ease; }
-.eu-progress-fill.danger { background: #dc2626; }
-.eu-progress-fill.warning { background: #d97706; }
+.eu-progress-fill.danger { background: var(--eu-danger); }
+.eu-progress-fill.warning { background: var(--eu-pending); }
+.eu-btn-sm-filter {
+  padding: 5px 14px; font-size: .82rem; border-radius: var(--eu-radius-sm);
+  border: 1px solid var(--eu-border); background: var(--eu-surface);
+  color: var(--eu-text-muted); cursor: pointer; transition: all .15s;
+}
+.eu-btn-sm-filter:hover { background: var(--eu-bg-secondary); color: var(--eu-text); }
+.eu-btn-sm-filter.active {
+  background: var(--eu-text); color: var(--eu-surface);
+  border-color: var(--eu-text); font-weight: 600;
+}
 </style>
 
 <script>
@@ -124,11 +136,11 @@ title: Mi perfil
           <div class="eu-mini-stat-label">Artículos escritos</div>
         </div>
         <div class="eu-mini-stat">
-          <div class="eu-mini-stat-value" style="color:#15803d">${approved}</div>
+          <div class="eu-mini-stat-value" style="color:var(--eu-success)">${approved}</div>
           <div class="eu-mini-stat-label">Aprobados</div>
         </div>
         <div class="eu-mini-stat">
-          <div class="eu-mini-stat-value" style="color:#d97706">${pending}</div>
+          <div class="eu-mini-stat-value" style="color:var(--eu-pending)">${pending}</div>
           <div class="eu-mini-stat-label">Pendientes</div>
         </div>
         <div class="eu-mini-stat">
@@ -231,7 +243,7 @@ title: Mi perfil
         <!-- Filter tabs -->
         <div class="d-flex gap-1 mb-3 flex-wrap">
           ${['TODOS','APPROVED','PENDING','REJECTED'].map(f => `
-            <button class="btn btn-sm ${f==='TODOS'?'btn-dark':'btn-outline-secondary'}"
+            <button class="eu-btn-sm-filter ${f==='TODOS'?'active':''}"
                     onclick="filterArticles('${f}', this)">${
               f==='TODOS'?`Todos (${totalArts})`:
               f==='APPROVED'?`✓ Aprobados (${approved})`:
@@ -301,10 +313,9 @@ title: Mi perfil
   }
 
   window.filterArticles = function(filter, btn) {
-    document.querySelectorAll('[onclick^="filterArticles"]').forEach(b => {
-      b.className = 'btn btn-sm btn-outline-secondary';
+    document.querySelectorAll('.eu-btn-sm-filter').forEach(b => {
+      b.classList.toggle('active', b === btn);
     });
-    btn.className = 'btn btn-sm btn-dark';
     document.getElementById('articlesList').innerHTML =
       renderArticlesList(window._profileArticles, window._profileBase, filter);
   };
