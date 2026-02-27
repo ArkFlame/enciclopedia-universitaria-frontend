@@ -1,0 +1,194 @@
+---
+layout: default
+title: Categorías
+description: Explora los artículos de la enciclopedia por categoría temática
+---
+
+<div style="max-width:1100px;margin:0 auto;padding:32px 20px">
+
+  <div class="mb-5">
+    <h1 class="eu-hero-title">Categorías</h1>
+    <p class="text-muted" style="font-size:1.05rem">Explora el conocimiento organizado por área temática</p>
+  </div>
+
+  <!-- Grid de categorías -->
+  <div id="categoriesGrid" class="row g-4 mb-5">
+    <!-- cargando... -->
+    <div class="col-12 text-center py-5">
+      <div class="eu-spinner mx-auto mb-3"></div>
+      <p class="text-muted">Cargando categorías...</p>
+    </div>
+  </div>
+
+  <!-- Vista de artículos de categoría seleccionada -->
+  <div id="categoryView" class="d-none">
+    <div class="d-flex align-items-center gap-3 mb-4" style="border-bottom:2px solid var(--eu-border);padding-bottom:16px">
+      <button class="eu-btn-outline btn-sm" onclick="closeCategoryView()">
+        <i class="bi bi-arrow-left"></i> Todas las categorías
+      </button>
+      <h2 id="categoryTitle" class="mb-0" style="font-family:var(--eu-font-display);font-size:1.5rem"></h2>
+      <span id="categoryCount" class="text-muted small ms-auto"></span>
+    </div>
+    <div id="categoryArticles"></div>
+    <div id="categoryPagination" class="eu-pagination mt-4"></div>
+  </div>
+</div>
+
+<style>
+.eu-cat-card {
+  background: var(--eu-surface);
+  border: 1px solid var(--eu-border);
+  border-radius: var(--eu-radius);
+  padding: 28px 24px;
+  cursor: pointer;
+  transition: transform .2s, box-shadow .2s, border-color .2s;
+  text-decoration: none;
+  display: block;
+  position: relative;
+  overflow: hidden;
+}
+.eu-cat-card::before {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0; height: 4px;
+  background: var(--cat-color, #000);
+}
+.eu-cat-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 32px rgba(0,0,0,.1);
+  border-color: var(--cat-color, #000);
+}
+.eu-cat-icon { font-size: 2rem; margin-bottom: 12px; display: block; }
+.eu-cat-name { font-family: var(--eu-font-display); font-size: 1.2rem; font-weight: 700; margin-bottom: 4px; }
+.eu-cat-count { font-size: .85rem; color: var(--eu-text-muted); }
+.eu-cat-article {
+  padding: 16px 0;
+  border-bottom: 1px solid var(--eu-border);
+  display: grid; grid-template-columns: 1fr auto; gap: 12px; align-items: center;
+  text-decoration: none; color: inherit; transition: background .15s;
+}
+.eu-cat-article:hover { background: var(--eu-bg-secondary); padding-left: 8px; border-radius: var(--eu-radius-sm); }
+</style>
+
+<script>
+(function() {
+  const API  = window.EU_CONFIG.backendUrl;
+  const BASE = window.EU_CONFIG.baseUrl;
+  let catPage = 1;
+  let currentCatSlug = '';
+
+  const ICONS = {
+    'ciencias-naturales': '🌿', 'historia': '📜', 'matematicas': '📐',
+    'tecnologia': '💻', 'fisica': '⚛️', 'quimica': '🧪',
+    'biologia': '🔬', 'filosofia': '💭', 'arte-cultura': '🎨', 'sociologia': '🏛️'
+  };
+
+  document.addEventListener('DOMContentLoaded', loadCategories);
+
+  async function loadCategories() {
+    try {
+      const [catsRes, articlesRes] = await Promise.all([
+        fetch(`${API}/api/articles/meta/categories`),
+        fetch(`${API}/api/articles?limit=1`) // just to get total
+      ]);
+      const cats = await catsRes.json();
+
+      // Fetch article counts per category in parallel
+      const counts = await Promise.all(cats.map(c =>
+        fetch(`${API}/api/articles?category=${c.slug}&limit=1`)
+          .then(r => r.json())
+          .then(d => ({ slug: c.slug, count: d.total || 0 }))
+          .catch(() => ({ slug: c.slug, count: 0 }))
+      ));
+      const countMap = Object.fromEntries(counts.map(c => [c.slug, c.count]));
+
+      const grid = document.getElementById('categoriesGrid');
+      if (!cats.length) {
+        grid.innerHTML = '<div class="col-12"><div class="eu-empty-state"><i class="bi bi-tag"></i><p>No hay categorías definidas</p></div></div>';
+        return;
+      }
+
+      grid.innerHTML = cats.map(c => `
+        <div class="col-6 col-md-4 col-lg-3">
+          <div class="eu-cat-card" style="--cat-color:${c.color}" onclick="openCategory('${c.slug}', '${escHtml(c.name)}', '${c.color}')">
+            <span class="eu-cat-icon">${ICONS[c.slug] || '📁'}</span>
+            <div class="eu-cat-name">${escHtml(c.name)}</div>
+            <div class="eu-cat-count">${countMap[c.slug] || 0} artículo${countMap[c.slug] !== 1 ? 's' : ''}</div>
+          </div>
+        </div>`).join('');
+    } catch(e) {
+      document.getElementById('categoriesGrid').innerHTML =
+        '<div class="col-12"><div class="alert alert-danger">Error al cargar categorías</div></div>';
+    }
+  }
+
+  window.openCategory = async function(slug, name, color) {
+    currentCatSlug = slug;
+    catPage = 1;
+    document.getElementById('categoriesGrid').closest('div.mb-5').classList.add('d-none');
+    const view = document.getElementById('categoryView');
+    view.classList.remove('d-none');
+    document.getElementById('categoryTitle').innerHTML =
+      `<span style="color:${color}">${escHtml(name)}</span>`;
+    await loadCategoryArticles(slug, 1);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  window.closeCategoryView = function() {
+    document.getElementById('categoryView').classList.add('d-none');
+    document.getElementById('categoriesGrid').closest('div.mb-5').classList.remove('d-none');
+    currentCatSlug = '';
+  };
+
+  async function loadCategoryArticles(slug, page) {
+    const container = document.getElementById('categoryArticles');
+    container.innerHTML = '<div class="py-4 text-center"><div class="eu-spinner mx-auto"></div></div>';
+    try {
+      const res  = await fetch(`${API}/api/articles?category=${slug}&page=${page}&limit=20`);
+      const data = await res.json();
+      document.getElementById('categoryCount').textContent =
+        `${data.total} artículo${data.total !== 1 ? 's' : ''}`;
+
+      if (!data.articles?.length) {
+        container.innerHTML = '<div class="eu-empty-state"><i class="bi bi-journal-x"></i><p>No hay artículos en esta categoría aún</p></div>';
+        return;
+      }
+
+      container.innerHTML = data.articles.map(a => `
+        <a href="${BASE}/articulo.html?slug=${encodeURIComponent(a.slug)}" class="eu-cat-article">
+          <div>
+            <div style="font-family:var(--eu-font-display);font-size:1rem;font-weight:700;margin-bottom:3px">${escHtml(a.title)}</div>
+            <div style="font-size:.85rem;color:var(--eu-text-muted);display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden">${escHtml(a.summary)}</div>
+            <div style="font-size:.78rem;color:var(--eu-text-muted);margin-top:4px">
+              <i class="bi bi-person" style="margin-right:4px"></i>${escHtml(a.author_username)} ·
+              <i class="bi bi-calendar3" style="margin-right:4px"></i>${fmtDate(a.created_at)}
+            </div>
+          </div>
+          <div style="font-size:.8rem;color:var(--eu-text-muted);white-space:nowrap">
+            <i class="bi bi-eye"></i> ${(a.views||0).toLocaleString('es-AR')}
+          </div>
+        </a>`).join('');
+
+      // Pagination
+      const pages = Math.ceil(data.total / 20);
+      const pag = document.getElementById('categoryPagination');
+      if (pages <= 1) { pag.innerHTML = ''; return; }
+      let html = '<div class="eu-pagination-inner">';
+      for (let i = 1; i <= pages; i++) {
+        html += `<button class="${i===page?'active':''}" onclick="catGoPage(${i})">${i}</button>`;
+      }
+      pag.innerHTML = html + '</div>';
+    } catch(e) {
+      container.innerHTML = '<div class="alert alert-danger">Error al cargar artículos</div>';
+    }
+  }
+
+  window.catGoPage = function(p) {
+    catPage = p;
+    loadCategoryArticles(currentCatSlug, p);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  function fmtDate(d) { return new Date(d).toLocaleDateString('es-AR', { day:'2-digit', month:'short', year:'numeric' }); }
+  function escHtml(s) { return String(s||'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+})();
+</script>

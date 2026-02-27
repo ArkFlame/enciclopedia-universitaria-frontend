@@ -1,0 +1,317 @@
+---
+layout: default
+title: Resultados de búsqueda
+---
+
+<div class="eu-search-page">
+  <div class="eu-search-header">
+    <div class="eu-search-bar-large">
+      <i class="bi bi-search eu-search-icon-large"></i>
+      <input type="text" id="searchInput" class="eu-search-input-large"
+             placeholder="Buscar artículos, temas, categorías..."
+             autocomplete="off" spellcheck="false">
+      <button id="clearSearch" class="eu-search-clear d-none">
+        <i class="bi bi-x-lg"></i>
+      </button>
+    </div>
+    <div id="searchMeta" class="eu-search-meta"></div>
+  </div>
+
+  <div class="eu-search-layout">
+    <!-- Filtros -->
+    <aside class="eu-search-filters">
+      <div class="eu-filter-group">
+        <div class="eu-filter-title">Categoría</div>
+        <div id="categoryFilters" class="eu-filter-list">
+          <label class="eu-filter-item active">
+            <input type="radio" name="category" value="" checked> Todas
+          </label>
+        </div>
+      </div>
+      <div class="eu-filter-group mt-4">
+        <div class="eu-filter-title">Ordenar por</div>
+        <div class="eu-filter-list">
+          <label class="eu-filter-item">
+            <input type="radio" name="sort" value="recent" checked> Más recientes
+          </label>
+          <label class="eu-filter-item">
+            <input type="radio" name="sort" value="views"> Más vistos
+          </label>
+          <label class="eu-filter-item">
+            <input type="radio" name="sort" value="alpha"> Alfabético
+          </label>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Resultados -->
+    <main class="eu-search-results">
+      <div id="resultsGrid"></div>
+      <div id="pagination" class="eu-pagination mt-5"></div>
+    </main>
+  </div>
+</div>
+
+<style>
+.eu-search-page { max-width: 1200px; margin: 0 auto; padding: 32px 20px; }
+.eu-search-header { margin-bottom: 40px; }
+.eu-search-bar-large {
+  position: relative; display: flex; align-items: center;
+  background: var(--eu-surface); border: 2px solid var(--eu-text);
+  border-radius: var(--eu-radius); overflow: hidden;
+  transition: border-color .2s, box-shadow .2s;
+}
+.eu-search-bar-large:focus-within {
+  border-color: var(--eu-accent);
+  box-shadow: 0 0 0 3px rgba(0,0,0,.08);
+}
+.eu-search-icon-large {
+  padding: 0 16px; font-size: 1.2rem; color: var(--eu-text-muted); flex-shrink: 0;
+}
+.eu-search-input-large {
+  flex: 1; padding: 18px 8px; font-size: 1.15rem;
+  border: none; background: transparent; color: var(--eu-text);
+  font-family: var(--eu-font-body); outline: none;
+}
+.eu-search-clear {
+  padding: 0 16px; background: none; border: none;
+  color: var(--eu-text-muted); cursor: pointer; font-size: 1rem;
+}
+.eu-search-meta { margin-top: 12px; color: var(--eu-text-muted); font-size: .9rem; min-height: 1.2em; }
+.eu-search-layout { display: grid; grid-template-columns: 220px 1fr; gap: 40px; }
+@media (max-width: 768px) { .eu-search-layout { grid-template-columns: 1fr; } .eu-search-filters { display: flex; gap: 24px; } }
+.eu-filter-title { font-size: .75rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--eu-text-muted); margin-bottom: 10px; }
+.eu-filter-list { display: flex; flex-direction: column; gap: 4px; }
+.eu-filter-item {
+  display: flex; align-items: center; gap: 8px; padding: 6px 10px;
+  border-radius: var(--eu-radius-sm); cursor: pointer; font-size: .9rem;
+  transition: background .15s; user-select: none;
+}
+.eu-filter-item:hover { background: var(--eu-bg-secondary); }
+.eu-filter-item input { accent-color: var(--eu-text); }
+.eu-search-results { min-height: 300px; }
+.eu-result-card {
+  display: grid; grid-template-columns: 1fr auto; gap: 12px; align-items: start;
+  padding: 20px; border-bottom: 1px solid var(--eu-border);
+  text-decoration: none; color: inherit; transition: background .15s;
+}
+.eu-result-card:hover { background: var(--eu-bg-secondary); border-radius: var(--eu-radius-sm); }
+.eu-result-title { font-family: var(--eu-font-display); font-size: 1.1rem; font-weight: 700; margin-bottom: 4px; }
+.eu-result-summary { font-size: .9rem; color: var(--eu-text-muted); line-height: 1.5; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.eu-result-meta { font-size: .78rem; color: var(--eu-text-muted); margin-top: 8px; display: flex; gap: 12px; flex-wrap: wrap; }
+.eu-result-views { font-size: .8rem; color: var(--eu-text-muted); white-space: nowrap; }
+.eu-no-results { text-align: center; padding: 80px 20px; color: var(--eu-text-muted); }
+.eu-no-results i { font-size: 3rem; display: block; margin-bottom: 16px; opacity: .4; }
+.eu-highlight { background: rgba(255,220,0,.35); border-radius: 2px; padding: 0 2px; }
+.eu-result-skeleton { padding: 20px; border-bottom: 1px solid var(--eu-border); }
+.eu-skeleton-line { height: 14px; background: var(--eu-bg-secondary); border-radius: 4px; margin-bottom: 8px; animation: eu-shimmer 1.2s infinite; }
+@keyframes eu-shimmer { 0%,100%{opacity:.6} 50%{opacity:1} }
+</style>
+
+<script>
+(function () {
+  const API  = window.EU_CONFIG.backendUrl;
+  const BASE = window.EU_CONFIG.baseUrl;
+
+  let currentPage  = 1;
+  let currentQuery = '';
+  let currentCat   = '';
+  let currentSort  = 'recent';
+  let debounceTimer;
+  const PAGE_SIZE  = 15;
+
+  const input      = document.getElementById('searchInput');
+  const clearBtn   = document.getElementById('clearSearch');
+  const metaEl     = document.getElementById('searchMeta');
+  const grid       = document.getElementById('resultsGrid');
+  const pagination = document.getElementById('pagination');
+
+  // ── Init ────────────────────────────────────────────────────
+  async function init() {
+    await loadCategories();
+    const params = new URLSearchParams(window.location.search);
+    const q = params.get('q') || '';
+    if (q) { input.value = q; clearBtn.classList.remove('d-none'); }
+    currentQuery = q;
+    search();
+  }
+
+  // ── Categories ──────────────────────────────────────────────
+  async function loadCategories() {
+    try {
+      const res  = await fetch(`${API}/api/articles/meta/categories`);
+      const cats = await res.json();
+      const container = document.getElementById('categoryFilters');
+      container.innerHTML = `<label class="eu-filter-item">
+        <input type="radio" name="category" value="" checked> Todas
+      </label>` + cats.map(c => `
+        <label class="eu-filter-item">
+          <input type="radio" name="category" value="${c.slug}">
+          <span style="width:8px;height:8px;border-radius:50%;background:${c.color};display:inline-block;flex-shrink:0"></span>
+          ${escHtml(c.name)}
+        </label>`).join('');
+
+      container.querySelectorAll('input[name="category"]').forEach(r => {
+        r.addEventListener('change', () => {
+          currentCat  = r.value;
+          currentPage = 1;
+          search();
+        });
+      });
+    } catch (e) { console.warn('No se pudieron cargar categorías'); }
+  }
+
+  // ── Search ───────────────────────────────────────────────────
+  async function search() {
+    showSkeleton();
+    updateURL();
+
+    const params = new URLSearchParams({
+      page: currentPage, limit: PAGE_SIZE,
+      ...(currentQuery  && { query: currentQuery }),
+      ...(currentCat    && { category: currentCat }),
+    });
+
+    try {
+      const res  = await fetch(`${API}/api/articles?${params}`);
+      const data = await res.json();
+      renderResults(data, currentQuery);
+      renderPagination(data.total, data.page, data.pageSize);
+      renderMeta(data.total, currentQuery);
+    } catch (e) {
+      grid.innerHTML = `<div class="eu-no-results">
+        <i class="bi bi-exclamation-circle"></i>
+        <p>Error al buscar. Intenta de nuevo.</p>
+      </div>`;
+    }
+  }
+
+  // ── Render ───────────────────────────────────────────────────
+  function renderResults(data, q) {
+    if (!data.articles?.length) {
+      grid.innerHTML = `<div class="eu-no-results">
+        <i class="bi bi-search"></i>
+        <h3>Sin resultados</h3>
+        <p>${q ? `No encontramos artículos para "<strong>${escHtml(q)}</strong>"` : 'No hay artículos disponibles aún.'}</p>
+        ${q ? `<p class="small">Intenta con términos más generales o revisa la ortografía</p>` : ''}
+      </div>`;
+      return;
+    }
+
+    grid.innerHTML = data.articles.map(a => {
+      const title   = highlight(escHtml(a.title),   q);
+      const summary = highlight(escHtml(a.summary), q);
+      return `<a href="${BASE}/articulo.html?slug=${encodeURIComponent(a.slug)}" class="eu-result-card">
+        <div>
+          <div class="eu-result-title">${title}</div>
+          <div class="eu-result-summary">${summary}</div>
+          <div class="eu-result-meta">
+            <span><i class="bi bi-person" style="margin-right:4px"></i>${escHtml(a.author_username)}</span>
+            ${a.category ? `<span><i class="bi bi-tag" style="margin-right:4px"></i>${escHtml(a.category)}</span>` : ''}
+            <span><i class="bi bi-calendar3" style="margin-right:4px"></i>${fmtDate(a.created_at)}</span>
+          </div>
+        </div>
+        <div class="eu-result-views">
+          <i class="bi bi-eye"></i> ${(a.views||0).toLocaleString('es-AR')}
+        </div>
+      </a>`;
+    }).join('');
+  }
+
+  function renderMeta(total, q) {
+    if (q) {
+      metaEl.textContent = `${total.toLocaleString('es-AR')} resultado${total !== 1 ? 's' : ''} para "${q}"`;
+    } else {
+      metaEl.textContent = total ? `${total.toLocaleString('es-AR')} artículo${total !== 1 ? 's' : ''}` : '';
+    }
+  }
+
+  function renderPagination(total, page, pageSize) {
+    const pages = Math.ceil(total / pageSize);
+    if (pages <= 1) { pagination.innerHTML = ''; return; }
+
+    let html = '<div class="eu-pagination-inner">';
+    if (page > 1) html += `<button onclick="goPage(${page-1})"><i class="bi bi-chevron-left"></i></button>`;
+
+    const start = Math.max(1, page - 2);
+    const end   = Math.min(pages, page + 2);
+    if (start > 1) html += `<button onclick="goPage(1)">1</button>${start > 2 ? '<span>…</span>' : ''}`;
+    for (let i = start; i <= end; i++) {
+      html += `<button class="${i===page?'active':''}" onclick="goPage(${i})">${i}</button>`;
+    }
+    if (end < pages) html += `${end < pages-1 ? '<span>…</span>' : ''}<button onclick="goPage(${pages})">${pages}</button>`;
+    if (page < pages) html += `<button onclick="goPage(${page+1})"><i class="bi bi-chevron-right"></i></button>`;
+
+    html += '</div>';
+    pagination.innerHTML = html;
+  }
+
+  function showSkeleton() {
+    grid.innerHTML = Array(5).fill(`
+      <div class="eu-result-skeleton">
+        <div class="eu-skeleton-line" style="width:60%;height:18px;margin-bottom:10px"></div>
+        <div class="eu-skeleton-line" style="width:100%"></div>
+        <div class="eu-skeleton-line" style="width:80%"></div>
+        <div class="eu-skeleton-line" style="width:40%;margin-top:6px"></div>
+      </div>`).join('');
+  }
+
+  // ── Helpers ──────────────────────────────────────────────────
+  function highlight(text, q) {
+    if (!q || !q.trim()) return text;
+    const terms = q.trim().split(/\s+/).map(t => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+    return text.replace(new RegExp(`(${terms.join('|')})`, 'gi'), '<mark class="eu-highlight">$1</mark>');
+  }
+  function fmtDate(d) { return new Date(d).toLocaleDateString('es-AR', { day:'2-digit', month:'short', year:'numeric' }); }
+  function escHtml(s) { return String(s||'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+  function updateURL() {
+    const p = new URLSearchParams();
+    if (currentQuery) p.set('q', currentQuery);
+    if (currentCat)   p.set('cat', currentCat);
+    if (currentPage > 1) p.set('page', currentPage);
+    const newUrl = `${window.location.pathname}${p.toString() ? '?'+p : ''}`;
+    history.replaceState(null, '', newUrl);
+  }
+
+  // ── Events ───────────────────────────────────────────────────
+  input.addEventListener('input', () => {
+    clearBtn.classList.toggle('d-none', !input.value);
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(() => {
+      currentQuery = input.value.trim();
+      currentPage  = 1;
+      search();
+    }, 320);
+  });
+
+  input.addEventListener('keydown', e => {
+    if (e.key === 'Enter') {
+      clearTimeout(debounceTimer);
+      currentQuery = input.value.trim();
+      currentPage  = 1;
+      search();
+    }
+  });
+
+  clearBtn.addEventListener('click', () => {
+    input.value = '';
+    clearBtn.classList.add('d-none');
+    currentQuery = '';
+    currentPage  = 1;
+    search();
+    input.focus();
+  });
+
+  document.querySelectorAll('input[name="sort"]').forEach(r => {
+    r.addEventListener('change', () => { currentSort = r.value; currentPage = 1; search(); });
+  });
+
+  window.goPage = function(p) {
+    currentPage = p;
+    search();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  document.addEventListener('DOMContentLoaded', init);
+})();
+</script>

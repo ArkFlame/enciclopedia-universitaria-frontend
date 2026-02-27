@@ -130,8 +130,9 @@ title: Cargando artículo...
           <!-- Acciones del artículo -->
           <div class="eu-divider"></div>
           <div class="d-flex gap-2 flex-wrap">
-            ${canEdit ? `<a href="${BASE}/editar-articulo.html?id=${data.id}" class="eu-btn-outline eu-btn-sm"><i class="bi bi-pencil"></i> Proponer edición</a>` : 
-              user ? `<a href="${BASE}/editar-articulo.html?id=${data.id}" class="eu-btn-outline eu-btn-sm"><i class="bi bi-pencil"></i> Proponer edición</a>` : ''}
+            ${user
+              ? `<a href="${BASE}/editar-articulo.html?slug=${encodeURIComponent(data.slug)}&id=${data.id}" class="eu-btn-outline eu-btn-sm"><i class="bi bi-pencil"></i> Proponer edición</a>`
+              : `<a href="${BASE}/login.html" class="eu-btn-outline eu-btn-sm"><i class="bi bi-pencil"></i> Proponer edición</a>`}
             <button class="eu-btn-outline eu-btn-sm" onclick="copyLink()"><i class="bi bi-link-45deg"></i> Copiar enlace</button>
           </div>
         </article>

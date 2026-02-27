@@ -201,13 +201,60 @@ const Auth = (() => {
       const res = await authFetch(`${API}/api/auth/notifications`);
       if (!res?.ok) return;
       const notifs = await res.json();
-      if (!notifs.length) return;
-      list.innerHTML = notifs.slice(0, 10).map(n => `
-        <div class="eu-notif-item ${!n.read_at ? 'unread' : ''}">
-          <div>${escapeHtml(n.message)}</div>
-          <div class="eu-notif-time">${timeAgo(n.created_at)}</div>
-        </div>`).join('');
+      if (!notifs.length) {
+        list.innerHTML = '<div class="eu-notif-empty">No hay notificaciones</div>';
+        return;
+      }
+      const BASE = window.EU_CONFIG.baseUrl;
+      list.innerHTML = notifs.slice(0, 15).map(n => {
+        const link = getNotifLink(n, BASE);
+        const inner = `
+          <div class="eu-notif-icon">${getNotifIcon(n.type)}</div>
+          <div style="flex:1;min-width:0">
+            <div class="eu-notif-msg">${escapeHtml(n.message)}</div>
+            <div class="eu-notif-time">${timeAgo(n.created_at)}</div>
+          </div>
+          ${!n.read_at ? '<span class="eu-notif-dot"></span>' : ''}`;
+        return link
+          ? `<a href="${link}" class="eu-notif-item ${!n.read_at ? 'unread' : ''}">${inner}</a>`
+          : `<div class="eu-notif-item ${!n.read_at ? 'unread' : ''}">${inner}</div>`;
+      }).join('');
     } catch (e) { console.warn('Error cargando notificaciones:', e); }
+  }
+
+  function getNotifLink(n, BASE) {
+    switch(n.type) {
+      case 'article_approved':
+      case 'article_rejected':
+      case 'new_submission':
+        // Use slug if available (returned by enriched query), fallback to id
+        return n.article_slug
+          ? `${BASE}/articulo.html?slug=${encodeURIComponent(n.article_slug)}`
+          : n.reference_id ? `${BASE}/articulo.html?id=${n.reference_id}` : null;
+      case 'edit_approved':
+      case 'edit_rejected':
+        return n.article_slug
+          ? `${BASE}/articulo.html?slug=${encodeURIComponent(n.article_slug)}`
+          : null;
+      case 'subscription_activated':
+      case 'subscription_expired':
+        return `${BASE}/suscripcion.html`;
+      default:
+        return null;
+    }
+  }
+
+  function getNotifIcon(type) {
+    const icons = {
+      article_approved:      '✅',
+      article_rejected:      '❌',
+      edit_approved:         '✏️',
+      edit_rejected:         '✏️',
+      subscription_activated:'⭐',
+      subscription_expired:  '⚠️',
+      new_submission:        '📝'
+    };
+    return `<span style="font-size:1rem">${icons[type] || '🔔'}</span>`;
   }
 
   function timeAgo(dateStr) {

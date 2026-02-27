@@ -42,6 +42,10 @@
           </div>`).join('');
       }
 
+      // Add "see all" footer
+      const seeAll = `<a class="eu-search-see-all" href="${window.EU_CONFIG.baseUrl}/busqueda.html?q=${encodeURIComponent(query.trim())}">
+        Ver todos los resultados <i class="bi bi-arrow-right"></i></a>`;
+      dropdownEl.innerHTML += seeAll;
       dropdownEl.classList.add('active');
     } catch (e) {
       dropdownEl.innerHTML = `<div class="eu-search-result-item text-danger">Error al buscar</div>`;

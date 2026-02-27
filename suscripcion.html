@@ -18,7 +18,9 @@ use_mercadopago: true
     </div>
 
     <div class="eu-stat-card p-5 mb-4" style="background:var(--eu-surface);border:2px solid var(--eu-text)">
-      <div class="eu-paywall-price mb-4">$1.000 <small style="font-size:1rem;color:var(--eu-text-muted);font-weight:400">ARS/mes</small></div>
+      <div class="eu-paywall-price mb-4">
+        $1.000 <small style="font-size:1rem;color:var(--eu-text-muted);font-weight:400">ARS/mes</small>
+      </div>
 
       <ul class="eu-paywall-features mb-5">
         <li>Artículos ilimitados todos los meses</li>
@@ -39,10 +41,9 @@ use_mercadopago: true
 
     <div class="text-muted small">
       <i class="bi bi-shield-check me-1"></i> Pago seguro via MercadoPago ·
-      <i class="bi bi-calendar-check me-1"></i> Renovación automática mensual ·
-      <i class="bi bi-x-circle me-1"></i> Cancela fácilmente desde tu cuenta
+      <i class="bi bi-calendar-check me-1"></i> Renovación mensual ·
+      <i class="bi bi-x-circle me-1"></i> Cancelación fácil
     </div>
-
     <div class="mt-4 text-muted small">
       ¿Tienes preguntas? <a href="mailto:contacto@enciclopedia.edu">Contáctanos</a>
     </div>
@@ -50,15 +51,27 @@ use_mercadopago: true
 </div>
 
 <script>
-(async function () {
+(function () {
   const API     = window.EU_CONFIG.backendUrl;
   const BASE    = window.EU_CONFIG.baseUrl;
   const section = document.getElementById('paymentSection');
 
   function setHtml(html) { section.innerHTML = html; }
 
+  function showDirectButton(initPoint) {
+    setHtml(`
+      <a href="${initPoint}"
+         class="eu-btn-primary w-100 justify-content-center"
+         style="font-size:1.1rem;padding:16px 24px;display:flex;align-items:center;gap:10px;text-decoration:none">
+        <img src="https://http2.mlstatic.com/frontend-assets/mp-web-navigation/ui-navigation/5.21.22/mercadopago/logo__small@2x.png"
+             alt="MercadoPago" style="height:20px;filter:brightness(0)invert(1)">
+        Pagar con MercadoPago
+      </a>
+      <p class="text-muted small mt-3">Serás redirigido a MercadoPago de forma segura para completar el pago.</p>`);
+  }
+
   document.addEventListener('DOMContentLoaded', async () => {
-    // ── Primero refrescar el token para tener el rol actualizado ──
+    // Refresh token first so role is current
     await Auth.refreshToken();
     const user = Auth.getUser();
 
@@ -86,42 +99,74 @@ use_mercadopago: true
       return;
     }
 
-    // ── Crear preferencia — la respuesta incluye la publicKey del backend ──
+    // Create payment preference — public key comes from backend response
     try {
       const res  = await Auth.authFetch(`${API}/api/payments/create-preference`, { method: 'POST' });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Error al crear preferencia');
+      if (!res.ok) throw new Error(data.error || 'Error al crear preferencia de pago');
 
-      const publicKey = data.publicKey;
-      if (!publicKey) throw new Error('No se recibió la clave pública de MercadoPago desde el servidor');
+      const { preferenceId, initPoint, sandboxInitPoint, publicKey } = data;
 
-      setHtml(`
-        <div id="walletBrick_container" class="mb-3"></div>
-        <div class="text-muted small mt-2">
-          Al completar el pago, tu cuenta se actualizará automáticamente en segundos.
-        </div>`);
-
-      if (typeof MercadoPago !== 'undefined') {
-        const mp            = new MercadoPago(publicKey);
-        const bricksBuilder = mp.bricks();
-        await bricksBuilder.create('wallet', 'walletBrick_container', {
-          initialization:  { preferenceId: data.preferenceId },
-          customization:   { texts: { valueProp: 'smart_option' } }
-        });
-      } else {
-        // Fallback si el SDK no cargó
-        setHtml(`
-          <a href="${data.initPoint}"
-             class="eu-btn-primary btn-lg w-100 justify-content-center"
-             style="font-size:1.1rem;padding:14px">
-            <i class="bi bi-credit-card me-2"></i> Pagar con MercadoPago
-          </a>
-          <div class="text-muted small mt-2">Serás redirigido a MercadoPago de forma segura</div>`);
+      if (!preferenceId || !initPoint) {
+        throw new Error('Respuesta incompleta del servidor de pagos');
       }
+
+      if (!publicKey) {
+        // No public key → use direct link fallback immediately
+        console.warn('MP public key not returned by backend, using direct link');
+        showDirectButton(initPoint);
+        return;
+      }
+
+      // Try to render MercadoPago Wallet Brick
+      setHtml(`<div id="walletBrick_container"></div>
+               <div class="text-muted small mt-3">Al completar el pago tu cuenta se actualiza automáticamente.</div>`);
+
+      // Wait for MP SDK to load (it's loaded with defer in layout)
+      let attempts = 0;
+      const tryInit = async () => {
+        if (typeof MercadoPago === 'undefined') {
+          if (++attempts < 20) {
+            setTimeout(tryInit, 300);
+          } else {
+            console.warn('MercadoPago SDK did not load, falling back to direct link');
+            showDirectButton(initPoint);
+          }
+          return;
+        }
+        try {
+          const mp  = new MercadoPago(publicKey, { locale: 'es-AR' });
+          const bricks = mp.bricks();
+          await bricks.create('wallet', 'walletBrick_container', {
+            initialization: {
+              preferenceId,
+              redirectMode: 'modal'  // stays on page after payment
+            },
+            customization: {
+              texts:    { valueProp: 'smart_option' },
+              visual:   { buttonBackground: 'black', borderRadius: '8px' }
+            },
+            callbacks: {
+              onError: (error) => {
+                console.error('MP Brick error:', error);
+                showDirectButton(initPoint);
+              }
+            }
+          });
+        } catch (brickErr) {
+          console.error('Failed to create MP brick:', brickErr);
+          showDirectButton(initPoint);
+        }
+      };
+      tryInit();
+
     } catch (err) {
-      setHtml(`<div class="alert alert-danger">
-        <i class="bi bi-exclamation-circle me-2"></i>${err.message}
-      </div>`);
+      setHtml(`
+        <div class="alert alert-danger text-start">
+          <i class="bi bi-exclamation-circle me-2"></i>
+          <strong>Error al cargar el pago:</strong> ${err.message}
+        </div>
+        <p class="text-muted small mt-2">Intenta recargar la página o contacta con soporte.</p>`);
     }
   });
 })();
