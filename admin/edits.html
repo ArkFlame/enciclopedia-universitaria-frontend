@@ -1,0 +1,342 @@
+---
+layout: default
+title: Revisión de ediciones
+---
+
+<div id="adminEditsPage" style="max-width:1200px;margin:0 auto;padding:24px 20px">
+  <div class="eu-loading" style="min-height:60vh">
+    <div class="eu-spinner"></div>
+    <span>Cargando...</span>
+  </div>
+</div>
+
+<!-- Modal previsualización -->
+<div id="previewModal" class="eu-modal-overlay d-none" onclick="closeModal(event)">
+  <div class="eu-modal-box" style="max-width:1000px;width:95%">
+    <div class="eu-modal-header">
+      <h4 id="modalTitle" style="margin:0;font-family:var(--eu-font-display)">Revisión de edición</h4>
+      <button class="eu-icon-btn" onclick="document.getElementById('previewModal').classList.add('d-none')">
+        <i class="bi bi-x-lg"></i>
+      </button>
+    </div>
+    <div class="eu-modal-body" id="modalBody">
+      <div class="eu-loading"><div class="eu-spinner"></div></div>
+    </div>
+    <div class="eu-modal-footer" id="modalFooter"></div>
+  </div>
+</div>
+
+<style>
+.eu-modal-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,.5);
+  z-index: 9999; display: flex; align-items: center; justify-content: center;
+  padding: 20px;
+}
+.eu-modal-overlay.d-none { display: none !important; }
+.eu-modal-box {
+  background: var(--eu-surface); border-radius: var(--eu-radius-lg);
+  display: flex; flex-direction: column; max-height: 90vh; overflow: hidden;
+  box-shadow: 0 24px 60px rgba(0,0,0,.3);
+}
+.eu-modal-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 20px 24px; border-bottom: 1px solid var(--eu-border); flex-shrink: 0;
+}
+.eu-modal-body { overflow-y: auto; padding: 24px; flex: 1; }
+.eu-modal-footer {
+  padding: 16px 24px; border-top: 1px solid var(--eu-border);
+  display: flex; gap: 10px; flex-wrap: wrap; flex-shrink: 0;
+}
+.eu-diff-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+@media (max-width: 700px) { .eu-diff-grid { grid-template-columns: 1fr; } }
+.eu-diff-panel { background: var(--eu-bg-secondary); border-radius: var(--eu-radius-sm); overflow: hidden; }
+.eu-diff-header {
+  padding: 8px 14px; font-size: .75rem; font-weight: 700; letter-spacing: .06em;
+  text-transform: uppercase; border-bottom: 1px solid var(--eu-border);
+}
+.eu-diff-header.original { background: #fee2e2; color: #991b1b; }
+.eu-diff-header.proposed { background: #dcfce7; color: #166534; }
+[data-theme="dark"] .eu-diff-header.original { background: #450a0a; color: #fca5a5; }
+[data-theme="dark"] .eu-diff-header.proposed { background: #052e16; color: #86efac; }
+.eu-diff-content {
+  padding: 14px; font-family: Courier New, monospace; font-size: .82rem;
+  white-space: pre-wrap; word-break: break-word; max-height: 320px; overflow-y: auto;
+  line-height: 1.5;
+}
+.eu-edit-row {
+  padding: 14px 16px; border-bottom: 1px solid var(--eu-border);
+  display: grid; grid-template-columns: 1fr auto; gap: 12px; align-items: start;
+}
+.eu-edit-row:hover { background: var(--eu-bg-secondary); }
+</style>
+
+<script>
+(function() {
+  const API  = window.EU_CONFIG.backendUrl;
+  const BASE = window.EU_CONFIG.baseUrl;
+  let currentPage = 1;
+  let currentStatus = 'PENDING';
+
+  document.addEventListener('DOMContentLoaded', async () => {
+    await Auth.refreshToken();
+    const user = Auth.getUser();
+    if (!user || !['MOD','ADMIN'].includes(user.role)) {
+      document.getElementById('adminEditsPage').innerHTML = `
+        <div class="alert alert-danger">Acceso denegado. Se requiere rol de moderador o administrador.</div>`;
+      return;
+    }
+    renderShell();
+    loadEdits();
+  });
+
+  function renderShell() {
+    document.getElementById('adminEditsPage').innerHTML = `
+      <div class="d-flex align-items-center gap-3 mb-4 flex-wrap">
+        <a href="${BASE}/admin/index.html" class="eu-btn-outline btn-sm">
+          <i class="bi bi-arrow-left"></i> Panel admin
+        </a>
+        <h1 style="font-family:var(--eu-font-display);font-size:1.4rem;margin:0">Ediciones propuestas</h1>
+      </div>
+
+      <div class="d-flex gap-1 mb-4 flex-wrap">
+        ${['PENDING','APPROVED','REJECTED','ALL'].map(s => `
+          <button class="btn btn-sm ${s==='PENDING'?'btn-dark':'btn-outline-secondary'}"
+                  id="tab-${s}" onclick="switchTab('${s}')">
+            ${s==='PENDING'?'⏳ Pendientes':s==='APPROVED'?'✓ Aprobadas':s==='REJECTED'?'✕ Rechazadas':'Todas'}
+          </button>`).join('')}
+      </div>
+
+      <div id="editsTable">
+        <div class="eu-loading"><div class="eu-spinner"></div></div>
+      </div>
+      <div id="editsPagination" class="eu-pagination mt-4"></div>`;
+  }
+
+  window.switchTab = function(status) {
+    currentStatus = status;
+    currentPage   = 1;
+    document.querySelectorAll('[id^="tab-"]').forEach(b => b.className = 'btn btn-sm btn-outline-secondary');
+    document.getElementById(`tab-${status}`).className = 'btn btn-sm btn-dark';
+    loadEdits();
+  };
+
+  async function loadEdits() {
+    const table = document.getElementById('editsTable');
+    table.innerHTML = '<div class="eu-loading"><div class="eu-spinner"></div></div>';
+    try {
+      const res  = await Auth.authFetch(`${API}/api/admin/edits?status=${currentStatus}&page=${currentPage}&limit=30`);
+      const data = await res.json();
+      renderEdits(data);
+    } catch(e) {
+      table.innerHTML = `<div class="alert alert-danger">Error al cargar ediciones: ${escHtml(e.message)}</div>`;
+    }
+  }
+
+  function renderEdits(data) {
+    const edits = data.edits || [];
+    const table = document.getElementById('editsTable');
+
+    if (!edits.length) {
+      table.innerHTML = `<div class="eu-empty-state py-5 text-center">
+        <i class="bi bi-check2-all" style="font-size:2rem;opacity:.3"></i>
+        <p class="text-muted mt-2">No hay ediciones ${currentStatus === 'PENDING' ? 'pendientes' : 'en esta categoría'}</p>
+      </div>`;
+      return;
+    }
+
+    table.innerHTML = `
+      <div class="eu-card" style="overflow:hidden">
+        ${edits.map(e => `
+        <div class="eu-edit-row">
+          <div>
+            <div style="font-size:.9rem;font-weight:600;margin-bottom:3px">
+              En: <a href="${BASE}/articulo.html?slug=${encodeURIComponent(e.article_slug)}"
+                     target="_blank" style="color:inherit">${escHtml(e.article_title)}</a>
+            </div>
+            <div class="text-muted small mb-1">
+              Por <strong>${escHtml(e.editor_username)}</strong> ·
+              ${fmtDate(e.created_at)}
+              ${e.reviewer_username ? ` · Revisado por ${escHtml(e.reviewer_username)}` : ''}
+            </div>
+            ${e.edit_note ? `<div class="small" style="color:var(--eu-text-muted);font-style:italic">
+              "${escHtml(e.edit_note)}"</div>` : ''}
+            ${e.rejection_reason ? `<div class="small text-danger">Motivo rechazo: ${escHtml(e.rejection_reason)}</div>` : ''}
+          </div>
+          <div class="d-flex flex-column gap-2 align-items-end">
+            <span class="eu-status-badge eu-status-${e.status}">
+              ${e.status==='APPROVED'?'✓ Aprobada':e.status==='REJECTED'?'✕ Rechazada':'⏳ Pendiente'}
+            </span>
+            <button class="eu-btn-outline btn-sm" onclick="openPreview(${e.id})">
+              <i class="bi bi-eye me-1"></i> Ver cambios
+            </button>
+          </div>
+        </div>`).join('')}
+      </div>`;
+
+    // Pagination
+    const pages = Math.ceil(data.total / data.pageSize);
+    const pag   = document.getElementById('editsPagination');
+    if (pages <= 1) { pag.innerHTML = ''; return; }
+    let html = '<div class="eu-pagination-inner">';
+    for (let i = 1; i <= Math.min(pages, 10); i++) {
+      html += `<button class="${i===currentPage?'active':''}" onclick="goPage(${i})">${i}</button>`;
+    }
+    pag.innerHTML = html + '</div>';
+  }
+
+  window.openPreview = async function(editId) {
+    const modal = document.getElementById('previewModal');
+    const body  = document.getElementById('modalBody');
+    const footer = document.getElementById('modalFooter');
+    modal.classList.remove('d-none');
+    body.innerHTML = '<div class="eu-loading"><div class="eu-spinner"></div></div>';
+    footer.innerHTML = '';
+
+    try {
+      const res  = await Auth.authFetch(`${API}/api/admin/edit-preview/${editId}`);
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+
+      document.getElementById('modalTitle').textContent =
+        `Revisión: edición en "${data.original_title}"`;
+
+      // Show diff
+      const changedTitle   = data.title   && data.title   !== data.original_title;
+      const changedSummary = data.summary && data.summary !== data.original_summary;
+
+      body.innerHTML = `
+        ${data.edit_note ? `
+        <div class="alert alert-info mb-3 py-2 small">
+          <i class="bi bi-chat-square-text me-2"></i>
+          <strong>Nota del editor:</strong> ${escHtml(data.edit_note)}
+        </div>` : ''}
+
+        ${changedTitle ? `
+        <div class="mb-3">
+          <div class="eu-filter-title mb-2">Título</div>
+          <div class="eu-diff-grid">
+            <div class="eu-diff-panel">
+              <div class="eu-diff-header original">Original</div>
+              <div class="eu-diff-content">${escHtml(data.original_title)}</div>
+            </div>
+            <div class="eu-diff-panel">
+              <div class="eu-diff-header proposed">Propuesto</div>
+              <div class="eu-diff-content">${escHtml(data.title)}</div>
+            </div>
+          </div>
+        </div>` : ''}
+
+        ${changedSummary ? `
+        <div class="mb-3">
+          <div class="eu-filter-title mb-2">Resumen</div>
+          <div class="eu-diff-grid">
+            <div class="eu-diff-panel">
+              <div class="eu-diff-header original">Original</div>
+              <div class="eu-diff-content">${escHtml(data.original_summary)}</div>
+            </div>
+            <div class="eu-diff-panel">
+              <div class="eu-diff-header proposed">Propuesto</div>
+              <div class="eu-diff-content">${escHtml(data.summary)}</div>
+            </div>
+          </div>
+        </div>` : ''}
+
+        <div class="eu-filter-title mb-2">Contenido (Markdown)</div>
+        <div class="eu-diff-grid">
+          <div class="eu-diff-panel">
+            <div class="eu-diff-header original">Original</div>
+            <div class="eu-diff-content">${escHtml(data.originalContent || '(sin contenido)')}</div>
+          </div>
+          <div class="eu-diff-panel">
+            <div class="eu-diff-header proposed">Propuesto</div>
+            <div class="eu-diff-content">${escHtml(data.proposedContent || '(sin contenido)')}</div>
+          </div>
+        </div>`;
+
+      // Footer buttons — only if still PENDING
+      if (data.status === 'PENDING') {
+        footer.innerHTML = `
+          <div style="flex:1">
+            <input type="text" id="rejectReason" class="eu-input" style="max-width:340px"
+                   placeholder="Motivo de rechazo (solo si rechazas)">
+          </div>
+          <button class="eu-btn-primary" style="background:#15803d;border-color:#15803d"
+                  onclick="reviewEdit(${editId},'APPROVED')">
+            <i class="bi bi-check-lg me-1"></i> Aprobar y publicar
+          </button>
+          <button class="eu-btn-outline" style="border-color:#dc2626;color:#dc2626"
+                  onclick="reviewEdit(${editId},'REJECTED')">
+            <i class="bi bi-x-lg me-1"></i> Rechazar
+          </button>
+          <div id="reviewMsg"></div>`;
+      } else {
+        footer.innerHTML = `<span class="text-muted small">
+          Esta edición ya fue revisada — estado: <strong>${data.status}</strong>
+        </span>`;
+      }
+    } catch(e) {
+      body.innerHTML = `<div class="alert alert-danger">${escHtml(e.message)}</div>`;
+    }
+  };
+
+  window.reviewEdit = async function(editId, status) {
+    const reason  = document.getElementById('rejectReason')?.value.trim();
+    const msgEl   = document.getElementById('reviewMsg');
+    const buttons = document.querySelectorAll('#modalFooter button');
+
+    if (status === 'REJECTED' && !reason) {
+      msgEl.innerHTML = '<span class="text-danger small ms-2">Escribe un motivo de rechazo</span>';
+      return;
+    }
+
+    buttons.forEach(b => b.disabled = true);
+    try {
+      const res  = await Auth.authFetch(`${API}/api/admin/edits/${editId}/status`, {
+        method: 'POST',
+        body: JSON.stringify({ status, reason })
+      });
+      // Try both POST (legacy) and PUT
+      const res2 = res?.status === 404
+        ? await Auth.authFetch(`${API}/api/admin/edits/${editId}/status`, {
+            method: 'PUT',
+            body: JSON.stringify({ status, reason })
+          })
+        : res;
+
+      const data = await (res2 || res).json();
+      if (!(res2||res).ok) throw new Error(data.error);
+
+      msgEl.innerHTML = `<span class="text-success small ms-2">✓ ${data.message}</span>`;
+      buttons.forEach(b => b.disabled = true);
+
+      // Reload list after 1 second
+      setTimeout(() => {
+        document.getElementById('previewModal').classList.add('d-none');
+        loadEdits();
+      }, 1200);
+    } catch(e) {
+      msgEl.innerHTML = `<span class="text-danger small ms-2">${escHtml(e.message)}</span>`;
+      buttons.forEach(b => b.disabled = false);
+    }
+  };
+
+  window.closeModal = function(e) {
+    if (e.target.id === 'previewModal')
+      document.getElementById('previewModal').classList.add('d-none');
+  };
+
+  window.goPage = function(p) {
+    currentPage = p;
+    loadEdits();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  function fmtDate(d) {
+    return new Date(d).toLocaleDateString('es-AR', { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' });
+  }
+  function escHtml(s) {
+    return String(s||'').replace(/[&<>"']/g, c =>
+      ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+})();
+</script>

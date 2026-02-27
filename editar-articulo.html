@@ -10,23 +10,57 @@ title: Editar artículo
   </div>
 </div>
 
+<style>
+.eu-editor-textarea {
+  font-family: 'Courier New', Courier, monospace;
+  font-size: .9rem;
+  line-height: 1.6;
+  resize: vertical;
+  min-height: 400px;
+}
+.eu-editor-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  padding: 6px;
+  background: var(--eu-bg-secondary);
+  border: 1px solid var(--eu-border);
+  border-bottom: none;
+  border-radius: var(--eu-radius-sm) var(--eu-radius-sm) 0 0;
+}
+.eu-toolbar-btn {
+  padding: 4px 8px;
+  background: none;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: .82rem;
+  color: var(--eu-text);
+  transition: background .15s;
+}
+.eu-toolbar-btn:hover { background: var(--eu-border); }
+.eu-toolbar-divider { width: 1px; background: var(--eu-border); margin: 2px 4px; }
+</style>
+
 <script>
 (function() {
-  const API  = window.EU_CONFIG.backendUrl;
-  const BASE = window.EU_CONFIG.baseUrl;
+  const API    = window.EU_CONFIG.backendUrl;
+  const BASE   = window.EU_CONFIG.baseUrl;
   const params = new URLSearchParams(window.location.search);
   const slug   = params.get('slug');
-  const articleId = params.get('id');
-
-  let originalArticle = null;
+  const idParam = params.get('id');
 
   document.addEventListener('DOMContentLoaded', async () => {
+    // Wait for Auth to be ready (refreshToken runs on DOMContentLoaded too)
+    // Give it a small tick to ensure auth.js DOMContentLoaded ran first
+    await new Promise(r => setTimeout(r, 100));
+
     if (!Auth.isLoggedIn()) {
       window.location.href = `${BASE}/login.html?redirect=${encodeURIComponent(window.location.href)}`;
       return;
     }
-    if (!slug && !articleId) {
-      renderError('No se especificó el artículo a editar.');
+    if (!slug && !idParam) {
+      renderError('No se especificó el artículo a editar. Vuelve al artículo y usa el botón "Proponer edición".');
       return;
     }
     await loadArticle();
@@ -34,173 +68,189 @@ title: Editar artículo
 
   async function loadArticle() {
     try {
-      // Fetch the article to pre-fill the form
-      const res  = await fetch(`${API}/api/articles/${slug || ''}${slug ? '' : '?id='+articleId}`);
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Artículo no encontrado');
-      originalArticle = data;
+      // Fetch article metadata — always use slug if available (more reliable)
+      let articleData = null;
 
-      // Now fetch the raw markdown content
-      let rawContent = '';
-      try {
-        const contentRes = await Auth.authFetch(`${API}/api/articles/by-id/${data.id}/content`);
-        if (contentRes?.ok) {
-          const cd = await contentRes.json();
-          rawContent = cd.content || '';
+      if (slug) {
+        const res = await fetch(`${API}/api/articles/${encodeURIComponent(slug)}?includePending=true`);
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          throw new Error(err.error || `No se pudo cargar el artículo (${res.status})`);
         }
-      } catch(e) { /* si no tiene permiso para ver el md, dejamos vacío */ }
+        articleData = await res.json();
+      } else {
+        // No slug — we can't fetch by id directly from articles route.
+        // This shouldn't happen if the edit button passes slug properly,
+        // but handle it gracefully.
+        throw new Error('Se requiere el slug del artículo. Vuelve al artículo y usa el botón "Proponer edición".');
+      }
 
-      renderEditor(data, rawContent);
+      // Fetch raw markdown content (requires auth)
+      let rawContent = '';
+      const contentRes = await Auth.authFetch(`${API}/api/articles/by-id/${articleData.id}/content`);
+      if (contentRes?.ok) {
+        const cd = await contentRes.json();
+        rawContent = cd.content || '';
+      } else if (contentRes?.status === 403) {
+        // Non-author, non-mod: still show the editor but empty (user writes their version)
+        rawContent = '';
+      }
+
+      renderEditor(articleData, rawContent);
     } catch(e) {
       renderError(e.message);
     }
   }
 
   function renderEditor(article, rawContent) {
-    const user    = Auth.getUser();
-    const isOwner = user && (user.id === article.author_id);
-    const isMod   = user && ['MOD','ADMIN'].includes(user.role);
-
+    const user = Auth.getUser();
     document.getElementById('editorPage').innerHTML = `
-      <div class="d-flex align-items-center gap-3 mb-4">
+      <div class="d-flex align-items-center gap-3 mb-4 flex-wrap">
         <a href="${BASE}/articulo.html?slug=${encodeURIComponent(article.slug)}" class="eu-btn-outline btn-sm">
-          <i class="bi bi-arrow-left"></i> Volver al artículo
+          <i class="bi bi-arrow-left"></i> Volver
         </a>
-        <h1 style="font-family:var(--eu-font-display);font-size:1.4rem;margin:0;flex:1" class="text-truncate">
-          Proponer edición: ${escHtml(article.title)}
-        </h1>
+        <div style="flex:1;min-width:0">
+          <div class="text-muted small">Proponiendo edición para:</div>
+          <h1 style="font-family:var(--eu-font-display);font-size:1.3rem;margin:0" class="text-truncate">
+            ${escHtml(article.title)}
+          </h1>
+        </div>
       </div>
 
-      <div class="alert alert-info mb-4">
-        <i class="bi bi-info-circle me-2"></i>
-        Tu edición quedará <strong>pendiente de aprobación</strong> por un moderador antes de publicarse.
-        Solo se publicará si mejora el artículo original.
+      <div class="alert alert-info d-flex gap-2 align-items-start mb-4">
+        <i class="bi bi-info-circle flex-shrink-0 mt-1"></i>
+        <div>
+          Tu edición quedará <strong>pendiente de aprobación</strong> por un moderador, igual que en Wikipedia.
+          El artículo original no cambia hasta que sea aprobada.
+          ${!rawContent ? '<br><span class="small">No se pudo cargar el contenido original — redacta tu versión completa del artículo.</span>' : ''}
+        </div>
       </div>
 
-      <div id="submitMessage"></div>
+      <div id="submitMsg"></div>
 
       <div class="eu-card p-4 mb-4">
-        <div class="mb-3">
-          <label class="eu-label">Título <span class="text-muted small">(dejar vacío para mantener el original)</span></label>
-          <input type="text" id="editTitle" class="eu-input" value="${escHtml(article.title)}"
-                 placeholder="${escHtml(article.title)}" maxlength="500">
-        </div>
-        <div class="mb-3">
-          <label class="eu-label">Resumen <span class="text-muted small">(dejar vacío para mantener el original)</span></label>
-          <textarea id="editSummary" class="eu-input" rows="2"
-                    placeholder="${escHtml(article.summary)}">${escHtml(article.summary)}</textarea>
-        </div>
-        <div class="mb-3">
-          <label class="eu-label">Contenido Markdown <span class="text-danger">*</span></label>
+        <h4 style="font-size:1rem;font-weight:700;margin-bottom:20px">Tu propuesta de edición</h4>
 
-          <!-- Toolbar -->
-          <div class="eu-editor-toolbar mb-1">
-            <button type="button" class="eu-toolbar-btn" onclick="wrap('**','**')" title="Negrita"><i class="bi bi-type-bold"></i></button>
-            <button type="button" class="eu-toolbar-btn" onclick="wrap('*','*')" title="Cursiva"><i class="bi bi-type-italic"></i></button>
-            <button type="button" class="eu-toolbar-btn" onclick="wrap('`','`')" title="Código"><i class="bi bi-code"></i></button>
-            <button type="button" class="eu-toolbar-btn" onclick="insertLine('## ')" title="Título">H2</button>
-            <button type="button" class="eu-toolbar-btn" onclick="insertLine('### ')" title="Subtítulo">H3</button>
-            <button type="button" class="eu-toolbar-btn" onclick="insertLine('- ')" title="Lista"><i class="bi bi-list-ul"></i></button>
-            <button type="button" class="eu-toolbar-btn" onclick="insertLine('> ')" title="Cita"><i class="bi bi-blockquote-left"></i></button>
-            <span class="eu-toolbar-divider"></span>
-            <button type="button" class="eu-toolbar-btn" onclick="insertShortcode('[tooltip text=\"definición\"]término[/tooltip]')" title="Tooltip">💬</button>
-            <button type="button" class="eu-toolbar-btn" onclick="insertShortcode('[alert type=\"info\"]mensaje[/alert]')" title="Alerta">⚠️</button>
-            <button type="button" class="eu-toolbar-btn" onclick="insertShortcode('[callout icon=\"💡\"]nota importante[/callout]')" title="Callout">📌</button>
-          </div>
+        <div class="mb-3">
+          <label class="eu-label">Título <span class="text-muted fw-normal small">— dejar igual al original si no cambia</span></label>
+          <input type="text" id="editTitle" class="eu-input" value="${escHtml(article.title)}" maxlength="500">
+        </div>
 
-          <div style="position:relative">
-            <textarea id="editContent" class="eu-input eu-editor-textarea" rows="20"
-                      placeholder="Escribe el contenido en Markdown..."
-                      spellcheck="false">${escHtml(rawContent)}</textarea>
-            <div style="position:absolute;bottom:8px;right:10px;font-size:.75rem;color:var(--eu-text-muted)">
-              <span id="charCount">0</span> caracteres
-            </div>
+        <div class="mb-3">
+          <label class="eu-label">Resumen <span class="text-muted fw-normal small">— dejar igual al original si no cambia</span></label>
+          <textarea id="editSummary" class="eu-input" rows="2" maxlength="2000">${escHtml(article.summary)}</textarea>
+        </div>
+
+        <div class="mb-3">
+          <label class="eu-label">Contenido completo <span class="text-danger">*</span></label>
+          <div class="eu-editor-toolbar">
+            <button type="button" class="eu-toolbar-btn" onclick="wrap('**','**')" title="Negrita"><b>B</b></button>
+            <button type="button" class="eu-toolbar-btn" onclick="wrap('*','*')" title="Cursiva"><i>I</i></button>
+            <button type="button" class="eu-toolbar-btn" onclick="wrap('\`','\`')" title="Código"><code>{ }</code></button>
+            <button type="button" class="eu-toolbar-btn" onclick="insertLine('## ')" title="H2">H2</button>
+            <button type="button" class="eu-toolbar-btn" onclick="insertLine('### ')" title="H3">H3</button>
+            <button type="button" class="eu-toolbar-btn" onclick="insertLine('- ')" title="Lista">≡</button>
+            <button type="button" class="eu-toolbar-btn" onclick="insertLine('> ')" title="Cita">❝</button>
+            <div class="eu-toolbar-divider"></div>
+            <button type="button" class="eu-toolbar-btn" onclick="insertSC('[tooltip text=\"def\"]término[/tooltip]')" title="Tooltip">💬</button>
+            <button type="button" class="eu-toolbar-btn" onclick="insertSC('[alert type=\"info\"]mensaje[/alert]')" title="Alerta">⚠️</button>
+            <button type="button" class="eu-toolbar-btn" onclick="insertSC('[callout icon=\"💡\"]nota[/callout]')" title="Callout">📌</button>
+            <button type="button" class="eu-toolbar-btn" onclick="insertSC('[accordion title=\"Título\"]\ncontenido\n[/accordion]')" title="Acordeón">▶</button>
+          </div>
+          <textarea id="editContent" class="eu-input eu-editor-textarea"
+                    style="border-radius:0 0 var(--eu-radius-sm) var(--eu-radius-sm);border-top:none"
+                    placeholder="Escribe el contenido completo del artículo en Markdown..."
+                    spellcheck="true">${escHtml(rawContent)}</textarea>
+          <div class="d-flex justify-content-between mt-1">
+            <span class="text-muted small">Markdown + shortcodes soportados · <a href="${BASE}/shortcodes.html" target="_blank">Ver guía</a></span>
+            <span class="text-muted small" id="charCount">0 car.</span>
           </div>
         </div>
-        <div class="mb-3">
-          <label class="eu-label">Nota para los moderadores <span class="text-muted small">(opcional)</span></label>
-          <textarea id="editNote" class="eu-input" rows="2"
-                    placeholder="Explica brevemente qué cambiaste y por qué (ej: corrección ortográfica, datos actualizados, sección nueva...)"></textarea>
+
+        <div class="mb-4">
+          <label class="eu-label">Nota para los moderadores <span class="text-muted fw-normal small">(opcional pero recomendado)</span></label>
+          <textarea id="editNote" class="eu-input" rows="2" maxlength="1000"
+                    placeholder="Ej: Corregí el tercer párrafo que tenía datos desactualizados. Fuente: …"></textarea>
         </div>
 
         <div class="d-flex gap-3 align-items-center flex-wrap">
-          <button class="eu-btn-primary" onclick="submitEdit(${article.id})">
-            <i class="bi bi-send"></i> Enviar edición
+          <button id="submitBtn" class="eu-btn-primary" onclick="submitEdit(${article.id})">
+            <i class="bi bi-send me-1"></i> Enviar edición para revisión
           </button>
           <a href="${BASE}/articulo.html?slug=${encodeURIComponent(article.slug)}" class="eu-btn-outline">
             Cancelar
           </a>
-          <span id="submitSpinner" class="d-none">
+          <div id="submitSpinner" class="d-none">
             <div class="eu-spinner" style="width:20px;height:20px"></div>
-          </span>
+          </div>
         </div>
       </div>
 
-      <!-- Comparación con original -->
-      <div class="eu-card p-4">
-        <h4 style="font-size:1rem;font-weight:700;margin-bottom:12px">
-          <i class="bi bi-file-earmark-text me-2"></i>Artículo original (referencia)
-        </h4>
-        <div style="background:var(--eu-bg-secondary);padding:16px;border-radius:var(--eu-radius-sm);max-height:300px;overflow-y:auto">
-          <p class="text-muted small mb-1">Resumen original:</p>
-          <p style="font-size:.9rem">${escHtml(article.summary)}</p>
-          ${rawContent ? `
-          <p class="text-muted small mb-1 mt-3">Contenido original (Markdown):</p>
-          <pre style="font-size:.8rem;white-space:pre-wrap;word-break:break-word;margin:0">${escHtml(rawContent)}</pre>` : ''}
+      ${rawContent ? `
+      <details class="eu-card p-4">
+        <summary style="cursor:pointer;font-weight:600;font-size:.9rem;margin-bottom:0">
+          <i class="bi bi-file-earmark-text me-2"></i>Ver artículo original (referencia)
+        </summary>
+        <div class="mt-3" style="background:var(--eu-bg-secondary);padding:14px;border-radius:var(--eu-radius-sm);max-height:350px;overflow-y:auto">
+          <pre style="font-size:.8rem;white-space:pre-wrap;word-break:break-word;margin:0;font-family:Courier New,monospace">${escHtml(rawContent)}</pre>
         </div>
-      </div>`;
+      </details>` : ''}`;
 
     // Char counter
     const ta = document.getElementById('editContent');
     const cc = document.getElementById('charCount');
-    function updateCount() { cc.textContent = (ta.value.length).toLocaleString('es-AR'); }
-    ta.addEventListener('input', updateCount);
-    updateCount();
+    const update = () => cc.textContent = ta.value.length.toLocaleString('es-AR') + ' car.';
+    ta.addEventListener('input', update);
+    update();
   }
 
-  window.submitEdit = async function(id) {
+  window.submitEdit = async function(articleId) {
     const title   = document.getElementById('editTitle')?.value.trim();
     const summary = document.getElementById('editSummary')?.value.trim();
     const content = document.getElementById('editContent')?.value.trim();
     const note    = document.getElementById('editNote')?.value.trim();
-    const msgEl   = document.getElementById('submitMessage');
+    const msgEl   = document.getElementById('submitMsg');
+    const btn     = document.getElementById('submitBtn');
     const spinner = document.getElementById('submitSpinner');
 
     if (!content) {
-      msgEl.innerHTML = '<div class="alert alert-warning mb-3"><i class="bi bi-exclamation-triangle me-2"></i>El contenido es obligatorio.</div>';
+      msgEl.innerHTML = '<div class="alert alert-warning mb-3"><i class="bi bi-exclamation-triangle me-2"></i>El contenido no puede estar vacío.</div>';
       return;
     }
 
+    btn.disabled = true;
     spinner.classList.remove('d-none');
-    document.querySelector('.eu-btn-primary').disabled = true;
     msgEl.innerHTML = '';
 
     try {
-      const res  = await Auth.authFetch(`${API}/api/articles/${id}/edit`, {
+      const res  = await Auth.authFetch(`${API}/api/articles/${articleId}/edit`, {
         method: 'POST',
         body: JSON.stringify({ title, summary, content, editNote: note })
       });
       const data = await res.json();
-
       if (!res.ok) throw new Error(data.error || 'Error al enviar edición');
 
-      msgEl.innerHTML = `<div class="alert alert-success mb-3">
-        <i class="bi bi-check-circle me-2"></i>
-        <strong>¡Edición enviada!</strong> Quedará pendiente de revisión por un moderador.
-        <div class="mt-2">
-          <a href="${BASE}/articulo.html?slug=${encodeURIComponent(slug)}" class="alert-link">
-            Volver al artículo →
-          </a>
-        </div>
-      </div>`;
-      document.querySelector('.eu-btn-primary').classList.add('d-none');
+      msgEl.innerHTML = `
+        <div class="alert alert-success mb-4">
+          <i class="bi bi-check-circle-fill me-2"></i>
+          <strong>¡Edición enviada exitosamente!</strong><br>
+          Un moderador la revisará. Te notificaremos cuando sea aprobada o rechazada.
+          <div class="mt-3">
+            <a href="${BASE}/articulo.html?slug=${encodeURIComponent(slug)}" class="btn btn-sm btn-outline-success">
+              Ver artículo original
+            </a>
+          </div>
+        </div>`;
+
+      // Hide form after success
+      document.querySelector('.eu-card').style.display = 'none';
     } catch(e) {
       msgEl.innerHTML = `<div class="alert alert-danger mb-3">
         <i class="bi bi-x-circle me-2"></i>${escHtml(e.message)}
       </div>`;
     } finally {
+      btn.disabled = false;
       spinner.classList.add('d-none');
-      document.querySelector('.eu-btn-primary').disabled = false;
     }
   };
 
@@ -215,33 +265,35 @@ title: Editar artículo
     ta.focus();
   };
   window.insertLine = function(prefix) {
-    const ta = document.getElementById('editContent');
-    const s  = ta.selectionStart;
-    const lineStart = ta.value.lastIndexOf('\n', s - 1) + 1;
-    ta.value = ta.value.substring(0, lineStart) + prefix + ta.value.substring(lineStart);
-    ta.selectionStart = ta.selectionEnd = lineStart + prefix.length;
+    const ta    = document.getElementById('editContent');
+    const s     = ta.selectionStart;
+    const start = ta.value.lastIndexOf('\n', s - 1) + 1;
+    ta.value    = ta.value.substring(0, start) + prefix + ta.value.substring(start);
+    ta.selectionStart = ta.selectionEnd = start + prefix.length;
     ta.focus();
   };
-  window.insertShortcode = function(sc) {
-    const ta = document.getElementById('editContent');
-    const s  = ta.selectionStart;
-    ta.value = ta.value.substring(0, s) + '\n' + sc + '\n' + ta.value.substring(s);
-    ta.selectionStart = ta.selectionEnd = s + sc.length + 2;
+  window.insertSC = function(sc) {
+    const ta  = document.getElementById('editContent');
+    const s   = ta.selectionStart;
+    const ins = '\n' + sc + '\n';
+    ta.value  = ta.value.substring(0, s) + ins + ta.value.substring(s);
+    ta.selectionStart = ta.selectionEnd = s + ins.length;
     ta.focus();
   };
 
   function renderError(msg) {
     document.getElementById('editorPage').innerHTML = `
       <div class="eu-empty-state" style="min-height:50vh">
-        <i class="bi bi-exclamation-circle fs-1 text-danger"></i>
-        <h3 class="mt-3">Error</h3>
+        <i class="bi bi-exclamation-circle" style="font-size:3rem;color:var(--eu-danger)"></i>
+        <h3 class="mt-3">No se puede cargar el editor</h3>
         <p class="text-muted">${escHtml(msg)}</p>
         <a href="${BASE}/" class="eu-btn-primary mt-3">Ir al inicio</a>
       </div>`;
   }
 
   function escHtml(s) {
-    return String(s||'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    return String(s||'').replace(/[&<>"']/g, c =>
+      ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   }
 })();
 </script>

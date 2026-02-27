@@ -1,0 +1,357 @@
+---
+layout: default
+title: Mi perfil
+---
+
+<div id="profilePage" style="max-width:900px;margin:0 auto;padding:32px 20px">
+  <div class="eu-loading" style="min-height:60vh">
+    <div class="eu-spinner"></div>
+    <span>Cargando perfil...</span>
+  </div>
+</div>
+
+<style>
+.eu-profile-header {
+  display: flex; align-items: center; gap: 24px;
+  padding: 32px; background: var(--eu-surface);
+  border: 1px solid var(--eu-border); border-radius: var(--eu-radius-lg);
+  margin-bottom: 28px;
+}
+.eu-avatar {
+  width: 80px; height: 80px; border-radius: 50%;
+  background: var(--eu-text); color: var(--eu-surface);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 2rem; font-family: var(--eu-font-display); font-weight: 700;
+  flex-shrink: 0;
+}
+.eu-profile-name { font-family: var(--eu-font-display); font-size: 1.8rem; font-weight: 700; margin-bottom: 4px; }
+.eu-profile-role { display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; border-radius: 20px; font-size: .85rem; font-weight: 600; }
+.eu-stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 16px; margin-bottom: 28px; }
+.eu-mini-stat { background: var(--eu-surface); border: 1px solid var(--eu-border); border-radius: var(--eu-radius); padding: 20px; text-align: center; }
+.eu-mini-stat-value { font-family: var(--eu-font-display); font-size: 2rem; font-weight: 700; line-height: 1; margin-bottom: 4px; }
+.eu-mini-stat-label { font-size: .8rem; color: var(--eu-text-muted); }
+.eu-article-row { display: grid; grid-template-columns: 1fr auto; gap: 12px; align-items: center; padding: 14px 0; border-bottom: 1px solid var(--eu-border); text-decoration: none; color: inherit; transition: background .15s; }
+.eu-article-row:hover { background: var(--eu-bg-secondary); padding-left: 8px; border-radius: 4px; }
+.eu-plan-card { border: 2px solid var(--eu-border); border-radius: var(--eu-radius-lg); padding: 28px; }
+.eu-plan-card.premium { border-color: #16a34a; background: #f0fdf4; }
+[data-theme="dark"] .eu-plan-card.premium { background: #052e16; }
+.eu-progress-bar { height: 8px; background: var(--eu-border); border-radius: 4px; overflow: hidden; margin-top: 8px; }
+.eu-progress-fill { height: 100%; background: var(--eu-text); border-radius: 4px; transition: width .5s ease; }
+.eu-progress-fill.danger { background: #dc2626; }
+.eu-progress-fill.warning { background: #d97706; }
+</style>
+
+<script>
+(function() {
+  const API  = window.EU_CONFIG.backendUrl;
+  const BASE = window.EU_CONFIG.baseUrl;
+
+  document.addEventListener('DOMContentLoaded', async () => {
+    await Auth.refreshToken();
+
+    if (!Auth.isLoggedIn()) {
+      window.location.href = `${BASE}/login.html?redirect=${encodeURIComponent(window.location.href)}`;
+      return;
+    }
+    await loadProfile();
+  });
+
+  async function loadProfile() {
+    const page = document.getElementById('profilePage');
+    try {
+      // Fetch fresh user data + user articles in parallel
+      const [meRes, articlesRes, editsRes] = await Promise.all([
+        Auth.authFetch(`${API}/api/auth/me`),
+        Auth.authFetch(`${API}/api/profile/my-articles`),
+        Auth.authFetch(`${API}/api/profile/my-edits`)
+      ]);
+
+      const user     = await meRes.json();
+      const articles = meRes.ok && articlesRes?.ok ? await articlesRes.json() : { articles: [], total: 0 };
+      const edits    = editsRes?.ok ? await editsRes.json() : [];
+
+      // Update stored user
+      if (meRes.ok) localStorage.setItem('eu_user', JSON.stringify(user));
+
+      renderProfile(user, articles, edits);
+    } catch(e) {
+      page.innerHTML = `<div class="alert alert-danger">Error al cargar perfil: ${escHtml(e.message)}</div>`;
+    }
+  }
+
+  function renderProfile(user, articlesData, edits) {
+    const articles   = articlesData.articles || [];
+    const totalArts  = articlesData.total || articles.length;
+    const approved   = articles.filter(a => a.status === 'APPROVED').length;
+    const pending    = articles.filter(a => a.status === 'PENDING').length;
+    const rejected   = articles.filter(a => a.status === 'REJECTED').length;
+    const totalViews = articles.reduce((s, a) => s + (a.views || 0), 0);
+
+    const roleConfig = {
+      FREE:    { label: 'Cuenta gratuita', color: '#6b7280', bg: '#f3f4f6' },
+      MONTHLY: { label: 'Suscriptor Premium', color: '#15803d', bg: '#dcfce7' },
+      MOD:     { label: 'Moderador',          color: '#1d4ed8', bg: '#dbeafe' },
+      ADMIN:   { label: 'Administrador',      color: '#b91c1c', bg: '#fee2e2' }
+    };
+    const rc = roleConfig[user.role] || roleConfig.FREE;
+
+    const freeLimit = user.freeLimit || 30;
+    const readCount = user.articlesReadThisMonth || 0;
+    const readPct   = Math.min(100, Math.round((readCount / freeLimit) * 100));
+    const barClass  = readPct >= 100 ? 'danger' : readPct >= 75 ? 'warning' : '';
+
+    document.getElementById('profilePage').innerHTML = `
+      <!-- Header -->
+      <div class="eu-profile-header">
+        <div class="eu-avatar">${escHtml(user.username[0].toUpperCase())}</div>
+        <div style="flex:1;min-width:0">
+          <div class="eu-profile-name">${escHtml(user.username)}</div>
+          <div class="text-muted small mb-2">${escHtml(user.email)}</div>
+          <span class="eu-profile-role" style="background:${rc.bg};color:${rc.color}">
+            ${rc.label}
+          </span>
+        </div>
+        <div class="d-none d-md-block text-end">
+          <div class="text-muted small">Miembro desde</div>
+          <div class="fw-semibold">${fmtDate(user.created_at || new Date())}</div>
+        </div>
+      </div>
+
+      <!-- Stats -->
+      <div class="eu-stat-grid">
+        <div class="eu-mini-stat">
+          <div class="eu-mini-stat-value">${totalArts}</div>
+          <div class="eu-mini-stat-label">Artículos escritos</div>
+        </div>
+        <div class="eu-mini-stat">
+          <div class="eu-mini-stat-value" style="color:#15803d">${approved}</div>
+          <div class="eu-mini-stat-label">Aprobados</div>
+        </div>
+        <div class="eu-mini-stat">
+          <div class="eu-mini-stat-value" style="color:#d97706">${pending}</div>
+          <div class="eu-mini-stat-label">Pendientes</div>
+        </div>
+        <div class="eu-mini-stat">
+          <div class="eu-mini-stat-value">${totalViews.toLocaleString('es-AR')}</div>
+          <div class="eu-mini-stat-label">Vistas totales</div>
+        </div>
+        <div class="eu-mini-stat">
+          <div class="eu-mini-stat-value">${edits.length}</div>
+          <div class="eu-mini-stat-label">Ediciones propuestas</div>
+        </div>
+      </div>
+
+      <!-- Plan -->
+      <div class="row g-4 mb-4">
+        <div class="col-md-6">
+          <div class="eu-plan-card ${user.role === 'MONTHLY' ? 'premium' : ''}">
+            <h4 style="font-size:1rem;font-weight:700;margin-bottom:16px">
+              <i class="bi bi-lightning-charge me-2"></i>Plan actual
+            </h4>
+            <div class="fw-bold" style="font-size:1.2rem;color:${rc.color};margin-bottom:8px">${rc.label}</div>
+            ${user.role === 'FREE' ? `
+              <div class="mb-3">
+                <div class="d-flex justify-content-between small text-muted mb-1">
+                  <span>Artículos leídos este mes</span>
+                  <span>${readCount} / ${freeLimit}</span>
+                </div>
+                <div class="eu-progress-bar">
+                  <div class="eu-progress-fill ${barClass}" style="width:${readPct}%"></div>
+                </div>
+              </div>
+              <p class="text-muted small mb-3">Con la cuenta gratuita podés leer ${freeLimit} artículos por mes y publicar 1 por hora.</p>
+              <a href="${BASE}/suscripcion.html" class="eu-btn-primary btn-sm">
+                <i class="bi bi-star me-1"></i> Mejorar a Premium — $1.000 ARS/mes
+              </a>` : ''}
+            ${user.role === 'MONTHLY' ? `
+              <p class="text-muted small mb-2">Acceso ilimitado activo ✓</p>
+              ${user.monthly_expires_at ? `<p class="text-muted small">Renueva: ${fmtDate(user.monthly_expires_at)}</p>` : ''}
+              <a href="${BASE}/suscripcion.html" class="btn btn-sm btn-outline-success">Gestionar suscripción</a>` : ''}
+            ${['MOD','ADMIN'].includes(user.role) ? `
+              <p class="text-muted small">Acceso completo de ${rc.label.toLowerCase()}. Sin restricciones.</p>
+              <a href="${BASE}/admin/index.html" class="eu-btn-primary btn-sm">
+                <i class="bi bi-shield-check me-1"></i> Panel de moderación
+              </a>` : ''}
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="eu-plan-card">
+            <h4 style="font-size:1rem;font-weight:700;margin-bottom:16px">
+              <i class="bi bi-gear me-2"></i>Configuración
+            </h4>
+            <div class="d-flex flex-column gap-2">
+              <button class="eu-btn-outline btn-sm text-start" onclick="showChangePassword()">
+                <i class="bi bi-lock me-2"></i> Cambiar contraseña
+              </button>
+              <a href="${BASE}/nuevo-articulo.html" class="eu-btn-outline btn-sm text-start">
+                <i class="bi bi-plus-circle me-2"></i> Escribir nuevo artículo
+              </a>
+              <button class="eu-btn-outline btn-sm text-start text-danger" onclick="Auth.logout()">
+                <i class="bi bi-box-arrow-right me-2"></i> Cerrar sesión
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Change password form (hidden) -->
+      <div id="changePasswordForm" class="eu-card p-4 mb-4 d-none">
+        <h4 style="font-size:1rem;font-weight:700;margin-bottom:16px">Cambiar contraseña</h4>
+        <div id="pwMsg"></div>
+        <div class="mb-3">
+          <label class="eu-label">Contraseña actual</label>
+          <input type="password" id="pwCurrent" class="eu-input" autocomplete="current-password">
+        </div>
+        <div class="mb-3">
+          <label class="eu-label">Nueva contraseña</label>
+          <input type="password" id="pwNew" class="eu-input" autocomplete="new-password">
+          <div class="text-muted small mt-1">Mínimo 8 caracteres</div>
+        </div>
+        <div class="mb-3">
+          <label class="eu-label">Confirmar nueva contraseña</label>
+          <input type="password" id="pwConfirm" class="eu-input" autocomplete="new-password">
+        </div>
+        <div class="d-flex gap-2">
+          <button class="eu-btn-primary btn-sm" onclick="changePassword()">Guardar</button>
+          <button class="eu-btn-outline btn-sm" onclick="document.getElementById('changePasswordForm').classList.add('d-none')">Cancelar</button>
+        </div>
+      </div>
+
+      <!-- Articles tab -->
+      <div class="eu-card p-4 mb-4">
+        <div class="d-flex align-items-center justify-content-between mb-4">
+          <h4 style="font-size:1rem;font-weight:700;margin:0">
+            <i class="bi bi-journal-text me-2"></i>Mis artículos
+          </h4>
+          <a href="${BASE}/nuevo-articulo.html" class="eu-btn-outline btn-sm">
+            <i class="bi bi-plus-lg"></i> Nuevo
+          </a>
+        </div>
+
+        <!-- Filter tabs -->
+        <div class="d-flex gap-1 mb-3 flex-wrap">
+          ${['TODOS','APPROVED','PENDING','REJECTED'].map(f => `
+            <button class="btn btn-sm ${f==='TODOS'?'btn-dark':'btn-outline-secondary'}"
+                    onclick="filterArticles('${f}', this)">${
+              f==='TODOS'?`Todos (${totalArts})`:
+              f==='APPROVED'?`✓ Aprobados (${approved})`:
+              f==='PENDING'?`⏳ Pendientes (${pending})`:
+              `✕ Rechazados (${rejected})`
+            }</button>`).join('')}
+        </div>
+
+        <div id="articlesList">
+          ${renderArticlesList(articles, BASE)}
+        </div>
+      </div>
+
+      <!-- Edits -->
+      ${edits.length ? `
+      <div class="eu-card p-4">
+        <h4 style="font-size:1rem;font-weight:700;margin-bottom:16px">
+          <i class="bi bi-pencil-square me-2"></i>Mis ediciones propuestas
+        </h4>
+        ${edits.map(e => `
+          <div style="padding:12px 0;border-bottom:1px solid var(--eu-border)">
+            <div class="d-flex align-items-start justify-content-between gap-2">
+              <div>
+                <div class="fw-semibold small">
+                  <a href="${BASE}/articulo.html?slug=${encodeURIComponent(e.article_slug||'')}"
+                     style="color:inherit">${escHtml(e.article_title)}</a>
+                </div>
+                ${e.edit_note ? `<div class="text-muted small">${escHtml(e.edit_note)}</div>` : ''}
+                <div class="text-muted" style="font-size:.75rem">${fmtDate(e.created_at)}</div>
+              </div>
+              <span class="eu-status-badge eu-status-${e.status}" style="white-space:nowrap">
+                ${e.status === 'APPROVED' ? '✓ Aprobada' : e.status === 'REJECTED' ? '✕ Rechazada' : '⏳ Pendiente'}
+              </span>
+            </div>
+            ${e.rejection_reason ? `<div class="small text-danger mt-1">Motivo: ${escHtml(e.rejection_reason)}</div>` : ''}
+          </div>`).join('')}
+      </div>` : ''}`;
+
+    // Store articles for filtering
+    window._profileArticles = articles;
+    window._profileBase     = BASE;
+  }
+
+  function renderArticlesList(arts, base, filter) {
+    const filtered = filter && filter !== 'TODOS'
+      ? arts.filter(a => a.status === filter)
+      : arts;
+
+    if (!filtered.length) return `<div class="text-muted text-center py-4">No hay artículos en esta categoría</div>`;
+
+    return filtered.map(a => `
+      <a href="${base}/articulo.html?slug=${encodeURIComponent(a.slug)}" class="eu-article-row">
+        <div>
+          <div style="font-family:var(--eu-font-display);font-size:.95rem;font-weight:700;margin-bottom:2px">
+            ${escHtml(a.title)}
+          </div>
+          <div style="font-size:.8rem;color:var(--eu-text-muted)">
+            ${fmtDate(a.created_at)} · <i class="bi bi-eye"></i> ${(a.views||0).toLocaleString('es-AR')} vistas
+          </div>
+          ${a.status === 'REJECTED' && a.rejection_reason
+            ? `<div class="small text-danger mt-1">Motivo: ${escHtml(a.rejection_reason)}</div>` : ''}
+        </div>
+        <span class="eu-status-badge eu-status-${a.status}">
+          ${a.status === 'APPROVED' ? '✓ Aprobado' : a.status === 'PENDING' ? '⏳ Pendiente' : '✕ Rechazado'}
+        </span>
+      </a>`).join('');
+  }
+
+  window.filterArticles = function(filter, btn) {
+    document.querySelectorAll('[onclick^="filterArticles"]').forEach(b => {
+      b.className = 'btn btn-sm btn-outline-secondary';
+    });
+    btn.className = 'btn btn-sm btn-dark';
+    document.getElementById('articlesList').innerHTML =
+      renderArticlesList(window._profileArticles, window._profileBase, filter);
+  };
+
+  window.showChangePassword = function() {
+    document.getElementById('changePasswordForm').classList.remove('d-none');
+    document.getElementById('pwCurrent').focus();
+  };
+
+  window.changePassword = async function() {
+    const current = document.getElementById('pwCurrent').value;
+    const newPw   = document.getElementById('pwNew').value;
+    const confirm = document.getElementById('pwConfirm').value;
+    const msgEl   = document.getElementById('pwMsg');
+
+    if (newPw !== confirm) {
+      msgEl.innerHTML = '<div class="alert alert-warning py-2 mb-3">Las contraseñas no coinciden</div>';
+      return;
+    }
+    if (newPw.length < 8) {
+      msgEl.innerHTML = '<div class="alert alert-warning py-2 mb-3">La contraseña debe tener al menos 8 caracteres</div>';
+      return;
+    }
+
+    try {
+      const res  = await Auth.authFetch(`${API}/api/profile/change-password`, {
+        method: 'POST',
+        body: JSON.stringify({ currentPassword: current, newPassword: newPw })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      msgEl.innerHTML = '<div class="alert alert-success py-2 mb-3">✓ Contraseña actualizada</div>';
+      document.getElementById('pwCurrent').value = '';
+      document.getElementById('pwNew').value     = '';
+      document.getElementById('pwConfirm').value = '';
+    } catch(e) {
+      msgEl.innerHTML = `<div class="alert alert-danger py-2 mb-3">${escHtml(e.message)}</div>`;
+    }
+  };
+
+  function fmtDate(d) {
+    if (!d) return '';
+    return new Date(d).toLocaleDateString('es-AR', { day:'2-digit', month:'short', year:'numeric' });
+  }
+  function escHtml(s) {
+    return String(s||'').replace(/[&<>"']/g, c =>
+      ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+})();
+</script>
