@@ -51,17 +51,18 @@
   --eu-border: #2e2a22;
   --eu-border-subtle: #242018;
 
-  --eu-text: #f2ede6;
-  --eu-text-secondary: #c4b9a8;
-  --eu-text-muted: #7a7060;
-  --eu-text-inverse: #0f0e0c;
+  /* FIX: All text colors must be light enough for dark backgrounds */
+  --eu-text: #f5f0e8;              /* Primary: very light cream */
+  --eu-text-secondary: #d4c9b8;     /* Secondary: light tan (was #c4b9a8) */
+  --eu-text-muted: #a89b88;         /* Muted: medium tan (was #7a7060 - TOO DARK!) */
+  --eu-text-inverse: #0f0e0c;       /* Dark for light backgrounds */
 
-  --eu-accent: #f2ede6;
-  --eu-accent-hover: #e0d5c0;
+  --eu-accent: #f5f0e8;
+  --eu-accent-hover: #e8dcc8;
   --eu-accent-light: #2a2520;
 
-  --eu-link: #d4c4a8;
-  --eu-link-hover: #f2ede6;
+  --eu-link: #e8dcc8;
+  --eu-link-hover: #f5f0e8;
 
   --eu-code-bg: #1e1c18;
   --eu-shadow: 0 1px 3px rgba(0,0,0,.3), 0 4px 16px rgba(0,0,0,.2);
