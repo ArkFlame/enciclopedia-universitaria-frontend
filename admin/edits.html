@@ -78,11 +78,26 @@ title: Revisión de ediciones
   let currentStatus = 'PENDING';
 
   document.addEventListener('DOMContentLoaded', async () => {
-    await Auth.refreshToken();
+    // CRITICAL FIX: Refresh token BEFORE checking permissions
+    try {
+      await Auth.refreshToken();
+    } catch (e) {
+      console.error('Token refresh failed:', e);
+      document.getElementById('adminEditsPage').innerHTML = `
+        <div class="alert alert-danger">
+          Sesión expirada. <a href="${BASE}/login.html">Iniciar sesión</a>
+        </div>`;
+      return;
+    }
+
     const user = Auth.getUser();
     if (!user || !['MOD','ADMIN'].includes(user.role)) {
       document.getElementById('adminEditsPage').innerHTML = `
-        <div class="alert alert-danger">Acceso denegado. Se requiere rol de moderador o administrador.</div>`;
+        <div class="alert alert-danger">
+          Acceso denegado. Se requiere rol de moderador o administrador.<br>
+          <small>Tu rol actual: <strong>${user?.role || 'no autenticado'}</strong> |
+                 Usuario: ${user?.username || 'unknown'}</small>
+        </div>`;
       return;
     }
     renderShell();
@@ -125,15 +140,31 @@ title: Revisión de ediciones
     table.innerHTML = '<div class="eu-loading"><div class="eu-spinner"></div></div>';
     try {
       const res  = await Auth.authFetch(`${API}/api/admin/edits?status=${currentStatus}&page=${currentPage}&limit=30`);
+
+      // FIX: Check response status
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({
+          error: 'Error desconocido',
+          code: 'UNKNOWN',
+          yourRole: Auth.getUser()?.role
+        }));
+        throw new Error(`${errorData.error} (Código: ${errorData.code || res.status}, Rol: ${errorData.yourRole || Auth.getUser()?.role || 'unknown'})`);
+      }
+
       const data = await res.json();
       renderEdits(data);
     } catch(e) {
-      table.innerHTML = `<div class="alert alert-danger">Error al cargar ediciones: ${escHtml(e.message)}</div>`;
+      table.innerHTML = `<div class="alert alert-danger">
+        <strong>Error al cargar ediciones:</strong> ${escHtml(e.message)}<br>
+        <small>Usuario: ${escHtml(Auth.getUser()?.username || 'unknown')} |
+               Rol: ${escHtml(Auth.getUser()?.role || 'unknown')}</small>
+      </div>`;
     }
   }
 
   function renderEdits(data) {
-    const edits = data.edits || [];
+    const edits = data?.edits || [];
+    const total = data?.total ?? 0;
     const table = document.getElementById('editsTable');
 
     if (!edits.length) {
@@ -174,7 +205,7 @@ title: Revisión de ediciones
       </div>`;
 
     // Pagination
-    const pages = Math.ceil(data.total / data.pageSize);
+    const pages = Math.ceil(total / (data.pageSize || 30));
     const pag   = document.getElementById('editsPagination');
     if (pages <= 1) { pag.innerHTML = ''; return; }
     let html = '<div class="eu-pagination-inner">';
@@ -194,8 +225,13 @@ title: Revisión de ediciones
 
     try {
       const res  = await Auth.authFetch(`${API}/api/admin/edit-preview/${editId}`);
+
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({ error: 'Error desconocido' }));
+        throw new Error(errorData.error || `Error ${res.status}`);
+      }
+
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error);
 
       document.getElementById('modalTitle').textContent =
         `Revisión: edición en "${data.original_title}"`;
@@ -303,8 +339,14 @@ title: Revisión de ediciones
           })
         : res;
 
-      const data = await (res2 || res).json();
-      if (!(res2||res).ok) throw new Error(data.error);
+      const finalRes = res2 || res;
+
+      if (!finalRes.ok) {
+        const errorData = await finalRes.json().catch(() => ({ error: 'Error desconocido' }));
+        throw new Error(errorData.error || `Error ${finalRes.status}`);
+      }
+
+      const data = await finalRes.json();
 
       msgEl.innerHTML = `<span class="text-success small ms-2">✓ ${data.message}</span>`;
       buttons.forEach(b => b.disabled = true);

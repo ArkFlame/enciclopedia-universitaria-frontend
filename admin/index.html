@@ -20,10 +20,24 @@ title: Panel de Moderación
   const BASE = window.EU_CONFIG.baseUrl;
 
   document.addEventListener('DOMContentLoaded', async () => {
-    if (!Auth.isLoggedIn()) { window.location.href = `${BASE}/login.html`; return; }
+    // CRITICAL FIX: Ensure token is fresh before ANY admin API calls
+    if (!Auth.isLoggedIn()) {
+      window.location.href = `${BASE}/login.html`;
+      return;
+    }
+
+    // Try to refresh token first to ensure it's valid
+    try {
+      await Auth.refreshToken();
+    } catch (e) {
+      console.error('Token refresh failed:', e);
+      window.location.href = `${BASE}/login.html?error=session_expired`;
+      return;
+    }
+
     const user = Auth.getUser();
     if (!['MOD','ADMIN'].includes(user?.role)) {
-      document.getElementById('adminPage').innerHTML = `<div class="eu-empty-state text-danger" style="min-height:60vh"><i class="bi bi-shield-exclamation fs-1"></i><h3>Acceso denegado</h3><p>Solo moderadores y administradores.</p><a href="${BASE}/" class="eu-btn-primary mt-3">Inicio</a></div>`;
+      document.getElementById('adminPage').innerHTML = `<div class="eu-empty-state text-danger" style="min-height:60vh"><i class="bi bi-shield-exclamation fs-1"></i><h3>Acceso denegado</h3><p>Solo moderadores y administradores.</p><p>Tu rol actual: <strong>${user?.role || 'desconocido'}</strong></p><a href="${BASE}/" class="eu-btn-primary mt-3">Inicio</a></div>`;
       return;
     }
     renderAdmin(user);
@@ -69,8 +83,20 @@ title: Panel de Moderación
   async function loadDashboard() {
     try {
       const res = await Auth.authFetch(`${API}/api/admin/stats`);
+
+      // FIX: Check for HTTP errors and parse error details
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({ error: 'Error desconocido', code: 'UNKNOWN' }));
+        throw new Error(`${errorData.error || 'Error'} (Código: ${errorData.code || res.status}, Rol: ${Auth.getUser()?.role || 'unknown'})`);
+      }
+
       const data = await res.json();
-      const { articles, edits, users, payments } = data;
+
+      // FIX: Add nullish coalescing to prevent undefined errors
+      const articles = data.articles || { pending: 0, approved: 0, rejected: 0, total: 0 };
+      const edits = data.edits || { pending: 0, total: 0 };
+      const users = data.users || { free: 0, monthly: 0, mod: 0, admin: 0, total: 0 };
+      const payments = data.payments || { total_revenue: 0, total_payments: 0 };
 
       if (articles.pending > 0) {
         const badge = document.getElementById('pendingCount');
@@ -93,27 +119,32 @@ title: Panel de Moderación
             <div class="eu-stat-card">
               <div class="eu-stat-label mb-3">Usuarios por tipo</div>
               <div class="d-flex flex-column gap-2">
-                ${userRow('FREE', users?.free_users || 0, '#6b7280')}
-                ${userRow('MONTHLY', users?.monthly_users || 0, '#15803d')}
-                ${userRow('MOD', users?.mod_users || 0, '#1d4ed8')}
-                ${userRow('ADMIN', users?.admin_users || 0, '#b91c1c')}
+                ${userRow('FREE', users.free || 0, '#6b7280')}
+                ${userRow('MONTHLY', users.monthly || 0, '#15803d')}
+                ${userRow('MOD', users.mod || 0, '#1d4ed8')}
+                ${userRow('ADMIN', users.admin || 0, '#b91c1c')}
               </div>
               <div class="eu-divider"></div>
-              <div class="fw-semibold">Total: ${users?.total || 0} usuarios</div>
+              <div class="fw-semibold">Total: ${users.total || 0} usuarios</div>
             </div>
           </div>
           <div class="col-md-6">
             <div class="eu-stat-card">
               <div class="eu-stat-label mb-3">Ingresos</div>
-              <div class="eu-stat-number" style="color:var(--eu-success)">$${parseFloat(payments?.total_revenue||0).toLocaleString('es-AR')}</div>
+              <div class="eu-stat-number" style="color:var(--eu-success)">$${parseFloat(payments.total_revenue || 0).toLocaleString('es-AR')}</div>
               <div class="text-muted small">ARS en pagos aprobados</div>
               <div class="eu-divider"></div>
-              <div class="text-muted small">${payments?.total_payments || 0} pagos procesados</div>
+              <div class="text-muted small">${payments.total_payments || 0} pagos procesados</div>
             </div>
           </div>
         </div>`;
     } catch (err) {
-      document.getElementById('adminMain').innerHTML = `<div class="alert alert-danger">Error: ${err.message}</div>`;
+      console.error('Dashboard error:', err);
+      document.getElementById('adminMain').innerHTML = `<div class="alert alert-danger">
+        <strong>Error:</strong> ${escapeHtml(err.message)}<br>
+        <small>Usuario: ${escapeHtml(Auth.getUser()?.username || 'unknown')} |
+               Rol: ${escapeHtml(Auth.getUser()?.role || 'unknown')}</small>
+      </div>`;
     }
   }
 
@@ -140,7 +171,13 @@ title: Panel de Moderación
   async function loadArticles(status) {
     try {
       const res = await Auth.authFetch(`${API}/api/admin/articles?status=${status}&limit=30`);
-      const { articles, total } = await res.json();
+
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({ error: 'Error desconocido' }));
+        throw new Error(errorData.error || `Error ${res.status}`);
+      }
+
+      const { articles = [], total = 0 } = await res.json();
 
       const statusLabels = { PENDING: '⏳ Pendientes', APPROVED: '✓ Aprobados', REJECTED: '✕ Rechazados', ALL: 'Todos' };
       const statusColors = { PENDING: '#d97706', APPROVED: '#15803d', REJECTED: '#b91c1c' };
@@ -186,7 +223,7 @@ title: Panel de Moderación
                 <td class="text-muted small text-nowrap">${formatDate(a.created_at)}</td>
                 <td>
                   <div class="d-flex gap-1 flex-wrap">
-                    <a href="${BASE}/articulo.html?slug=${encodeURIComponent(a.slug)}&includePending=true" 
+                    <a href="${BASE}/articulo.html?slug=${encodeURIComponent(a.slug)}&includePending=true"
                        class="btn btn-sm btn-outline-secondary" target="_blank" title="Ver artículo">
                        <i class="bi bi-eye"></i>
                     </a>
@@ -205,20 +242,30 @@ title: Panel de Moderación
           </table>
         </div>`}`;
     } catch (err) {
-      document.getElementById('adminMain').innerHTML = `<div class="alert alert-danger">Error: ${err.message}</div>`;
+      document.getElementById('adminMain').innerHTML = `<div class="alert alert-danger">
+        <strong>Error:</strong> ${escapeHtml(err.message)}<br>
+        <small>Rol actual: ${escapeHtml(Auth.getUser()?.role || 'unknown')}</small>
+      </div>`;
     }
   }
 
   // ── EDICIONES ──────────────────────────────────────────────────
   async function loadEdits() {
     try {
-      const res  = await Auth.authFetch(`${API}/api/admin/edits?status=PENDING&limit=50`);
+      const res = await Auth.authFetch(`${API}/api/admin/edits?status=PENDING&limit=50`);
+
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({ error: 'Error desconocido' }));
+        throw new Error(errorData.error || `Error ${res.status}`);
+      }
+
       const data = await res.json();
-      const edits = data.edits || data; // handle both old array and new {edits,total}
+      const edits = data.edits || [];
+      const total = data.total ?? edits.length;
 
       document.getElementById('adminMain').innerHTML = `
         <div class="d-flex justify-content-between align-items-center mb-4">
-          <h2 class="eu-section-title mb-0">Ediciones pendientes (${data.total || edits.length})</h2>
+          <h2 class="eu-section-title mb-0">Ediciones pendientes (${total})</h2>
           <a href="${BASE}/admin/edits.html" class="eu-btn-outline btn-sm"><i class="bi bi-arrow-up-right-square me-1"></i>Vista completa</a>
         </div>
         ${!edits.length ? '<div class="eu-empty-state"><i class="bi bi-pencil"></i><p>No hay ediciones pendientes</p></div>' : `
@@ -249,7 +296,10 @@ title: Panel de Moderación
           </table>
         </div>`}`;
     } catch (err) {
-      document.getElementById('adminMain').innerHTML = `<div class="alert alert-danger">Error: ${err.message}</div>`;
+      document.getElementById('adminMain').innerHTML = `<div class="alert alert-danger">
+        <strong>Error:</strong> ${escapeHtml(err.message)}<br>
+        <small>Rol actual: ${escapeHtml(Auth.getUser()?.role || 'unknown')}</small>
+      </div>`;
     }
   }
 
@@ -257,7 +307,13 @@ title: Panel de Moderación
   async function loadUsers() {
     try {
       const res = await Auth.authFetch(`${API}/api/admin/users?limit=50`);
-      const { users, total } = await res.json();
+
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({ error: 'Error desconocido' }));
+        throw new Error(errorData.error || `Error ${res.status}`);
+      }
+
+      const { users = [], total = 0 } = await res.json();
 
       document.getElementById('adminMain').innerHTML = `
         <h2 class="eu-section-title mb-4">Usuarios (${total})</h2>
@@ -279,7 +335,10 @@ title: Panel de Moderación
           </table>
         </div>`;
     } catch (err) {
-      document.getElementById('adminMain').innerHTML = `<div class="alert alert-danger">Error: ${err.message}</div>`;
+      document.getElementById('adminMain').innerHTML = `<div class="alert alert-danger">
+        <strong>Error:</strong> ${escapeHtml(err.message)}<br>
+        <small>Rol actual: ${escapeHtml(Auth.getUser()?.role || 'unknown')}</small>
+      </div>`;
     }
   }
 
@@ -287,6 +346,12 @@ title: Panel de Moderación
   async function loadLogs() {
     try {
       const res = await Auth.authFetch(`${API}/api/admin/logs`);
+
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({ error: 'Error desconocido' }));
+        throw new Error(errorData.error || `Error ${res.status}`);
+      }
+
       const logs = await res.json();
 
       document.getElementById('adminMain').innerHTML = `
@@ -305,7 +370,10 @@ title: Panel de Moderación
           </table>
         </div>`;
     } catch (err) {
-      document.getElementById('adminMain').innerHTML = `<div class="alert alert-danger">Error: ${err.message}</div>`;
+      document.getElementById('adminMain').innerHTML = `<div class="alert alert-danger">
+        <strong>Error:</strong> ${escapeHtml(err.message)}<br>
+        <small>Rol actual: ${escapeHtml(Auth.getUser()?.role || 'unknown')}</small>
+      </div>`;
     }
   }
 
@@ -360,10 +428,20 @@ title: Panel de Moderación
 
   window.previewEdit = async function(editId) {
     try {
-      const res  = await Auth.authFetch(`${API}/api/admin/edit-preview/${editId}`);
+      const res = await Auth.authFetch(`${API}/api/admin/edit-preview/${editId}`);
+
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({ error: 'Error desconocido' }));
+        throw new Error(errorData.error || `Error ${res.status}`);
+      }
+
       const data = await res.json();
+      // ... rest of preview code
       const { originalContent, proposedContent: markdown, original_title, title, edit_note } = data;
-      
+
+      // FIX: html variable was undefined in original code
+      const html = markdown ? marked.parse(markdown) : '(sin contenido)';
+
       const modal = document.createElement('div');
       modal.innerHTML = `
         <div class="modal fade" id="editPreviewModal" tabindex="-1">
@@ -394,7 +472,9 @@ title: Panel de Moderación
       const m = new bootstrap.Modal(document.getElementById('editPreviewModal'));
       m.show();
       document.getElementById('editPreviewModal').addEventListener('hidden.bs.modal', function() { this.remove(); });
-    } catch (err) { window.showToast(err.message, 'error'); }
+    } catch (err) {
+      window.showToast(err.message, 'error');
+    }
   };
 
   function escapeHtml(s) { return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
