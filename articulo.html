@@ -95,6 +95,31 @@ title: Cargando artículo...
         </div>
       </div>` : '';
 
+    // Render sources (PDFs first, then links)
+    const sources = data.sources || [];
+    const pdfSources = sources.filter(s => s.type === 'pdf');
+    const linkSources = sources.filter(s => s.type === 'link');
+    
+    const sourcesHtml = sources.length ? `
+      <div class="eu-sidebar-widget">
+        <h4><i class="bi bi-link-45deg me-1"></i>Fuentes</h4>
+        <div class="eu-sources-list">
+          ${pdfSources.map(s => `
+            <a href="${BASE}/api/sources/sources/pdf/${s.id}" target="_blank" class="eu-source-item eu-source-pdf">
+              <i class="bi bi-file-earmark-pdf-fill"></i>
+              <span class="eu-source-title">${escapeHtml(s.title)}</span>
+              <span class="eu-source-size">${formatFileSize(s.pdf_size)}</span>
+            </a>
+          `).join('')}
+          ${linkSources.map(s => `
+            <a href="${escapeHtml(s.url)}" target="_blank" rel="noopener noreferrer" class="eu-source-item eu-source-link">
+              <img src="${escapeHtml(s.favicon_url)}" alt="" class="eu-source-favicon" onerror="this.style.display='none'">
+              <span class="eu-source-title">${escapeHtml(s.title)}</span>
+            </a>
+          `).join('')}
+        </div>
+      </div>` : '';
+
     document.getElementById('articlePage').innerHTML = `
       <div class="eu-article-wrapper">
         <!-- Artículo principal -->
@@ -141,6 +166,7 @@ title: Cargando artículo...
         <aside class="eu-article-sidebar">
           ${relatedHtml}
           ${mediaHtml}
+          ${sourcesHtml}
           <div class="eu-sidebar-widget">
             <h4>Sobre este artículo</h4>
             <div class="small" style="color:var(--eu-text-secondary)">
@@ -201,7 +227,15 @@ title: Cargando artículo...
   }
 
   function escapeHtml(s) {
-    return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&gt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+
+  function formatFileSize(bytes) {
+    if (!bytes) return '';
+    const k = 1024;
+    const sizes = ['B', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
   }
 
   window.copyLink = function() {
