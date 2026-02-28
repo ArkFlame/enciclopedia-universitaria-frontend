@@ -1,0 +1,160 @@
+/* ================================================================
+   ENCICLOPEDIA UNIVERSITARIA - Components
+   Buttons, forms, cards, badges
+   ================================================================ */
+
+/* ── BUTTONS ──────────────────────────────────────────────── */
+.eu-btn-primary, .eu-btn-outline {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 20px;
+  font-size: .9rem;
+  font-weight: 600;
+  border-radius: var(--eu-radius);
+  cursor: pointer;
+  transition: all var(--eu-transition);
+  text-decoration: none;
+  border: 2px solid transparent;
+}
+
+.eu-btn-primary {
+  background: var(--eu-accent);
+  color: var(--eu-text-inverse);
+}
+.eu-btn-primary:hover {
+  background: var(--eu-accent-hover);
+  color: var(--eu-text-inverse);
+}
+
+.eu-btn-outline {
+  background: transparent;
+  border-color: var(--eu-border);
+  color: var(--eu-text);
+}
+.eu-btn-outline:hover {
+  background: var(--eu-bg-secondary);
+  border-color: var(--eu-text);
+}
+
+.eu-btn-sm { padding: 6px 12px; font-size: .8rem; }
+
+/* ── FORMS ──────────────────────────────────────────────── */
+.eu-input, .eu-select {
+  width: 100%;
+  padding: 10px 14px;
+  font-size: .95rem;
+  border: 1px solid var(--eu-border);
+  border-radius: var(--eu-radius);
+  background: var(--eu-surface);
+  color: var(--eu-text);
+  transition: border-color var(--eu-transition), box-shadow var(--eu-transition);
+}
+.eu-input:focus, .eu-select:focus {
+  outline: none;
+  border-color: var(--eu-text);
+  box-shadow: 0 0 0 3px rgba(0,0,0,.08);
+}
+.eu-label {
+  display: block;
+  font-size: .85rem;
+  font-weight: 600;
+  margin-bottom: 6px;
+  color: var(--eu-text);
+}
+
+/* ── CARDS ──────────────────────────────────────────────── */
+.eu-card {
+  background: var(--eu-surface);
+  border: 1px solid var(--eu-border);
+  border-radius: var(--eu-radius-lg);
+  padding: 20px;
+  box-shadow: var(--eu-shadow);
+}
+
+/* ── BADGES & TAGS ───────────────────────────────────────── */
+.eu-category-tag {
+  display: inline-block;
+  padding: 2px 10px;
+  font-size: .75rem;
+  font-weight: 500;
+  background: var(--eu-bg-tertiary);
+  border-radius: 100px;
+  color: var(--eu-text-secondary);
+}
+
+.eu-status-badge {
+  display: inline-block;
+  padding: 3px 10px;
+  font-size: .75rem;
+  font-weight: 600;
+  border-radius: 4px;
+}
+.eu-status-APPROVED { background: #dcfce7; color: #166534; }
+.eu-status-PENDING { background: #fef3c7; color: #92400e; }
+.eu-status-REJECTED { background: #fee2e2; color: #991b1b; }
+
+/* ── LOADING ─────────────────────────────────────────────── */
+.eu-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 40px;
+  color: var(--eu-text-muted);
+}
+.eu-spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid var(--eu-border);
+  border-top-color: var(--eu-text);
+  border-radius: 50%;
+  animation: eu-spin .8s linear infinite;
+}
+@keyframes eu-spin { to { transform: rotate(360deg); } }
+
+/* ── EMPTY STATE ────────────────────────────────────────── */
+.eu-empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--eu-text-muted);
+}
+.eu-empty-state i { font-size: 3rem; margin-bottom: 16px; display: block; }
+.eu-empty-state h3 { margin-bottom: 8px; color: var(--eu-text); }
+
+/* ── DIVIDER ─────────────────────────────────────────────── */
+.eu-divider {
+  height: 1px;
+  background: var(--eu-border);
+  margin: 24px 0;
+}
+
+/* ── ALERTS ─────────────────────────────────────────────── */
+.alert {
+  padding: 12px 16px;
+  border-radius: var(--eu-radius);
+  border: 1px solid transparent;
+}
+.alert-info { background: #dbeafe; color: #1e40af; }
+.alert-warning { background: #fef3c7; color: #92400e; }
+.alert-danger { background: #fee2e2; color: #991b1b; }
+.alert-success { background: #dcfce7; color: #166534; }
+
+/* ── PAGINATION ──────────────────────────────────────────── */
+.eu-pagination-inner {
+  display: flex; gap: 4px; justify-content: center; flex-wrap: wrap;
+}
+.eu-pagination-inner button {
+  min-width: 36px; height: 36px; border: 1px solid var(--eu-border);
+  background: var(--eu-surface); color: var(--eu-text);
+  border-radius: var(--eu-radius-sm); cursor: pointer;
+  font-size: .88rem; transition: all .15s; padding: 0 8px;
+}
+.eu-pagination-inner button:hover { background: var(--eu-bg-secondary); }
+.eu-pagination-inner button.active {
+  background: var(--eu-text); color: var(--eu-surface);
+  border-color: var(--eu-text); font-weight: 700;
+}
+.eu-pagination-inner span { display: flex; align-items: center; padding: 0 4px; color: var(--eu-text-muted); }
