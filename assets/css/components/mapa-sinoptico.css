@@ -6,10 +6,11 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 12px;
   margin-bottom: 12px;
 }
 .eu-mapa-sinoptico-toggle {
-  width: 100%;
+  flex: 1;
   text-align: left;
   display: inline-flex;
   align-items: center;
@@ -57,20 +58,17 @@
   display: flex;
   flex-direction: column;
   gap: 14px;
+  pointer-events: none;
 }
 .eu-mapa-sinoptico.eu-mapa-sinoptico-open .eu-mapa-sinoptico-body {
-  max-height: 2000px;
   opacity: 1;
-}
-.eu-mapa-sinoptico-actions {
-  display: flex;
-  justify-content: flex-end;
+  pointer-events: auto;
 }
 .eu-mapa-sinoptico-download {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  padding: 10px 16px;
+  padding: 10px 18px;
   border-radius: 999px;
   border: 1px solid transparent;
   background: var(--eu-btn-bg, #0f172a);
@@ -78,11 +76,13 @@
   font-weight: 600;
   font-size: 0.9rem;
   cursor: pointer;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+  white-space: nowrap;
 }
 .eu-mapa-sinoptico-download:hover {
   transform: translateY(-1px);
   box-shadow: 0 10px 30px rgba(15, 23, 42, 0.2);
+  background: var(--eu-btn-bg-hover, #0b1220);
 }
 .eu-mapa-sinoptico-download-icon {
   width: 18px;

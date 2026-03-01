@@ -101,6 +101,7 @@ body {
 
     if (!edges.length) {
       treeWrapper.innerHTML = '<div class="eu-mapa-sinoptico-empty">Define relaciones usando <code>-></code> para que aparezca el mapa.</div>';
+      initMapaInteractions(container);
       return;
     }
 
@@ -111,6 +112,7 @@ body {
     treeWrapper.innerHTML = '';
     if (!roots.length) {
       treeWrapper.innerHTML = '<div class="eu-mapa-sinoptico-empty">No se encontró raíz para este mapa.</div>';
+      initMapaInteractions(container);
       return;
     }
 
@@ -268,11 +270,32 @@ body {
   function initMapaToggle(container) {
     const toggle = container.querySelector('.eu-mapa-sinoptico-toggle');
     if (!toggle) return;
+    const body = container.querySelector('.eu-mapa-sinoptico-body');
     const label = toggle.querySelector('.eu-mapa-sinoptico-toggle-label');
     const icon = toggle.querySelector('.eu-mapa-sinoptico-toggle-icon');
     const setOpen = open => {
       container.classList.toggle('eu-mapa-sinoptico-open', open);
       toggle.setAttribute('aria-expanded', open);
+      if (body) {
+        body.setAttribute('aria-hidden', !open);
+        const adjustHeight = () => {
+          if (open) {
+            body.style.maxHeight = `${body.scrollHeight}px`;
+            const cleanup = () => {
+              body.style.maxHeight = 'none';
+              body.removeEventListener('transitionend', cleanup);
+            };
+            body.addEventListener('transitionend', cleanup, { once: true });
+          } else {
+            const currentHeight = body.scrollHeight;
+            body.style.maxHeight = `${currentHeight}px`;
+            requestAnimationFrame(() => {
+              body.style.maxHeight = '0';
+            });
+          }
+        };
+        adjustHeight();
+      }
       if (label) {
         label.textContent = open ? TOGGLE_LABELS.open : TOGGLE_LABELS.closed;
       }
