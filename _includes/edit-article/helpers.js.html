@@ -1,0 +1,118 @@
+<script>
+// ── UTILITY FUNCTIONS ─────────────────────────────────────────────────────
+window.EditArticleUtils = {
+  escHtml: function(s) { 
+    return String(s||'').replace(/[&<>"']/g,function(c){
+      return({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]);
+    }); 
+  },
+  escAttr: function(s) { return this.escHtml(s); },
+  fmtSize: function(bytes) {
+    var k = 1024, s = ['B','KB','MB'];
+    var i = Math.floor(Math.log(bytes) / Math.log(k));
+    return (bytes / Math.pow(k, i)).toFixed(1) + ' ' + s[i];
+  },
+  noScrollInsert: function(ta, text, from, to) {
+    var pageY = window.scrollY, taTop = ta.scrollTop;
+    ta.value = ta.value.slice(0, from) + text + ta.value.slice(to);
+    ta.scrollTop = taTop;
+    window.scrollTo({ top: pageY });
+  },
+  showToast: function(msg, type) {
+    if (window.showToast) window.showToast(msg, type);
+  }
+};
+
+// ── TEXT EDITING HELPERS ──────────────────────────────────────────────────
+window.summaryWrapEdit = function(before, after) {
+  var ta = document.getElementById('editSummary');
+  var s = ta.selectionStart, e = ta.selectionEnd;
+  var sel = ta.value.substring(s, e) || 'texto';
+  var st = ta.scrollTop;
+  ta.value = ta.value.substring(0, s) + before + sel + after + ta.value.substring(e);
+  ta.selectionStart = s + before.length;
+  ta.selectionEnd = s + before.length + sel.length;
+  ta.scrollTop = st;
+  ta.focus();
+};
+
+window.summaryLineEdit = function(prefix) {
+  var ta = document.getElementById('editSummary');
+  var s = ta.selectionStart;
+  var start = ta.value.lastIndexOf('\n', s - 1) + 1;
+  var st = ta.scrollTop;
+  ta.value = ta.value.substring(0, start) + prefix + ta.value.substring(start);
+  ta.selectionStart = ta.selectionEnd = start + prefix.length;
+  ta.scrollTop = st;
+  ta.focus();
+};
+
+window.summaryAnchorEdit = function() {
+  var id = prompt('ID del título:');
+  if (!id) return;
+  var label = prompt('Texto del enlace:') || id;
+  var ta = document.getElementById('editSummary');
+  var pos = ta.selectionStart;
+  var st = ta.scrollTop;
+  ta.value = ta.value.slice(0, pos) + '[' + label + '](#' + id + ')' + ta.value.slice(pos);
+  ta.scrollTop = st;
+  ta.focus();
+};
+
+window.wrap = function(before, after) {
+  var u = EditArticleUtils;
+  var ta = document.getElementById('editContent');
+  var s = ta.selectionStart, e = ta.selectionEnd;
+  var sel = ta.value.substring(s, e) || 'texto';
+  u.noScrollInsert(ta, before + sel + after, s, e);
+  ta.focus();
+  ta.setSelectionRange(s + before.length, s + before.length + sel.length);
+};
+
+window.insertLine = function(prefix) {
+  var u = EditArticleUtils;
+  var ta = document.getElementById('editContent');
+  var s = ta.selectionStart;
+  var start = ta.value.lastIndexOf('\n', s - 1) + 1;
+  u.noScrollInsert(ta, prefix, start, start);
+  ta.focus();
+  ta.setSelectionRange(start + prefix.length, start + prefix.length);
+};
+
+window.insertSCEdit = function(sc) {
+  var u = EditArticleUtils;
+  var ta = document.getElementById('editContent');
+  var pos = ta.selectionStart;
+  u.noScrollInsert(ta, '\n' + sc + '\n', pos, pos);
+  ta.focus();
+};
+
+window.insertLinkEdit = function() {
+  var u = EditArticleUtils;
+  var url = prompt('URL del enlace:');
+  if (!url) return;
+  var label = prompt('Texto:') || url;
+  var ta = document.getElementById('editContent');
+  var pos = ta.selectionStart;
+  u.noScrollInsert(ta, '[' + label + '](' + url + ')', pos, pos);
+  ta.focus();
+};
+
+window.insertEditImageSC = function(url, alt) {
+  var u = EditArticleUtils;
+  var ta = document.getElementById('editContent');
+  var pos = ta.selectionStart;
+  u.noScrollInsert(ta, '\n[img file="' + url + '" alt="' + alt + '" caption=""]\n', pos, pos);
+  ta.focus();
+  u.showToast('Imagen insertada', 'success');
+};
+
+window.insertExistingSourceRef = function(id, title) {
+  var u = EditArticleUtils;
+  var ta = document.getElementById('editContent');
+  var pos = ta.selectionStart;
+  u.noScrollInsert(ta, '[source-ref title="' + u.escAttr(title) + '"]', pos, pos);
+  ta.focus();
+  u.showToast('Referencia insertada', 'success');
+};
+</script>

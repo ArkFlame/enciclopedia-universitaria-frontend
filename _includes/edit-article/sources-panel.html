@@ -1,0 +1,45 @@
+<div class="eu-card p-4 mb-4">
+  <h5 class="mb-1"><i class="bi bi-link-45deg me-2"></i>Fuentes del artículo</h5>
+
+  <div class="mb-3">
+    <div class="fw-semibold small mb-2">Fuentes actuales</div>
+    <div class="eu-sources-editor mb-2" id="sourcesList">
+      <div class="text-muted text-center p-2 small">Cargando fuentes...</div>
+    </div>
+  </div>
+
+  <div class="mb-3 pb-3" style="border-bottom:1px solid var(--eu-border)">
+    <div class="fw-semibold small mb-2">🔗 Añadir enlace</div>
+    <input type="text" id="editSrcLinkTitle" class="eu-input mb-2" placeholder="Título">
+    <input type="url" id="editSrcLinkUrl" class="eu-input mb-2" placeholder="https://...">
+    <button type="button" class="eu-btn-outline eu-btn-sm w-100" id="addLinkBtn">
+      <i class="bi bi-plus-circle"></i> Añadir enlace
+    </button>
+  </div>
+
+  <div class="mb-2">
+    <div class="fw-semibold small mb-2">📄 Añadir PDF</div>
+    <input type="text" id="editSrcPdfTitle" class="eu-input mb-2" placeholder="Título del PDF">
+    
+    <div id="editPdfAttachZone">
+      <label class="eu-btn-outline eu-btn-sm w-100 text-center" style="cursor:pointer">
+        <i class="bi bi-paperclip"></i> Adjuntar PDF (máx 10MB)
+        <input type="file" id="editSrcPdfInput" accept=".pdf" class="d-none">
+      </label>
+    </div>
+    
+    <div id="editPdfPreview" class="d-none mt-2 p-2 rounded d-flex align-items-center gap-2" style="background:var(--eu-bg-secondary);border:1px solid var(--eu-border)">
+      <svg viewBox="0 0 24 24" fill="currentColor" style="width:16px;height:16px;flex-shrink:0;color:#dc2626">
+        <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z"/>
+      </svg>
+      <span class="small" id="editPdfPreviewName" style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></span>
+      <button type="button" class="eu-source-delete-btn" id="clearPdfBtn">✕</button>
+    </div>
+    
+    <button type="button" class="eu-btn-primary eu-btn-sm w-100 mt-2 d-none" id="uploadPdfBtn">
+      <i class="bi bi-upload"></i> Subir PDF
+    </button>
+  </div>
+
+  <div id="editSourcesMsg" class="mt-1"></div>
+</div>

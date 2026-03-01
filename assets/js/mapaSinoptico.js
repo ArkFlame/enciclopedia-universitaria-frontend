@@ -1,5 +1,6 @@
 (() => {
   const instances = new Map();
+  const RESIZE_DEBOUNCE_MS = 120;
 
   function initMapas(root = document) {
     root.querySelectorAll('.eu-mapa-sinoptico').forEach(renderMapa);
@@ -56,34 +57,61 @@
       levelsWrapper.appendChild(row);
     });
 
-    const redraw = () => {
-      if (svgEl) {
-        drawConnections(container, built.childrenMap, svgEl);
-      }
+    const state = {
+      observer: null,
+      redraw: () => {},
+      lastSize: null,
+      resizeTimer: null,
     };
 
+    const drawLoop = (force = false) => {
+      if (!svgEl) return;
+      const rect = container.getBoundingClientRect();
+      const width = Math.round(rect.width);
+      const height = Math.round(rect.height);
+      if (!width || !height) return;
+      const sizeKey = `${width}x${height}`;
+      if (!force && state.lastSize === sizeKey) {
+        return;
+      }
+      state.lastSize = sizeKey;
+      drawConnections(container, built.childrenMap, svgEl, rect);
+    };
+
+    const scheduleRedraw = () => {
+      if (state.resizeTimer) return;
+      state.resizeTimer = window.setTimeout(() => {
+        state.resizeTimer = null;
+        window.requestAnimationFrame(() => drawLoop(false));
+      }, RESIZE_DEBOUNCE_MS);
+    };
+
+    state.redraw = () => window.requestAnimationFrame(() => drawLoop(true));
+
     const prev = instances.get(container);
-    if (prev && prev.observer) {
-      prev.observer.disconnect();
+    if (prev) {
+      if (prev.observer) prev.observer.disconnect();
+      if (prev.resizeTimer) clearTimeout(prev.resizeTimer);
     }
 
     const ro = typeof ResizeObserver !== 'undefined'
-      ? new ResizeObserver(() => window.requestAnimationFrame(redraw))
+      ? new ResizeObserver(scheduleRedraw)
       : null;
 
     if (ro) {
       ro.observe(container);
-      ro.observe(levelsWrapper);
     }
 
-    instances.set(container, { observer: ro, redraw });
-    window.requestAnimationFrame(redraw);
+    state.observer = ro;
+    instances.set(container, state);
+    state.redraw();
   }
 
   function removeInstance(container) {
     const prev = instances.get(container);
     if (prev) {
       if (prev.observer) prev.observer.disconnect();
+      if (prev.resizeTimer) clearTimeout(prev.resizeTimer);
       instances.delete(container);
     }
   }
