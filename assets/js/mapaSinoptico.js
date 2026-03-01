@@ -271,11 +271,13 @@ body {
   function hydrateMapaControls(container) {
     const header = container.querySelector('.eu-mapa-sinoptico-header');
     if (!header) return { toggle: null, download: null };
-    const existingToggles = Array.from(header.querySelectorAll('.eu-mapa-sinoptico-toggle'));
-    let toggle = existingToggles[0] || null;
-    if (existingToggles.length > 1) {
-      existingToggles.slice(1).forEach(node => node.remove());
+    if (header.dataset.euMapaControlsInit === 'true') {
+      return {
+        toggle: header.querySelector('.eu-mapa-sinoptico-toggle'),
+        download: header.querySelector('.eu-mapa-sinoptico-download')
+      };
     }
+    let toggle = header.querySelector('.eu-mapa-sinoptico-toggle');
     if (!toggle) {
       toggle = document.createElement('button');
       toggle.type = 'button';
@@ -309,6 +311,8 @@ body {
       download = createDownloadButton();
       header.appendChild(download);
     }
+
+    header.dataset.euMapaControlsInit = 'true';
     return { toggle, download };
   }
 
