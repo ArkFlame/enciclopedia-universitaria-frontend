@@ -41,7 +41,7 @@ description: Guía completa para crear artículos en la Enciclopedia Universitar
           <li><a href="#ref">Referencias</a></li>
           <li><a href="#source-ref">Citar fuentes</a></li>
           <li><a href="#sinoptico">Cuadro sinóptico</a></li>
-          <li><a href="#diagram">Diagrama interactivo</a></li>
+          <li><a href="#mapa">Mapa sinóptico</a></li>
         </ul>
       </div>
     </div>
@@ -340,25 +340,17 @@ Producción de glucosa y liberación de O₂
     </div>
   </section>
 
-  <!-- DIAGRAM -->
-  <section id="diagram" class="mb-5">
-    <h2 class="eu-section-title">🔬 Diagrama interactivo</h2>
-    <p class="text-muted mb-3">Crea diagramas donde cada elemento es clickeable y muestra información al hacer clic.</p>
+  <section id="mapa" class="mb-5">
+    <h2 class="eu-section-title">🗺️ Mapa sinóptico</h2>
+    <p class="text-muted mb-3">El nuevo shortcode <code>[mapa-sinoptico]</code> convierte relaciones con flechas <code>-></code> en un grafo Mermaid renderizado automáticamente.</p>
     <div class="eu-card p-4">
-      <pre class="eu-sc-code">[interactive-diagram title="Estructura de la célula animal"]
-[cell label="Núcleo" article="nucleo-celular" x="50" y="45" color="#6366f1"]
-  El núcleo contiene el ADN y controla todas las funciones celulares.
-[/cell]
-[cell label="Mitocondria" article="mitocondria" x="75" y="30" color="#f59e0b"]
-  Central energética. Produce ATP mediante respiración celular.
-[/cell]
-[cell label="Membrana" x="20" y="50" color="#10b981"]
-  Regula el paso de sustancias dentro y fuera de la célula.
-[/cell]
-[/interactive-diagram]</pre>
-      <div class="small text-muted mt-2">
-        <strong>Parámetros de [cell]:</strong> <code>label</code> (nombre), <code>article</code> (slug del artículo, opcional), <code>x</code>/<code>y</code> (posición 0–95%), <code>color</code> (hexadecimal).
-      </div>
+      <div class="eu-label mb-1">Código equivalente:</div>
+      <pre class="eu-sc-code">[mapa-sinoptico dir="LR"]
+Proceso de fotosíntesis -> Fase 1
+Proceso de fotosíntesis -> Fase 2
+Fase 1 -> Resultado
+[/mapa-sinoptico]</pre>
+      <div class="small text-muted mt-2"><strong>dir</strong> controla la dirección del grafo (LR, RL, TB, BT). Si no la especificás, se usa <code>LR</code>.</div>
     </div>
   </section>
 

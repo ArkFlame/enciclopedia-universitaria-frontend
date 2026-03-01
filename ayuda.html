@@ -26,7 +26,7 @@ title: Guía completa para publicar artículos
       <div class="col-md-6">
         <ul class="mb-0">
           <li><a href="#tabs">Pestañas</a></li>
-          <li><a href="#diagram">Diagrama interactivo</a></li>
+          <li><a href="#mapa">Mapa sinóptico</a></li>
           <li><a href="#image">Imágenes</a></li>
           <li><a href="#ref">Referencias</a></li>
           <li><a href="#publicar">Publicar artículo</a></li>
@@ -197,45 +197,28 @@ Péndulo doble, clima y cadenas logísticas.
     </div>
   </section>
 
-  <section id="diagram" class="mb-5">
-    <h2 class="eu-section-title">🔬 Diagrama interactivo</h2>
-    <p class="text-muted mb-3">Mapas con elementos clickeables que muestran contenido o referencias.</p>
+  <section id="mapa" class="mb-5">
+    <h2 class="eu-section-title">🗺️ Mapa sinóptico</h2>
+    <p class="text-muted mb-3">Define relaciones jerárquicas con flechas <code>-></code> y deja que el backend genere el grafo Mermaid correspondiente.</p>
     <div class="eu-card p-4">
       <div class="eu-label mb-1">Código:</div>
       <pre style="background:var(--eu-code-bg);padding:12px;border-radius:8px;overflow-x:auto;">
-[interactive-diagram title="Célula eucariota"]
-[cell label="Núcleo" article="nucleo-celular" x="50" y="40" color="#6366f1"]
-Controla las funciones celulares y alberga el ADN.
-[/cell]
-[cell label="Mitocondria" article="mitocondria" x="75" y="60" color="#f59e0b"]
-Central energética que produce ATP mediante respiración celular.
-[/cell]
-[cell label="Membrana" article="membrana-celular" x="20" y="55" color="#10b981"]
-Regula el paso de sustancias y mantiene el equilibrio osmótico.
-[/cell]
-[/interactive-diagram]
+[mapa-sinoptico dir="LR"]
+Célula -> Eucariota
+Célula -> Procariota
+Eucariota -> Animal
+[/mapa-sinoptico]
       </pre>
-      <div class="eu-label mt-3 mb-1">Resultado interactivo:</div>
-      <div class="eu-interactive-diagram" id="diagramExample">
-        <div class="eu-diagram-title">Célula eucariota</div>
-        <div class="eu-diagram-canvas">
-          <button class="eu-diagram-cell" style="left:50%;top:40%;background:#6366f1;"
-            data-label="Núcleo"
-            data-desc="Controla las funciones celulares y alberga el ADN."
-            data-article="nucleo-celular">Núcleo</button>
-          <button class="eu-diagram-cell" style="left:75%;top:60%;background:#f59e0b;"
-            data-label="Mitocondria"
-            data-desc="Central energética que produce ATP mediante respiración celular."
-            data-article="mitocondria">Mitocondria</button>
-          <button class="eu-diagram-cell" style="left:20%;top:55%;background:#10b981;"
-            data-label="Membrana"
-            data-desc="Regula el paso de sustancias y mantiene el equilibrio osmótico."
-            data-article="membrana-celular">Membrana</button>
-        </div>
-        <div class="eu-cell-popup" id="diagramPopupExample" aria-live="polite">
-          <strong id="diagramPopupTitle">Título</strong>
-          <p class="eu-cell-desc" id="diagramPopupDesc">Descripción</p>
-          <a href="#" class="eu-article-ref" id="diagramPopupLink">Ver artículo relacionado</a>
+      <div class="eu-label mt-3 mb-1">Resultado renderizado:</div>
+      <div class="eu-article-content">
+        <div class="eu-mapa-sinoptico">
+          <div class="eu-mermaid-wrap">
+            <div class="mermaid">graph LR
+  Célula --> Eucariota
+  Célula --> Procariota
+  Eucariota --> Animal</div>
+          </div>
+          <p class="text-center text-muted mt-2" style="font-size:.72rem">🗺️ Mapa Sinóptico</p>
         </div>
       </div>
     </div>
@@ -324,34 +307,6 @@ Regula el paso de sustancias y mantiene el equilibrio osmótico.
     });
   });
 
-  const diagram = document.getElementById('diagramExample');
-  if (diagram) {
-    const popup = diagram.querySelector('#diagramPopupExample');
-    const cells = diagram.querySelectorAll('.eu-diagram-cell');
-    const base = (window.EU_CONFIG && window.EU_CONFIG.baseUrl) || '';
-    cells.forEach(cell => {
-      cell.addEventListener('click', event => {
-        event.stopPropagation();
-        const rect = cell.getBoundingClientRect();
-        const containerRect = diagram.getBoundingClientRect();
-        popup.querySelector('#diagramPopupTitle').textContent = cell.dataset.label;
-        popup.querySelector('#diagramPopupDesc').textContent = cell.dataset.desc;
-        const link = popup.querySelector('#diagramPopupLink');
-        link.href = `${base}/articulo.html?slug=${cell.dataset.article}`;
-        popup.style.display = 'block';
-        const top = rect.top - containerRect.top + rect.height + 6;
-        const left = rect.left - containerRect.left;
-        popup.style.top = `${Math.min(top, diagram.clientHeight - popup.offsetHeight - 16)}px`;
-        popup.style.left = `${Math.min(Math.max(left, 12), diagram.clientWidth - popup.offsetWidth - 12)}px`;
-      });
-    });
-    document.addEventListener('click', event => {
-      if (!diagram.contains(event.target)) {
-        popup.style.display = 'none';
-      }
-    });
-  }
-
   const copyBtn = document.getElementById('copyForLLMBtn');
   if (copyBtn) {
     copyBtn.addEventListener('click', () => {
@@ -396,9 +351,13 @@ Regula el paso de sustancias y mantiene el equilibrio osmótico.
       '```markdown',
       '[tabs]\n[tab title="Definición"]La teoría del caos estudia sistemas sobre sensibilidad a condiciones iniciales.[/tab]\n[tab title="Ejemplos"]Péndulo doble, clima y logística.[/tab]\n[/tabs]',
       '```',
-      '### Diagrama interactivo',
+      '### Mapa sinóptico',
       '```markdown',
-      '[interactive-diagram title="Célula eucariota"]\n[cell label="Núcleo" article="nucleo-celular" x="50" y="40" color="#6366f1"]Controla funciones celulares y aloja el ADN[/cell]\n[cell label="Mitocondria" article="mitocondria" x="75" y="60" color="#f59e0b"]Produce ATP mediante respiración celular[/cell]\n[/interactive-diagram]',
+      '[mapa-sinoptico dir="LR"]',
+      'Célula -> Eucariota',
+      'Célula -> Procariota',
+      'Eucariota -> Animal',
+      '[/mapa-sinoptico]',
       '```',
       '### Ref',
       '```markdown',
@@ -422,7 +381,7 @@ Regula el paso de sustancias y mantiene el equilibrio osmótico.
       '4. Si se rechaza, corregir la versión y reenviar.',
       '',
       '## Resultado',
-      'El artículo aprobado muestra exactamente los componentes interactivos de esta guía, incluyendo tooltip, alertas, acordeones, tabs, diagramas con popups y referencias internas.'
+      'El artículo aprobado muestra exactamente los componentes interactivos de esta guía, incluyendo tooltip, alertas, acordeones, tabs, mapas sinópticos y referencias internas.'
     ].join('\n');
   }
 
