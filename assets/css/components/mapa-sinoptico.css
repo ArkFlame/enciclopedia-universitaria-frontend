@@ -55,13 +55,14 @@
   overflow: hidden;
   max-height: 0;
   opacity: 0;
-  transition: max-height 0.3s ease, opacity 0.3s ease;
+  transition: opacity 0.3s ease;
   display: flex;
   flex-direction: column;
   gap: 14px;
   pointer-events: none;
 }
 .eu-mapa-sinoptico.eu-mapa-sinoptico-open .eu-mapa-sinoptico-body {
+  max-height: none;
   opacity: 1;
   pointer-events: auto;
 }
