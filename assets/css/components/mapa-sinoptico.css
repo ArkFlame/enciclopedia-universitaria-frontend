@@ -9,6 +9,9 @@
   gap: 12px;
   margin-bottom: 12px;
 }
+.eu-mapa-sinoptico-header .eu-mapa-sinoptico-download:not(:first-of-type) {
+  display: none;
+}
 .eu-mapa-sinoptico-toggle {
   flex: 0 1 auto;
   text-align: left;
@@ -55,14 +58,14 @@
   overflow: hidden;
   max-height: 0;
   opacity: 0;
-  transition: opacity 0.3s ease;
+  transition: max-height 0.35s ease, opacity 0.3s ease;
   display: flex;
   flex-direction: column;
   gap: 14px;
   pointer-events: none;
 }
 .eu-mapa-sinoptico.eu-mapa-sinoptico-open .eu-mapa-sinoptico-body {
-  max-height: none;
+  max-height: 9999px;
   opacity: 1;
   pointer-events: auto;
 }
