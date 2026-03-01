@@ -70,15 +70,20 @@ function _appInit() {
           return;
         }
         const recent = notifications.slice(0, 5);
-        list.innerHTML = recent.map(n => `
-          <div class="eu-notif-item ${n.read_at ? '' : 'unread'}">
-            <div class="eu-notif-icon">${n.type.includes('approved') ? '✓' : n.type.includes('rejected') ? '✕' : '•'}</div>
+        list.innerHTML = recent.map(n => {
+          const link = Auth.getNotificationLink ? Auth.getNotificationLink(n) : null;
+          const inner = `
+            <div class="eu-notif-icon">${Auth.getNotificationIcon ? Auth.getNotificationIcon(n.type) : (n.type.includes('approved') ? '✓' : n.type.includes('rejected') ? '✕' : '•')}</div>
             <div style="flex:1">
               <div class="eu-notif-msg">${window.escapeHtml(n.message)}</div>
               <div class="eu-notif-time">${window.timeAgo(n.created_at)}</div>
             </div>
-          </div>
-        `).join('');
+            ${!n.read_at ? '<span class="eu-notif-dot"></span>' : ''}`;
+          const itemClass = `eu-notif-item ${!n.read_at ? 'unread' : ''}`;
+          return link
+            ? `<a href="${link}" class="${itemClass}">${inner}</a>`
+            : `<div class="${itemClass}">${inner}</div>`;
+        }).join('');
       })
       .catch(() => {
         list.innerHTML = '<div class="eu-notif-empty text-danger">Error al cargar</div>';

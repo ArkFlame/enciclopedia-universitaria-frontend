@@ -121,6 +121,42 @@ const Auth = (() => {
     return getUser();
   }
 
+  function resolveNotificationLink(n) {
+    const BASE = window.EU_CONFIG.baseUrl;
+    switch (n.type) {
+      case 'article_approved':
+      case 'article_rejected':
+      case 'new_submission':
+        return n.notification_url
+          ? n.notification_url
+          : n.article_slug
+            ? `${BASE}/articulo.html?slug=${encodeURIComponent(n.article_slug)}`
+            : null;
+      case 'edit_approved':
+      case 'edit_rejected':
+        return n.notification_url
+          ? n.notification_url
+          : n.article_slug
+            ? `${BASE}/articulo.html?slug=${encodeURIComponent(n.article_slug)}`
+            : null;
+      case 'subscription_activated':
+      case 'subscription_expired':
+        return `${BASE}/suscripcion.html`;
+      default:
+        return n.notification_url || null;
+    }
+  }
+
+  function resolveNotificationIcon(type) {
+    const icons = {
+      article_approved: '✅', article_rejected: '❌',
+      edit_approved: '✏️', edit_rejected: '✏️',
+      subscription_activated: '⭐', subscription_expired: '⚠️',
+      new_submission: '📝'
+    };
+    return `<span style="font-size:1rem">${icons[type] || '🔔'}</span>`;
+  }
+
   function updateNavbar() {
     const user               = getUser();
     const authSection        = document.getElementById('authSection');
@@ -237,25 +273,25 @@ const Auth = (() => {
     if (!list) return;
     try {
       const res = await authFetch(`${API}/api/auth/notifications`);
-      if (!res?.ok) return; // silently skip — do NOT logout
+      if (!res?.ok) return;
       const notifs = await res.json();
       if (!notifs.length) {
         list.innerHTML = '<div class="eu-notif-empty">No hay notificaciones</div>';
         return;
       }
-      const BASE = window.EU_CONFIG.baseUrl;
       list.innerHTML = notifs.slice(0, 15).map(n => {
-        const link = getNotifLink(n, BASE);
+        const link = resolveNotificationLink(n);
         const inner = `
-          <div class="eu-notif-icon">${getNotifIcon(n.type)}</div>
+          <div class="eu-notif-icon">${resolveNotificationIcon(n.type)}</div>
           <div style="flex:1;min-width:0">
             <div class="eu-notif-msg">${escapeHtml(n.message)}</div>
             <div class="eu-notif-time">${timeAgo(n.created_at)}</div>
           </div>
           ${!n.read_at ? '<span class="eu-notif-dot"></span>' : ''}`;
+        const itemClass = `eu-notif-item ${!n.read_at ? 'unread' : ''}`;
         return link
-          ? `<a href="${link}" class="eu-notif-item ${!n.read_at ? 'unread' : ''}">${inner}</a>`
-          : `<div class="eu-notif-item ${!n.read_at ? 'unread' : ''}">${inner}</div>`;
+          ? `<a href="${link}" class="${itemClass}">${inner}</a>`
+          : `<div class="${itemClass}">${inner}</div>`;
       }).join('');
     } catch (e) {
       console.warn('Error cargando notificaciones:', e);
@@ -319,7 +355,9 @@ const Auth = (() => {
   return {
     getToken, getUser, isLoggedIn, hasRole,
     login, register, logout, authFetch,
-    refreshToken, refreshUser, updateNavbar
+    refreshToken, refreshUser, updateNavbar,
+    getNotificationLink: resolveNotificationLink,
+    getNotificationIcon: resolveNotificationIcon
   };
 })();
 
