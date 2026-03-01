@@ -1,0 +1,154 @@
+<script>
+// ── SHARED UTILITIES ─────────────────────────────────────────────────────
+window.ArticleEditor = {
+  utils: {
+    escHtml: function(s) { 
+      return String(s||'').replace(/[&<>"']/g,function(c){
+        return({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]);
+      }); 
+    },
+    escAttr: function(s) { return this.escHtml(s); },
+    fmtSize: function(bytes) {
+      var k = 1024, s = ['B','KB','MB'];
+      var i = Math.floor(Math.log(bytes) / Math.log(k));
+      return (bytes / Math.pow(k, i)).toFixed(1) + ' ' + s[i];
+    },
+    noScrollInsert: function(ta, text, from, to) {
+      var pageY = window.scrollY, taTop = ta.scrollTop;
+      ta.value = ta.value.slice(0, from) + text + ta.value.slice(to);
+      ta.scrollTop = taTop;
+      window.scrollTo({ top: pageY });
+    },
+    showToast: function(msg, type) {
+      if (window.showToast) window.showToast(msg, type);
+    }
+  },
+  
+  // Shared state (pages override these)
+  API: window.EU_CONFIG.backendUrl,
+  BASE: window.EU_CONFIG.baseUrl,
+  articleId: null,
+  localSources: [],
+  pendingPdf: null,
+  
+  // ── TEXT EDITING HELPERS ───────────────────────────────────────────────
+  summaryWrap: function(before, after) {
+    var ta = document.getElementById('artSummary') || document.getElementById('editSummary');
+    if (!ta) return;
+    var s = ta.selectionStart, e = ta.selectionEnd;
+    var sel = ta.value.substring(s, e) || 'texto';
+    var st = ta.scrollTop;
+    ta.value = ta.value.substring(0, s) + before + sel + after + ta.value.substring(e);
+    ta.selectionStart = s + before.length;
+    ta.selectionEnd = s + before.length + sel.length;
+    ta.scrollTop = st;
+    ta.focus();
+  },
+  
+  summaryLine: function(prefix) {
+    var ta = document.getElementById('artSummary') || document.getElementById('editSummary');
+    if (!ta) return;
+    var s = ta.selectionStart;
+    var start = ta.value.lastIndexOf('\n', s - 1) + 1;
+    var st = ta.scrollTop;
+    ta.value = ta.value.substring(0, start) + prefix + ta.value.substring(start);
+    ta.selectionStart = ta.selectionEnd = start + prefix.length;
+    ta.scrollTop = st;
+    ta.focus();
+  },
+  
+  summaryAnchor: function() {
+    var id = prompt('ID del título (ej: "metabolismo" para "## Metabolismo"):');
+    if (!id) return;
+    var label = prompt('Texto del enlace:') || id;
+    var ta = document.getElementById('artSummary') || document.getElementById('editSummary');
+    if (!ta) return;
+    var pos = ta.selectionStart;
+    var st = ta.scrollTop;
+    ta.value = ta.value.slice(0, pos) + '[' + label + '](#' + id + ')' + ta.value.slice(pos);
+    ta.scrollTop = st;
+    ta.focus();
+  },
+  
+  insertMd: function(before, after) {
+    var u = this.utils;
+    var ta = document.getElementById('artContent') || document.getElementById('editContent');
+    if (!ta) return;
+    var s = ta.selectionStart, e = ta.selectionEnd;
+    var sel = ta.value.slice(s, e) || 'texto';
+    u.noScrollInsert(ta, before + sel + after, s, e);
+    ta.focus();
+    ta.setSelectionRange(s + before.length, s + before.length + sel.length);
+  },
+  
+  insertLine: function(prefix) {
+    var u = this.utils;
+    var ta = document.getElementById('artContent') || document.getElementById('editContent');
+    if (!ta) return;
+    var s = ta.selectionStart;
+    var start = ta.value.lastIndexOf('\n', s - 1) + 1;
+    u.noScrollInsert(ta, prefix, start, start);
+    ta.focus();
+    ta.setSelectionRange(start + prefix.length, start + prefix.length);
+  },
+  
+  insertSC: function(sc) {
+    var u = this.utils;
+    var ta = document.getElementById('artContent') || document.getElementById('editContent');
+    if (!ta) return;
+    var pos = ta.selectionStart;
+    u.noScrollInsert(ta, '\n' + sc + '\n', pos, pos);
+    ta.focus();
+    ta.setSelectionRange(pos + 1, pos + 1 + sc.length);
+  },
+  
+  insertLink: function() {
+    var u = this.utils;
+    var url = prompt('URL del enlace:');
+    if (!url) return;
+    var label = prompt('Texto del enlace:') || url;
+    var ta = document.getElementById('artContent') || document.getElementById('editContent');
+    if (!ta) return;
+    var pos = ta.selectionStart;
+    u.noScrollInsert(ta, '[' + label + '](' + url + ')', pos, pos);
+    ta.focus();
+  },
+  
+  insertImageShortcode: function(url, alt) {
+    var u = this.utils;
+    var ta = document.getElementById('artContent') || document.getElementById('editContent');
+    if (!ta) return;
+    var pos = ta.selectionStart;
+    u.noScrollInsert(ta, '\n[img file="' + url + '" alt="' + alt + '" caption=""]\n', pos, pos);
+    ta.focus();
+    u.showToast('Imagen insertada', 'success');
+  },
+  
+  // ── KEYBOARD HANDLER ───────────────────────────────────────────────────
+  handleEditorKeys: function(e) {
+    if (e.ctrlKey || e.metaKey) {
+      if (e.key === 'b') { e.preventDefault(); ArticleEditor.insertMd('**','**'); }
+      if (e.key === 'i') { e.preventDefault(); ArticleEditor.insertMd('*','*'); }
+      if (e.key === 'k') { e.preventDefault(); ArticleEditor.insertLink(); }
+    }
+    if (e.key === 'Tab') {
+      e.preventDefault();
+      var ta = e.target;
+      var s = ta.selectionStart;
+      var st = ta.scrollTop;
+      ta.value = ta.value.slice(0, s) + '  ' + ta.value.slice(s);
+      ta.selectionStart = ta.selectionEnd = s + 2;
+      ta.scrollTop = st;
+    }
+  }
+};
+
+window.summaryWrap = function(b,a){ return ArticleEditor.summaryWrap(b,a); };
+window.summaryLine = function(p){ return ArticleEditor.summaryLine(p); };
+window.summaryAnchor = function(){ return ArticleEditor.summaryAnchor(); };
+window.insertMd = function(b,a){ return ArticleEditor.insertMd(b,a); };
+window.insertLine = function(p){ return ArticleEditor.insertLine(p); };
+window.insertSC = function(s){ return ArticleEditor.insertSC(s); };
+window.insertLink = function(){ return ArticleEditor.insertLink(); };
+window.insertImageShortcode = function(u,a){ return ArticleEditor.insertImageShortcode(u,a); };
+</script>

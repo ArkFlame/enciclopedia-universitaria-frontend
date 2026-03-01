@@ -1,0 +1,43 @@
+{% comment %}
+Enhanced toolbar with all buttons
+Parameters:
+- target: 'artContent' or 'editContent' (default: artContent)
+- prefix: 'insert' or 'insertSC' or 'insertMd' (default: insertMd)
+{% endcomment %}
+
+{% assign target_id = include.target | default: 'artContent' %}
+{% assign fn_prefix = include.prefix | default: 'insertMd' %}
+
+<div class="eu-editor-toolbar" id="editorToolbar">
+  <button type="button" class="eu-editor-btn" onclick="{{ fn_prefix }}('**','**')" title="Negrita (Ctrl+B)"><b>B</b></button>
+  <button type="button" class="eu-editor-btn" onclick="{{ fn_prefix }}('*','*')" title="Cursiva (Ctrl+I)"><i>I</i></button>
+  <button type="button" class="eu-editor-btn" onclick="{{ fn_prefix }}('~~','~~')" title="Tachado"><s>S</s></button>
+  <button type="button" class="eu-editor-btn" onclick="{{ fn_prefix }}('`','`')" title="Código inline"><code style="font-size:.75rem">{ }</code></button>
+  <div class="eu-editor-separator"></div>
+  <button type="button" class="eu-editor-btn" onclick="insertLine('# ')" title="Título H1">H1</button>
+  <button type="button" class="eu-editor-btn" onclick="insertLine('## ')" title="Título H2">H2</button>
+  <button type="button" class="eu-editor-btn" onclick="insertLine('### ')" title="Subtítulo H3">H3</button>
+  <button type="button" class="eu-editor-btn" onclick="insertLine('#### ')" title="H4">H4</button>
+  <div class="eu-editor-separator"></div>
+  <button type="button" class="eu-editor-btn" onclick="insertLine('- ')" title="Lista">• Lista</button>
+  <button type="button" class="eu-editor-btn" onclick="insertLine('1. ')" title="Lista numerada">1. Lista</button>
+  <button type="button" class="eu-editor-btn" onclick="insertLine('> ')" title="Cita">❝ Cita</button>
+  <button type="button" class="eu-editor-btn" onclick="insertLine('---')" title="Línea horizontal">─ HR</button>
+  <div class="eu-editor-separator"></div>
+  <button type="button" class="eu-editor-btn" onclick="insertLink()" title="Enlace (Ctrl+K)">🔗 Link</button>
+  <button type="button" class="eu-editor-btn" onclick="insertSC('| Col1 | Col2 |\n|---|---|\n| valor | valor |')" title="Tabla">⊞ Tabla</button>
+  <div class="eu-editor-separator"></div>
+  <button type="button" class="eu-editor-btn" onclick="insertSC('[tooltip text=\"Definición\"]término[/tooltip]')" title="Tooltip">💬 Tooltip</button>
+  <button type="button" class="eu-editor-btn" onclick="insertSC('[alert type=\"info\"]Mensaje[/alert]')" title="Alerta">⚠️ Alert</button>
+  <button type="button" class="eu-editor-btn" onclick="insertSC('[callout icon=\"💡\"]Nota[/callout]')" title="Callout">📌 Callout</button>
+  <button type="button" class="eu-editor-btn" onclick="insertSC('[accordion title=\"¿Pregunta?\"]\nRespuesta\n[/accordion]')" title="Acordeón">▶ Acordeón</button>
+  <button type="button" class="eu-editor-btn" onclick="insertSC('[tabs]\n[tab title=\"Tab 1\"]Contenido 1[/tab]\n[tab title=\"Tab 2\"]Contenido 2[/tab]\n[/tabs]')" title="Pestañas">⊟ Tabs</button>
+  <button type="button" class="eu-editor-btn" onclick="insertSC('[highlight]texto[/highlight]')" title="Resaltar">🖊 Resaltar</button>
+  <button type="button" class="eu-editor-btn" onclick="insertSC('[formula]E = mc^2[/formula]')" title="Fórmula">∑ Fórmula</button>
+  <button type="button" class="eu-editor-btn" onclick="insertSC('[youtube id=\"ID_VIDEO\"]')" title="YouTube">▶ YouTube</button>
+  <button type="button" class="eu-editor-btn" onclick="insertSC('[ref article=\"slug\"]texto[/ref]')" title="Referencia artículo">↗ Ref Art.</button>
+  <button type="button" class="eu-editor-btn" onclick="insertSC('[mapa-sinoptico name=\"Mapa Conceptual\"]\nCélula -> Eucariota\nEucariota -> Animal\nEucariota -> Vegetal\nCélula -> Procariota\nProcariota -> Bacteria\nProcariota -> Archaea\n[/mapa-sinoptico]')" title="Mapa Conceptual">🗺️ Árbol</button>
+  <button type="button" class="eu-editor-btn" onclick="insertSC('[cuadro-sinoptico main=\"Título\"]\n[etapa title=\"ETAPA 1\" color=\"#3b82f6\"]Descripción[/etapa]\n[/cuadro-sinoptico]')" title="Cuadro sinóptico">⚡ Cuadro</button>
+  <button type="button" class="eu-editor-btn" onclick="insertSC('[card title=\"Título\"]Contenido[/card]')" title="Tarjeta">🃏 Card</button>
+  <button type="button" class="eu-editor-btn" onclick="insertSC('[modal id=\"m1\" title=\"Modal\"]Contenido[/modal]\n[modal-trigger modal=\"m1\"]Abrir[/modal-trigger]')" title="Modal">⬜ Modal</button>
+</div>

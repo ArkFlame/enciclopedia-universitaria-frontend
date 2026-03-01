@@ -1,0 +1,55 @@
+{% comment %}
+Sources panel for links and PDFs
+Parameters:
+- id_suffix: '' for nuevo, 'Edit' for editar (default: '')
+{% endcomment %}
+
+{% assign suffix = include.id_suffix | default: '' %}
+{% assign link_title_id = 'srcLinkTitle' | append: suffix %}
+{% assign link_url_id = 'srcLinkUrl' | append: suffix %}
+{% assign pdf_title_id = 'srcPdfTitle' | append: suffix %}
+{% assign msg_id = 'sourcesMsg' | append: suffix %}
+{% assign list_id = 'sourcesList' | append: suffix %}
+
+<div class="eu-card p-4 mb-4" id="sourcesPanel{{ suffix }}">
+  <h5 class="mb-1"><i class="bi bi-link-45deg me-2"></i>Fuentes</h5>
+  <p class="text-muted small mb-3">{% if suffix == 'Edit' %}Fuentes del artículo{% else %}Aparecerán en el sidebar del artículo publicado.{% endif %}</p>
+  
+  <div class="mb-3 pb-3" style="border-bottom:1px solid var(--eu-border)">
+    <div class="fw-semibold small mb-2">🔗 Añadir enlace</div>
+    <input type="text" id="{{ link_title_id }}" class="eu-input mb-2" placeholder="Título{% if suffix == '' %} (ej: Wikipedia - Fotosíntesis){% endif %}">
+    <input type="url" id="{{ link_url_id }}" class="eu-input mb-2" placeholder="https://...">
+    <button type="button" class="eu-btn-outline eu-btn-sm w-100" id="addLinkBtn{{ suffix }}">
+      <i class="bi bi-plus-circle"></i> Añadir enlace
+    </button>
+  </div>
+  
+  <div class="mb-3">
+    <div class="fw-semibold small mb-2">📄 Añadir PDF</div>
+    <input type="text" id="{{ pdf_title_id }}" class="eu-input mb-2" placeholder="Título del PDF{% if suffix == '' %} (opcional){% endif %}">
+    
+    <div id="pdfAttachZone{{ suffix }}">
+      <label class="eu-btn-outline eu-btn-sm w-100 text-center" style="cursor:pointer">
+        <i class="bi bi-paperclip"></i> Adjuntar PDF (máx 10MB)
+        <input type="file" id="srcPdfInput{{ suffix }}" accept=".pdf" class="d-none">
+      </label>
+    </div>
+    
+    <div id="pdfPreview{{ suffix }}" class="d-none mt-2 p-2 rounded d-flex align-items-center gap-2" style="background:var(--eu-bg-secondary);border:1px solid var(--eu-border)">
+      <svg viewBox="0 0 24 24" fill="currentColor" style="width:16px;height:16px;flex-shrink:0;color:#dc2626">
+        <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z"/>
+      </svg>
+      <span class="small" id="pdfPreviewName{{ suffix }}" style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></span>
+      <button type="button" class="eu-source-delete-btn" id="clearPdfBtn{{ suffix }}" title="Quitar">✕</button>
+    </div>
+    
+    <button type="button" class="eu-btn-primary eu-btn-sm w-100 mt-2 d-none" id="addPdfBtn{{ suffix }}">
+      <i class="bi bi-{% if suffix == '' %}plus-circle{% else %}upload{% endif %}"></i> {% if suffix == '' %}Añadir PDF{% else %}Subir PDF{% endif %}
+    </button>
+  </div>
+  
+  <div id="{{ msg_id }}"></div>
+  <div id="{{ list_id }}" class="eu-sources-editor mt-2">
+    <div class="text-muted text-center p-3 small">No hay fuentes{% if suffix == 'Edit' %} existentes{% endif %}</div>
+  </div>
+</div>

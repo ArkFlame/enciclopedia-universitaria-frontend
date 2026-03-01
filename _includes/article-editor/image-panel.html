@@ -1,0 +1,37 @@
+{% comment %}
+Image upload panel
+Parameters:
+- id_suffix: '' for nuevo, 'Edit' for editar (default: '')
+{% endcomment %}
+
+{% assign suffix = include.id_suffix | default: '' %}
+{% assign upload_id = 'upload' | append: suffix %}
+{% assign input_id = 'imageInput' | append: suffix %}
+{% assign progress_id = 'imgUploadProgress' | append: suffix %}
+{% assign bar_id = 'imgProgressBar' | append: suffix %}
+{% assign label_id = 'imgProgressLabel' | append: suffix %}
+{% assign grid_id = 'uploadedImages' | append: suffix %}
+
+<div class="eu-card p-4 mb-4" id="imagePanel{{ suffix }}">
+  <h5 class="mb-1"><i class="bi bi-images me-2"></i>Multimedia</h5>
+  <p class="text-muted small mb-3">{% if suffix == 'Edit' %}Imágenes en área de revisión hasta aprobación.{% else %}Imágenes en borrador hasta aprobación del artículo.{% endif %}</p>
+  
+  <div id="{{ upload_id }}Area" class="eu-upload-zone mb-3">
+    <i class="bi bi-cloud-upload fs-3 mb-2 d-block text-muted"></i>
+    {% if suffix == '' %}
+    <div class="small text-muted mb-2">Arrastra imágenes aquí o</div>
+    {% endif %}
+    <label for="{{ input_id }}" class="eu-btn-outline eu-btn-sm" style="cursor:pointer">
+      <i class="bi bi-plus-circle"></i> {% if suffix == '' %}Seleccionar{% else %}Subir imágenes{% endif %}
+    </label>
+    <input type="file" id="{{ input_id }}" multiple accept="image/*" class="d-none">
+    <div class="text-muted mt-{% if suffix == '' %}2{% else %}1{% endif %}" style="font-size:.7rem">PNG, JPG, {% if suffix == '' %}GIF, {% endif %}WebP · Máx 5MB</div>
+  </div>
+  
+  <div id="{{ progress_id }}" class="d-none mb-3">
+    <div class="eu-progress-bar-wrap"><div id="{{ bar_id }}" class="eu-progress-bar" style="width:0%"></div></div>
+    <div class="small text-muted mt-1" id="{{ label_id }}">Subiendo...</div>
+  </div>
+  
+  <div id="{{ grid_id }}" class="eu-media-grid"></div>
+</div>

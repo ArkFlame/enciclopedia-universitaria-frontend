@@ -1,0 +1,405 @@
+<script>
+(function() {
+  var Editor = window.ArticleEditor;
+  var u = Editor.utils;
+  var API = Editor.API;
+  var BASE = Editor.BASE;
+  
+  var articleId = null;
+  var localSources = [];
+  var pendingPdf = null;
+
+  document.addEventListener('DOMContentLoaded', async function() {
+    if (!Auth.isLoggedIn()) {
+      window.location.href = BASE + '/login.html?redirect=' + encodeURIComponent(window.location.href);
+      return;
+    }
+    document.getElementById('cancelLink').href = BASE + '/';
+    await loadCategories();
+    setupEventListeners();
+  });
+
+  async function loadCategories() {
+    try {
+      var res = await fetch(API + '/api/articles/meta/categories');
+      if (!res.ok) return;
+      var cats = await res.json();
+      var select = document.getElementById('artCategory');
+      if (!select) return;
+      cats.forEach(function(c) {
+        var opt = document.createElement('option');
+        opt.value = c.slug;
+        opt.textContent = c.name;
+        select.appendChild(opt);
+      });
+    } catch(e) {
+      console.warn('Failed to load categories:', e);
+    }
+  }
+
+  function setupEventListeners() {
+    var summary = document.getElementById('artSummary');
+    if (summary) {
+      summary.addEventListener('input', function() {
+        document.getElementById('summaryCount').textContent = this.value.length;
+      });
+    }
+
+    var content = document.getElementById('artContent');
+    if (content) content.addEventListener('keydown', Editor.handleEditorKeys);
+
+    var previewBtn = document.getElementById('previewBtn');
+    if (previewBtn) previewBtn.addEventListener('click', togglePreview);
+
+    var uploadArea = document.getElementById('uploadArea');
+    var imageInput = document.getElementById('imageInput');
+    if (uploadArea) {
+      uploadArea.addEventListener('dragover', function(e) { e.preventDefault(); this.classList.add('dragover'); });
+      uploadArea.addEventListener('dragleave', function() { this.classList.remove('dragover'); });
+      uploadArea.addEventListener('drop', handleDrop);
+    }
+    if (imageInput) {
+      imageInput.addEventListener('change', function() { uploadImages(this.files); });
+    }
+
+    var addLinkBtn = document.getElementById('addLinkBtn');
+    if (addLinkBtn) addLinkBtn.addEventListener('click', addLinkSource);
+
+    var pdfInput = document.getElementById('srcPdfInput');
+    if (pdfInput) pdfInput.addEventListener('change', function() { attachPdf(this); });
+
+    var clearPdfBtn = document.getElementById('clearPdfBtn');
+    if (clearPdfBtn) clearPdfBtn.addEventListener('click', clearPdfAttach);
+
+    var addPdfBtn = document.getElementById('addPdfBtn');
+    if (addPdfBtn) addPdfBtn.addEventListener('click', addPdfSource);
+
+    var publishBtn = document.getElementById('publishBtn');
+    if (publishBtn) publishBtn.addEventListener('click', publishArticle);
+  }
+
+  function togglePreview() {
+    var container = document.getElementById('previewContainer');
+    var area = document.getElementById('previewArea');
+    var btn = document.getElementById('previewBtn');
+    var content = document.getElementById('artContent').value;
+    if (!container || !area || !btn) return;
+    if (container.classList.contains('d-none')) {
+      container.classList.remove('d-none');
+      area.innerHTML = simplePreview(content);
+      btn.innerHTML = '<i class="bi bi-pencil"></i> Editar';
+    } else {
+      container.classList.add('d-none');
+      btn.innerHTML = '<i class="bi bi-eye"></i> Vista previa';
+    }
+  }
+
+  function simplePreview(md) {
+    return md
+      .replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>')
+      .replace(/\*(.*?)\*/g,'<em>$1</em>')
+      .replace(/~~(.*?)~~/g,'<s>$1</s>')
+      .replace(/^#### (.*)/gm,'<h4>$1</h4>')
+      .replace(/^### (.*)/gm,'<h3>$1</h3>')
+      .replace(/^## (.*)/gm,'<h2>$1</h2>')
+      .replace(/^# (.*)/gm,'<h1>$1</h1>')
+      .replace(/^- (.*)/gm,'<li>$1</li>')
+      .replace(/\[([^\]]+)\]\(([^)]+)\)/g,'<a href="$2">$1</a>')
+      .replace(/`([^`]+)`/g,'<code>$1</code>')
+      .replace(/\[\/?\w[^\]]*\]/g,'<span style="opacity:.5;font-style:italic">[shortcode]</span>')
+      .replace(/\n/g,'<br>');
+  }
+
+  function handleDrop(e) {
+    e.preventDefault();
+    document.getElementById('uploadArea')?.classList.remove('dragover');
+    if (e.dataTransfer.files.length) uploadImages(e.dataTransfer.files);
+  }
+  window.handleDrop = handleDrop;
+
+  async function uploadImages(files) {
+    if (!files || !files.length) return;
+    var formData = new FormData();
+    for (var i = 0; i < files.length; i++) formData.append('images', files[i]);
+    if (articleId) formData.append('articleId', articleId);
+
+    var prog = document.getElementById('imgUploadProgress');
+    var bar = document.getElementById('imgProgressBar');
+    var lbl = document.getElementById('imgProgressLabel');
+    if (!prog || !bar || !lbl) return;
+    prog.classList.remove('d-none');
+    bar.style.width = '15%';
+    bar.style.background = '';
+    lbl.textContent = 'Subiendo ' + files.length + ' imagen(es)...';
+
+    var token = Auth.getToken();
+    var ticker = setInterval(function(){ bar.style.width = Math.min(parseFloat(bar.style.width) + 7, 80) + '%'; }, 300);
+    try {
+      var res = await fetch(API + '/api/media/upload', {
+        method: 'POST',
+        headers: { Authorization: 'Bearer ' + token },
+        body: formData
+      });
+      clearInterval(ticker);
+      bar.style.width = '100%';
+      var data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+
+      lbl.textContent = '✓ ' + data.files.length + ' imagen(es) lista(s)';
+      setTimeout(function(){ prog.classList.add('d-none'); }, 2500);
+
+      var container = document.getElementById('uploadedImages');
+      data.files.forEach(function(f) { appendImageThumb(container, f.id, f.publicUrl, f.filename); });
+      u.showToast(data.files.length + ' imagen(es) subida(s)', 'success');
+    } catch(err) {
+      clearInterval(ticker);
+      bar.style.width = '100%';
+      bar.style.background = 'var(--eu-danger)';
+      lbl.textContent = '✗ ' + err.message;
+      setTimeout(function(){ prog.classList.add('d-none'); bar.style.background = ''; }, 3500);
+      u.showToast(err.message, 'error');
+    }
+  }
+
+  function appendImageThumb(container, mediaId, url, filename) {
+    if (!container) return;
+    var altName = filename.replace(/\.[^.]+$/, '');
+    var div = document.createElement('div');
+    div.className = 'eu-media-thumb';
+    div.dataset.mediaId = mediaId;
+    div.innerHTML =
+      '<img src="' + u.escHtml(url) + '" alt="' + u.escHtml(filename) + '" loading="lazy">' +
+      '<div class="eu-media-thumb-overlay">' +
+      '<button type="button" class="insert-img" data-url="' + u.escAttr(url) + '" data-alt="' + u.escAttr(altName) + '">📥 Insertar</button>' +
+      '<button type="button" class="delete-img" data-id="' + mediaId + '" style="color:#fca5a5">🗑 Eliminar</button>' +
+      '</div>';
+    container.appendChild(div);
+
+    div.querySelector('.insert-img')?.addEventListener('click', function() {
+      Editor.insertImageShortcode(this.dataset.url, this.dataset.alt);
+    });
+    div.querySelector('.delete-img')?.addEventListener('click', function() {
+      deleteImage(parseInt(this.dataset.id, 10), this);
+    });
+  }
+
+  async function deleteImage(mediaId, btn) {
+    if (!confirm('¿Eliminar esta imagen? No se puede deshacer.')) return;
+    var token = Auth.getToken();
+    btn.disabled = true;
+    btn.textContent = '...';
+    try {
+      var res = await fetch(API + '/api/media/' + mediaId, {
+        method: 'DELETE',
+        headers: { Authorization: 'Bearer ' + token }
+      });
+      if (!res.ok) { var d = await res.json(); throw new Error(d.error); }
+      var thumb = btn.closest('.eu-media-thumb');
+      if (thumb) { thumb.style.transition = 'opacity .3s'; thumb.style.opacity = '0'; setTimeout(function(){ thumb.remove(); }, 300); }
+      u.showToast('Imagen eliminada', 'success');
+    } catch(err) {
+      u.showToast('Error: ' + err.message, 'error');
+      btn.disabled = false;
+      btn.textContent = '🗑 Eliminar';
+    }
+  }
+  window.deleteImage = deleteImage;
+
+  function attachPdf(input) {
+    var file = input.files[0];
+    if (!file) return;
+    if (file.size > 10 * 1024 * 1024) { showSourceMsg('warning', 'El PDF supera los 10MB'); input.value = ''; return; }
+    pendingPdf = { file: file, name: file.name };
+    var title = document.getElementById('srcPdfTitle').value.trim() || file.name.replace(/\.pdf$/i,'');
+    document.getElementById('srcPdfTitle').value = title;
+    document.getElementById('pdfPreviewName').textContent = file.name + ' (' + u.fmtSize(file.size) + ')';
+    document.getElementById('pdfPreview').classList.remove('d-none');
+    document.getElementById('addPdfBtn').classList.remove('d-none');
+    document.getElementById('pdfAttachZone').classList.add('d-none');
+  }
+  window.attachPdf = attachPdf;
+
+  function clearPdfAttach() {
+    pendingPdf = null;
+    document.getElementById('srcPdfInput').value = '';
+    document.getElementById('pdfPreview').classList.add('d-none');
+    document.getElementById('addPdfBtn').classList.add('d-none');
+    document.getElementById('pdfAttachZone').classList.remove('d-none');
+  }
+  window.clearPdfAttach = clearPdfAttach;
+
+  function addPdfSource() {
+    if (!pendingPdf) return;
+    var title = document.getElementById('srcPdfTitle').value.trim() || pendingPdf.name.replace(/\.pdf$/i,'');
+    if (localSources.filter(function(s){return s.type==='pdf';}).length >= 5) { showSourceMsg('warning','Límite de 5 PDFs alcanzado'); return; }
+    localSources.push({ id: Date.now(), type: 'pdf', title: title, file: pendingPdf.file, fileName: pendingPdf.name });
+    renderLocalSources();
+    document.getElementById('srcPdfTitle').value = '';
+    clearPdfAttach();
+    showSourceMsg('success', '📄 PDF listo — se subirá al publicar');
+  }
+  window.addPdfSource = addPdfSource;
+
+  function addLinkSource() {
+    var title = document.getElementById('srcLinkTitle').value.trim();
+    var url = document.getElementById('srcLinkUrl').value.trim();
+    if (!title || !url) { showSourceMsg('warning','Título y URL son obligatorios'); return; }
+    try { new URL(url); } catch(e) { showSourceMsg('warning','URL inválida'); return; }
+    if (localSources.filter(function(s){return s.type==='link';}).length >= 20) { showSourceMsg('warning','Límite de 20 enlaces'); return; }
+    localSources.push({ id: Date.now(), type: 'link', title: title, url: url });
+    renderLocalSources();
+    document.getElementById('srcLinkTitle').value = '';
+    document.getElementById('srcLinkUrl').value = '';
+    showSourceMsg('success', '🔗 Enlace añadido');
+  }
+  window.addLinkSource = addLinkSource;
+
+  function showSourceMsg(type, msg) {
+    var el = document.getElementById('sourcesMsg');
+    if (!el) return;
+    el.innerHTML = '<div class="alert alert-' + type + ' py-2 px-3 small mb-0">' + u.escHtml(msg) + '</div>';
+    setTimeout(function(){ if(el) el.innerHTML=''; }, 3500);
+  }
+
+  function renderLocalSources() {
+    var container = document.getElementById('sourcesList');
+    if (!container) return;
+    if (!localSources.length) {
+      container.innerHTML = '<div class="text-muted text-center p-3 small">No hay fuentes aún</div>';
+      return;
+    }
+    container.innerHTML = localSources.map(function(s) {
+      var icon = s.type === 'pdf'
+        ? '<svg viewBox="0 0 24 24" fill="currentColor" style="width:16px;height:16px;flex-shrink:0;color:#dc2626"><path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z"/></svg>'
+        : '<i class="bi bi-link-45deg" style="flex-shrink:0"></i>';
+      return '<div class="eu-source-editor-item" id="lsrc-' + s.id + '">' +
+        icon +
+        '<span class="eu-source-title" title="' + u.escHtml(s.title) + '">' + u.escHtml(s.title) + '</span>' +
+        '<button type="button" class="eu-source-action-btn" data-action="edit" data-id="' + s.id + '" title="Editar">✏️</button>' +
+        '<button type="button" class="eu-source-insert-btn" data-action="cite" data-id="' + s.id + '">Citar</button>' +
+        '<button type="button" class="eu-source-delete-btn" data-action="delete" data-id="' + s.id + '">✕</button>' +
+        '</div>';
+    }).join('');
+
+    container.querySelectorAll('[data-action="edit"]').forEach(function(btn) {
+      btn.addEventListener('click', function() { editLocalSource(parseInt(this.dataset.id, 10)); });
+    });
+    container.querySelectorAll('[data-action="cite"]').forEach(function(btn) {
+      btn.addEventListener('click', function() { insertSourceRef(parseInt(this.dataset.id, 10)); });
+    });
+    container.querySelectorAll('[data-action="delete"]').forEach(function(btn) {
+      btn.addEventListener('click', function() { removeLocalSource(parseInt(this.dataset.id, 10)); });
+    });
+  }
+
+  function editLocalSource(id) {
+    var src = localSources.find(function(s){return s.id===id;});
+    if (!src) return;
+    var newTitle = prompt('Título:', src.title);
+    if (newTitle === null) return;
+    if (newTitle.trim()) src.title = newTitle.trim();
+    if (src.type === 'link') {
+      var newUrl = prompt('URL:', src.url);
+      if (newUrl !== null && newUrl.trim()) {
+        try { new URL(newUrl.trim()); src.url = newUrl.trim(); } catch(e) { u.showToast('URL inválida','error'); return; }
+      }
+    }
+    renderLocalSources();
+  }
+  window.editLocalSource = editLocalSource;
+
+  function insertSourceRef(id) {
+    var src = localSources.find(function(s){return s.id===id;});
+    if (!src) return;
+    var ta = document.getElementById('artContent');
+    if (!ta) return;
+    var pos = ta.selectionStart;
+    u.noScrollInsert(ta, '[source-ref title="' + u.escAttr(src.title) + '"]', pos, pos);
+    ta.focus();
+    u.showToast('Referencia insertada','success');
+  }
+  window.insertSourceRef = insertSourceRef;
+
+  function removeLocalSource(id) {
+    localSources = localSources.filter(function(s){return s.id!==id;});
+    renderLocalSources();
+  }
+  window.removeLocalSource = removeLocalSource;
+
+  async function publishArticle() {
+    var title = document.getElementById('artTitle').value.trim();
+    var summary = document.getElementById('artSummary').value.trim();
+    var content = document.getElementById('artContent').value.trim();
+    var category = document.getElementById('artCategory').value;
+    var btn = document.getElementById('publishBtn');
+    var alertEl = document.getElementById('publishAlert');
+
+    if (!title || !summary || !content) {
+      if (alertEl) {
+        alertEl.className = 'alert alert-danger';
+        alertEl.textContent = 'El título, resumen y contenido son obligatorios';
+        alertEl.classList.remove('d-none');
+      }
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
+    btn.disabled = true;
+    btn.innerHTML = '<span class="eu-spinner" style="width:18px;height:18px;border-width:2px"></span> Enviando...';
+    if (alertEl) alertEl.classList.add('d-none');
+
+    try {
+      var res = await Auth.authFetch(API + '/api/articles', {
+        method: 'POST',
+        body: JSON.stringify({ title: title, summary: summary, content: content, category: category })
+      });
+      var data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      articleId = data.articleId;
+
+      if (localSources.length) await uploadPendingSources(articleId);
+
+      if (alertEl) {
+        alertEl.className = 'alert alert-success';
+        alertEl.innerHTML = '✓ <strong>Artículo enviado.</strong> Quedará visible cuando un moderador lo apruebe. <a href="' + BASE + '/articulo.html?slug=' + data.slug + '" class="alert-link">Ver artículo</a>';
+        alertEl.classList.remove('d-none');
+      }
+      btn.innerHTML = '<i class="bi bi-check-lg"></i> Enviado';
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } catch(err) {
+      if (alertEl) {
+        alertEl.className = 'alert alert-danger';
+        alertEl.textContent = err.message;
+        alertEl.classList.remove('d-none');
+      }
+      btn.disabled = false;
+      btn.innerHTML = '<i class="bi bi-send"></i> Enviar para revisión';
+    }
+  }
+  window.publishArticle = publishArticle;
+
+  async function uploadPendingSources(artId) {
+    var token = Auth.getToken();
+    for (var i = 0; i < localSources.length; i++) {
+      var src = localSources[i];
+      try {
+        if (src.type === 'link') {
+          await fetch(API + '/api/articles/' + artId + '/sources', {
+            method: 'POST',
+            headers: { 'Content-Type':'application/json', 'Authorization':'Bearer ' + token },
+            body: JSON.stringify({ type:'link', title:src.title, url:src.url })
+          });
+        } else if (src.type === 'pdf') {
+          var fd = new FormData();
+          fd.append('pdf', src.file);
+          fd.append('title', src.title);
+          await fetch(API + '/api/articles/' + artId + '/sources/pdf', {
+            method: 'POST',
+            headers: { 'Authorization':'Bearer ' + token },
+            body: fd
+          });
+        }
+      } catch(e) { console.warn('Source failed:', e); }
+    }
+  }
+})();
+</script>

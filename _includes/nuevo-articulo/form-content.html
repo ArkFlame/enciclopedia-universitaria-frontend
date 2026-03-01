@@ -1,0 +1,60 @@
+{% comment %}
+Main form content for new article
+{% endcomment %}
+
+<div class="eu-card p-4 mb-4">
+  <h5 class="mb-3">Información del artículo</h5>
+  
+  <div class="eu-form-group">
+    <label class="eu-label" for="artTitle">Título <span class="text-danger">*</span></label>
+    <input type="text" id="artTitle" class="eu-input" placeholder="Ej: La fotosíntesis en plantas C4" maxlength="500">
+  </div>
+  
+  <div class="eu-form-group">
+    <label class="eu-label">Resumen <span class="text-danger">*</span> <span class="text-muted small fw-normal">— soporta Markdown</span></label>
+    <div class="eu-summary-toolbar">
+      <button class="eu-editor-btn" type="button" onclick="summaryWrap('**','**')" title="Negrita"><b>B</b></button>
+      <button class="eu-editor-btn" type="button" onclick="summaryWrap('*','*')" title="Cursiva"><i>I</i></button>
+      <button class="eu-editor-btn" type="button" onclick="summaryLine('- ')" title="Lista">• Lista</button>
+      <button class="eu-editor-btn" type="button" onclick="summaryLine('1. ')" title="Lista numerada">1. Lista</button>
+      <button class="eu-editor-btn" type="button" onclick="summaryAnchor()" title="Ancla">⚓ Sección</button>
+    </div>
+    <textarea id="artSummary" class="eu-textarea eu-summary-textarea" placeholder="Breve descripción" maxlength="4000" rows="4"></textarea>
+    <div class="text-muted small mt-1"><span id="summaryCount">0</span>/4000 · Markdown habilitado</div>
+  </div>
+  
+  <div class="row g-3">
+    <div class="col-md-6">
+      <label class="eu-label" for="artCategory">Categoría</label>
+      <select id="artCategory" class="eu-select">
+        <option value="">Sin categoría</option>
+        <!-- Categories loaded dynamically -->
+      </select>
+    </div>
+  </div>
+</div>
+
+<div class="eu-card p-4 mb-4">
+  <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
+    <h5 class="m-0">Contenido del artículo</h5>
+    <button class="eu-btn-outline eu-btn-sm" id="previewBtn" type="button">
+      <i class="bi bi-eye"></i> Vista previa
+    </button>
+  </div>
+  
+  {% include article-editor/toolbar.html %}
+  
+  <textarea id="artContent" class="eu-input eu-editor-area" style="border-radius:0 0 var(--eu-radius) var(--eu-radius);border-top:none" placeholder="# Título principal&#10;&#10;Escribe el contenido en Markdown..."></textarea>
+  
+  <div id="previewContainer" class="d-none mt-3">
+    <div class="eu-label mb-2">Vista previa:</div>
+    <div class="eu-preview-area eu-article-content p-3 border rounded" id="previewArea"></div>
+  </div>
+</div>
+
+<div class="d-flex gap-3 justify-content-end flex-wrap">
+  <a href="#" id="cancelLink" class="eu-btn-outline">Cancelar</a>
+  <button class="eu-btn-primary" type="button" id="publishBtn">
+    <i class="bi bi-send"></i> Enviar para revisión
+  </button>
+</div>
