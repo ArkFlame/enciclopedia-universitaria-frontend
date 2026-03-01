@@ -341,16 +341,86 @@ Producción de glucosa y liberación de O₂
   </section>
 
   <section id="mapa" class="mb-5">
-    <h2 class="eu-section-title">🗺️ Mapa sinóptico</h2>
-    <p class="text-muted mb-3">El nuevo shortcode <code>[mapa-sinoptico]</code> convierte relaciones con flechas <code>-></code> en un grafo Mermaid renderizado automáticamente.</p>
+    <h2 class="eu-section-title">🗺️ Mapa Conceptual (Family Tree)</h2>
+    <p class="text-muted mb-3">Visualiza jerarquías y relaciones padre-hijo con un árbol genealógico interactivo. Usa nodos anidados para crear estructuras complejas.</p>
+    
+    <div class="eu-card p-4 mb-4">
+      <div class="eu-label mb-1">Nuevo sintaxis recomendada:</div>
+      <pre style="background:var(--eu-code-bg);padding:12px;border-radius:8px;overflow-x:auto;">
+[family-tree name="Clasificación de Células"]
+  [node label="Célula" color="#f59e0b"]
+    [node label="Eucariota" color="#3b82f6"]
+      [node label="Animal" color="#10b981"]
+      [node label="Vegetal" color="#84cc16"]
+      [node label="Hongos" color="#8b5cf6"]
+    [/node]
+    [node label="Procariota" color="#ec4899"]
+      [node label="Bacteria" color="#06b6d4"]
+      [node label="Archaea" color="#f43f5e"]
+    [/node]
+  [/node]
+[/family-tree]</pre>
+    </div>
+
     <div class="eu-card p-4">
-      <div class="eu-label mb-1">Código equivalente:</div>
-      <pre class="eu-sc-code">[mapa-sinoptico dir="LR"]
-Proceso de fotosíntesis -> Fase 1
-Proceso de fotosíntesis -> Fase 2
-Fase 1 -> Resultado
-[/mapa-sinoptico]</pre>
-      <div class="small text-muted mt-2"><strong>dir</strong> controla la dirección del grafo (LR, RL, TB, BT). Si no la especificás, se usa <code>LR</code>.</div>
+      <div class="eu-label mb-1">Resultado renderizado:</div>
+      <div class="eu-family-tree-container">
+        <div class="eu-family-tree-wrapper">
+          <ul class="eu-tree-level">
+            <li class="eu-tree-node-wrapper">
+              <div class="eu-tree-node" style="--node-color: #f59e0b; background: #f59e0b; color: white;">
+                <span class="eu-tree-label">Célula</span>
+              </div>
+              <ul class="eu-tree-level">
+                <li class="eu-tree-node-wrapper">
+                  <div class="eu-tree-node" style="--node-color: #3b82f6; background: #3b82f6; color: white;">
+                    <span class="eu-tree-label">Eucariota</span>
+                  </div>
+                  <ul class="eu-tree-level">
+                    <li class="eu-tree-node-wrapper">
+                      <div class="eu-tree-node" style="--node-color: #10b981; background: #10b981; color: white;">
+                        <span class="eu-tree-label">Animal</span>
+                      </div>
+                    </li>
+                    <li class="eu-tree-node-wrapper">
+                      <div class="eu-tree-node" style="--node-color: #84cc16; background: #84cc16; color: white;">
+                        <span class="eu-tree-label">Vegetal</span>
+                      </div>
+                    </li>
+                    <li class="eu-tree-node-wrapper">
+                      <div class="eu-tree-node" style="--node-color: #8b5cf6; background: #8b5cf6; color: white;">
+                        <span class="eu-tree-label">Hongos</span>
+                      </div>
+                    </li>
+                  </ul>
+                </li>
+                <li class="eu-tree-node-wrapper">
+                  <div class="eu-tree-node" style="--node-color: #ec4899; background: #ec4899; color: white;">
+                    <span class="eu-tree-label">Procariota</span>
+                  </div>
+                  <ul class="eu-tree-level">
+                    <li class="eu-tree-node-wrapper">
+                      <div class="eu-tree-node" style="--node-color: #06b6d4; background: #06b6d4; color: white;">
+                        <span class="eu-tree-label">Bacteria</span>
+                      </div>
+                    </li>
+                    <li class="eu-tree-node-wrapper">
+                      <div class="eu-tree-node" style="--node-color: #f43f5e; background: #f43f5e; color: white;">
+                        <span class="eu-tree-label">Archaea</span>
+                      </div>
+                    </li>
+                  </ul>
+                </li>
+              </ul>
+            </li>
+          </ul>
+        </div>
+        <p class="eu-tree-caption">🗺️ Clasificación de Células</p>
+      </div>
+    </div>
+
+    <div class="alert alert-warning mt-4" style="font-size:0.85rem;">
+      <strong>⚠️ Sintaxis antigua deprecada:</strong> El shortcode <code>[mapa-sinoptico]</code> con flechas <code>-></code> sigue funcionando pero se recomienda migrar a <code>[family-tree]</code> para mejor visualización.
     </div>
   </section>
 

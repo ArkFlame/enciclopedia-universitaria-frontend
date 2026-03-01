@@ -195,21 +195,29 @@ title: Cargando artículo...
       document.head.appendChild(script);
     }
 
-    // Mermaid para Mapas Sinópticos
-    if (document.querySelector('.eu-mapa-sinoptico')) {
-      const mermaidScript = document.createElement('script');
-      mermaidScript.src = 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js';
-      mermaidScript.onload = function() {
-        window.mermaid.initialize({
-          startOnLoad: false,
-          theme: document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'default',
-          flowchart: { curve: 'basis', useMaxWidth: true },
-          securityLevel: 'loose'
+    // Inicializar Family Trees (Mapa Conceptual)
+    if (document.querySelector('[data-family-tree]')) {
+      document.querySelectorAll('.eu-tree-node').forEach(node => {
+        node.addEventListener('click', function(e) {
+          e.stopPropagation();
+
+          document.querySelectorAll('.eu-tree-node').forEach(n => {
+            n.style.transform = '';
+            n.style.boxShadow = '';
+          });
+
+          this.style.transform = 'scale(1.05)';
+          this.style.boxShadow = '0 0 0 4px rgba(59, 130, 246, 0.3), 0 10px 15px -3px rgba(0, 0, 0, 0.1)';
+
+          setTimeout(() => {
+            this.style.transform = '';
+            this.style.boxShadow = '';
+          }, 2000);
         });
-        window.mermaid.run({ querySelector: '.eu-mapa-sinoptico .mermaid' });
-      };
-      document.head.appendChild(mermaidScript);
+      });
     }
+
+    // DEPRECATED: Old Mermaid initialization removed. The family-tree shortcode replaces mapa-sinoptico with a pure CSS solution.
 
   } catch (err) {
     document.getElementById('articlePage').innerHTML = `

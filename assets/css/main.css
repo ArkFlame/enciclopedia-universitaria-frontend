@@ -1921,35 +1921,245 @@ a.eu-notif-item {
   color: #86efac;
   border-color: #15803d;
 }
+[data-theme="dark"] .alert-warning {
+  background: #451a03;
+  color: #fbbf24;
+  border-color: #f59e0b;
+}
+[data-theme="dark"] .alert-danger {
+  background: #450a0a;
+  color: #f87171;
+  border-color: #f43f5e;
+}
+[data-theme="dark"] .alert-light {
   background: var(--eu-bg-secondary);
   color: var(--eu-text);
 }
 
-/* ═══════════════════════════════════════════════════════════
-   MAPA SINÓPTICO (Mermaid)
-   ═══════════════════════════════════════════════════════════ */
-.eu-mapa-sinoptico {
-  border: 1px solid var(--eu-border);
-  border-radius: var(--eu-radius-lg);
-  padding: 20px;
-  background: var(--eu-surface);
+/* ==========================================================================
+   FAMILY TREE / MAPA CONCEPTUAL STYLES
+   ========================================================================== */
+
+.eu-family-tree-container {
+  width: 100%;
   overflow-x: auto;
+  padding: 2rem 1rem;
+  background: var(--eu-bg-secondary, #f8f9fa);
+  border-radius: 12px;
+  border: 1px solid var(--eu-border, #e5e7eb);
 }
-.eu-mermaid-wrap {
-  min-height: 80px;
+
+.eu-family-tree-wrapper {
   display: flex;
   justify-content: center;
+  min-width: max-content;
 }
-.eu-mapa-sinoptico .mermaid svg {
-  max-width: 100%;
-  height: auto;
+
+.eu-tree-caption {
+  text-align: center;
+  font-size: 0.875rem;
+  color: var(--eu-text-muted, #6b7280);
+  margin-top: 1rem;
+  margin-bottom: 0;
+  font-style: italic;
 }
-/* Mermaid dark theme fix */
-[data-theme="dark"] .eu-mapa-sinoptico .mermaid .label {
-  color: #e2e8f0 !important;
+
+/* Tree Structure - Horizontal Layout */
+.eu-family-tree-wrapper ul {
+  position: relative;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  gap: 2rem;
 }
-[data-theme="dark"] .eu-mapa-sinoptico .mermaid .edgePath .path {
-  stroke: #94a3b8 !important;
+
+.eu-family-tree-wrapper ul.eu-tree-level {
+  position: relative;
+}
+
+/* Vertical connector from parent to children container */
+.eu-family-tree-wrapper ul.eu-tree-level::before {
+  content: '';
+  position: absolute;
+  top: -2rem;
+  left: 50%;
+  width: 2px;
+  height: 2rem;
+  background: var(--eu-border, #d1d5db);
+  transform: translateX(-50%);
+}
+
+/* First level doesn't need top connector */
+.eu-family-tree-wrapper > ul::before {
+  display: none;
+}
+
+/* Node Wrapper */
+.eu-tree-node-wrapper {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-top: 2rem;
+}
+
+/* First level nodes don't need top padding */
+.eu-family-tree-wrapper > ul > .eu-tree-node-wrapper {
+  padding-top: 0;
+}
+
+/* Horizontal connectors between siblings */
+.eu-tree-node-wrapper::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -1rem;
+  right: -1rem;
+  height: 2px;
+  background: var(--eu-border, #d1d5db);
+}
+
+/* Remove horizontal line for first and last child */
+.eu-tree-node-wrapper:first-child::before {
+  left: 50%;
+}
+
+.eu-tree-node-wrapper:last-child::before {
+  right: 50%;
+}
+
+/* Single child - no horizontal line needed */
+.eu-tree-node-wrapper:only-child::before {
+  display: none;
+}
+
+/* Vertical connector line down to children */
+.eu-tree-node-wrapper::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 2px;
+  height: 2rem;
+  background: var(--eu-border, #d1d5db);
+  transform: translateX(-50%);
+}
+
+/* Leaf nodes (no children) don't need bottom connector */
+.eu-tree-node-wrapper:not(:has(> ul))::after {
+  display: none;
+}
+
+/* Root level nodes don't need top connector */
+.eu-family-tree-wrapper > ul > .eu-tree-node-wrapper::after {
+  display: none;
+}
+
+/* The Node Itself */
+.eu-tree-node {
+  position: relative;
+  z-index: 2;
+  padding: 0.75rem 1.25rem;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  transition: all 0.2s ease;
+  cursor: default;
+  min-width: 120px;
+  text-align: center;
+  border: 3px solid white;
+  outline: 2px solid var(--node-color, #3b82f6);
+}
+
+.eu-tree-node:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
+.eu-tree-label {
+  display: block;
+  line-height: 1.3;
+}
+
+/* Nested children container */
+.eu-tree-node-wrapper > ul {
+  margin-top: 2rem;
+  position: relative;
+}
+
+/* Connector from parent node to children container */
+.eu-tree-node-wrapper > ul::before {
+  content: '';
+  position: absolute;
+  top: -2rem;
+  left: 50%;
+  width: 2px;
+  height: 2rem;
+  background: var(--eu-border, #d1d5db);
+  transform: translateX(-50%);
+}
+
+/* Dark mode adjustments */
+[data-theme="dark"] .eu-family-tree-container {
+  background: var(--eu-bg-secondary, #1f2937);
+  border-color: var(--eu-border, #374151);
+}
+
+[data-theme="dark"] .eu-tree-node {
+  border-color: #1f2937;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+}
+
+[data-theme="dark"] .eu-tree-node-wrapper::before,
+[data-theme="dark"] .eu-tree-node-wrapper::after,
+[data-theme="dark"] .eu-tree-node-wrapper > ul::before {
+  background: var(--eu-border, #4b5563);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .eu-family-tree-wrapper ul {
+    gap: 1rem;
+  }
+  
+  .eu-tree-node {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.85rem;
+    min-width: 100px;
+  }
+  
+  .eu-tree-node-wrapper {
+    padding-top: 1.5rem;
+  }
+  
+  .eu-tree-node-wrapper::after,
+  .eu-tree-node-wrapper > ul::before {
+    height: 1.5rem;
+  }
+  
+  .eu-tree-node-wrapper > ul {
+    margin-top: 1.5rem;
+  }
+}
+
+/* Print styles */
+@media print {
+  .eu-family-tree-container {
+    break-inside: avoid;
+    background: white !important;
+    border: 1px solid #ccc;
+  }
+  
+  .eu-tree-node {
+    box-shadow: none;
+    border: 2px solid var(--node-color, #333);
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
 }
 
 /* ═══════════════════════════════════════════════════════════
