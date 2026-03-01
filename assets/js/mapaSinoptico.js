@@ -1,3 +1,4 @@
+// mapaSinoptico.js
 (() => {
   const DEFAULT_NODE_PALETTE = [
     '#1f2d3d', '#0066cc', '#00a65a', '#8e44ad',
