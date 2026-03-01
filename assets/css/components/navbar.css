@@ -285,44 +285,130 @@
 .eu-mobile-search .eu-search-box {
   width: 100%;
 }
-/* Mobile responsiveness */
+/* ── Mobile responsiveness ────────────────────────────────── */
+
+/*
+ * Root containment: prevent ANY child from causing horizontal scroll.
+ * Applied here (on the stylesheet that owns the navbar) so it is
+ * co-located with the component that was causing the overflow.
+ */
+html, body {
+  overflow-x: hidden;
+  max-width: 100%;
+}
+
+/* Navbar itself must never exceed the viewport */
+.eu-navbar {
+  width: 100%;
+  max-width: 100vw;
+  overflow: hidden;        /* clip any child that bleeds */
+  box-sizing: border-box;
+}
+
+/* Inner row: shrink padding and gap on small screens */
 @media (max-width: 767.98px) {
-  .eu-navbar {
-    width: 100vw;
-    max-width: 100vw;
-    left: 0;
-    right: 0;
-  }
   .eu-navbar-inner {
-    padding: 0 12px;
-    gap: 8px;
+    padding: 0 10px;
+    gap: 6px;
+    /* Ensure the row itself cannot exceed the viewport */
+    width: 100%;
+    max-width: 100%;
+    overflow: hidden;
   }
+
   .eu-hamburger {
     display: flex;
   }
-  .eu-logo-text {
-    font-size: 0.7rem;
-  }
+
+  /* Logo: tighten up but stay legible */
   .eu-logo-icon {
-    font-size: 1.5rem;
+    font-size: 1.45rem;
   }
+  .eu-logo-text {
+    font-size: 0.68rem;
+  }
+
+  /* Right-side controls: tighter gap, smaller touch targets */
   .eu-navbar-right {
-    gap: 4px;
+    gap: 2px;
+    flex-shrink: 1;   /* allow shrinking if needed */
+    min-width: 0;
+    overflow: hidden;
   }
+
+  /* Icon buttons: slightly smaller */
   .eu-icon-btn {
     width: 32px;
     height: 32px;
-    font-size: 0.9rem;
+    font-size: 0.88rem;
+  }
+
+  /* Auth "login" button: compact on mobile */
+  #authSection .eu-btn-primary {
+    padding: 6px 10px;
+    font-size: 0.8rem;
+    white-space: nowrap;
+  }
+
+  /* Mobile search row: must not overflow */
+  .eu-mobile-search {
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+  .eu-mobile-search .eu-search-box,
+  .eu-mobile-search .eu-search-input {
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
   }
 }
+
+/* Extra-small screens (≤575px) */
 @media (max-width: 575.98px) {
   .eu-navbar-inner {
     padding: 0 8px;
+    gap: 4px;
   }
+
+  /* Hide logo text entirely to reclaim space */
   .eu-logo-text {
     display: none;
   }
+
+  /* Hide read counter number, keep icon only */
   .eu-read-counter span {
     display: none;
+  }
+
+  /* On very small screens the toggle-pending switch takes too much space;
+     hide it (it's already d-none d-sm-flex in the HTML, this is a safety net) */
+  .eu-toggle-wrap {
+    display: none !important;
+  }
+
+  /* Auth button: icon-only feel */
+  #authSection .eu-btn-primary {
+    padding: 6px 8px;
+    font-size: 0.78rem;
+  }
+
+  /* Tightest icon buttons */
+  .eu-icon-btn {
+    width: 30px;
+    height: 30px;
+    font-size: 0.85rem;
+  }
+}
+
+/* Phones narrower than 360px (very small Android devices) */
+@media (max-width: 359px) {
+  .eu-logo-icon {
+    font-size: 1.25rem;
+  }
+  #authSection {
+    display: none;  /* show only in sidebar on tiny devices */
   }
 }

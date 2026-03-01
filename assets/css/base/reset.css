@@ -1,9 +1,14 @@
 /* ── RESET & BASE ───────────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
+html {
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+  overflow-x: hidden;   /* prevent horizontal scroll from any overflowing child */
+}
 
 body {
+  overflow-x: hidden;   /* belt-and-suspenders with html rule above */
   font-family: var(--eu-font-body);
   font-size: 16px;
   line-height: 1.6;
