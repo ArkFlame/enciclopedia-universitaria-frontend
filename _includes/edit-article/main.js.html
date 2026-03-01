@@ -244,20 +244,43 @@
 
   async function uploadEditImages(files) {
     if (!articleData) return;
-    var formData = new FormData();
-    for (var i = 0; i < files.length; i++) formData.append('images', files[i]);
-    formData.append('articleId', articleData.id);
     var token = Auth.getToken();
 
     var prog = document.getElementById('editImgProgress');
-    var bar = document.getElementById('editImgBar');
-    var lbl = document.getElementById('editImgLabel');
+    var bar  = document.getElementById('editImgBar');
+    var lbl  = document.getElementById('editImgLabel');
     if (!prog || !bar || !lbl) return;
     prog.classList.remove('d-none');
-    bar.style.width = '15%';
+    bar.style.width = '5%';
     bar.style.background = '';
-    lbl.textContent = 'Subiendo ' + files.length + ' imagen(es)...';
-    var ticker = setInterval(function(){ bar.style.width = Math.min(parseFloat(bar.style.width) + 7, 80) + '%'; }, 300);
+
+    // ── Frontend compression ──────────────────────────────────────────
+    var compressedFiles;
+    if (window.ImageCompressor && window.ImageCompressor.isSupported()) {
+      lbl.textContent = 'Comprimiendo ' + files.length + ' imagen(es)\u2026';
+      try {
+        compressedFiles = await window.ImageCompressor.compressFiles(
+          Array.from(files),
+          function (idx, total, msg) {
+            lbl.textContent = 'Comprimiendo ' + (idx + 1) + '/' + total + ': ' + msg;
+            bar.style.width = Math.round(5 + (idx / total) * 30) + '%';
+          }
+        );
+      } catch (compErr) {
+        console.warn('[upload] Compression error, using originals:', compErr);
+        compressedFiles = Array.from(files);
+      }
+    } else {
+      compressedFiles = Array.from(files);
+    }
+
+    var formData = new FormData();
+    for (var i = 0; i < compressedFiles.length; i++) formData.append('images', compressedFiles[i]);
+    formData.append('articleId', articleData.id);
+
+    bar.style.width = '35%';
+    lbl.textContent = 'Subiendo ' + compressedFiles.length + ' imagen(es)\u2026';
+    var ticker = setInterval(function(){ bar.style.width = Math.min(parseFloat(bar.style.width) + 5, 90) + '%'; }, 400);
 
     try {
       var res = await fetch(API + '/api/media/upload', {
