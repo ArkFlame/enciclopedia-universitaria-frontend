@@ -100,20 +100,26 @@ title: Cargando artículo...
     const pdfSources = sources.filter(s => s.type === 'pdf');
     const linkSources = sources.filter(s => s.type === 'link');
     
+    const pdfIconSvg = `<svg class="eu-source-pdf-icon" viewBox="0 0 24 24" fill="currentColor" style="width:18px;height:18px;flex-shrink:0;color:#dc2626"><path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z"/></svg>`;
+
     const sourcesHtml = sources.length ? `
       <div class="eu-sidebar-widget">
         <h4><i class="bi bi-link-45deg me-1"></i>Fuentes</h4>
         <div class="eu-sources-list">
           ${pdfSources.map(s => `
-            <a href="${BASE}/api/sources/sources/pdf/${s.id}" target="_blank" class="eu-source-item eu-source-pdf">
-              <i class="bi bi-file-earmark-pdf-fill"></i>
-              <span class="eu-source-title">${escapeHtml(s.title)}</span>
-              <span class="eu-source-size">${formatFileSize(s.pdf_size)}</span>
+            <a href="${API}/api/sources/pdf/${s.id}" target="_blank" class="eu-source-item eu-source-pdf">
+              ${pdfIconSvg}
+              <div style="flex:1;min-width:0">
+                <div class="eu-source-title">${escapeHtml(s.title)}</div>
+                ${s.pdf_size ? `<div class="eu-source-size">${formatFileSize(s.pdf_size)}</div>` : ''}
+              </div>
             </a>
           `).join('')}
           ${linkSources.map(s => `
             <a href="${escapeHtml(s.url)}" target="_blank" rel="noopener noreferrer" class="eu-source-item eu-source-link">
-              <img src="${escapeHtml(s.favicon_url)}" alt="" class="eu-source-favicon" onerror="this.style.display='none'">
+              ${s.favicon_url
+                ? `<img src="${escapeHtml(s.favicon_url)}" alt="" class="eu-source-favicon" onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22><path fill=%22%23666%22 d=%22M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71%22/><path fill=%22%23666%22 d=%22M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71%22/></svg>'">`
+                : `<i class="bi bi-link-45deg" style="font-size:1rem;flex-shrink:0"></i>`}
               <span class="eu-source-title">${escapeHtml(s.title)}</span>
             </a>
           `).join('')}
@@ -147,7 +153,7 @@ title: Cargando artículo...
             </div>` : ''}
 
           <div class="eu-article-summary mb-4 p-3 rounded" style="background:var(--eu-bg-secondary);border-left:3px solid var(--eu-text)">
-            <p class="m-0" style="font-size:1.05rem;color:var(--eu-text-secondary);font-style:italic">${escapeHtml(data.summary)}</p>
+            <div class="eu-summary-content" style="font-size:1.05rem;color:var(--eu-text-secondary);font-style:italic">${renderSummaryMarkdown(data.summary)}</div>
           </div>
 
           ${contentHtml}
@@ -227,7 +233,19 @@ title: Cargando artículo...
   }
 
   function escapeHtml(s) {
-    return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&gt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+
+  function renderSummaryMarkdown(text) {
+    if (!text) return '';
+    var safe = text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    return safe
+      .replace(/**(.*?)**/g,'<strong>$1</strong>')
+      .replace(/*(.*?)*/g,'<em>$1</em>')
+      .replace(/[([^]]+)](([^)]+))/g,'<a href="$2" style="color:var(--eu-link)">$1</a>')
+      .replace(/^- (.+)/gm,'<li>$1</li>')
+      .replace(/
+/g,'<br>');
   }
 
   function formatFileSize(bytes) {

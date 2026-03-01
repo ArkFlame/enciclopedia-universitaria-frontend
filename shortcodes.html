@@ -1,35 +1,47 @@
 ---
 layout: default
-title: Guía de Shortcodes
-description: Aprende a crear contenido interactivo en la Enciclopedia Universitaria
+title: Guía de Shortcodes y Escritura
+description: Guía completa para crear artículos en la Enciclopedia Universitaria
 ---
 
-<div style="max-width:900px;margin:0 auto">
+<div style="max-width:960px;margin:0 auto">
   <div class="mb-5">
-    <h1 class="eu-hero-title">Guía de Shortcodes</h1>
-    <p class="text-muted" style="font-size:1.05rem">Aprende a crear artículos interactivos y profesionales usando nuestros componentes predefinidos.</p>
+    <h1 class="eu-hero-title">Guía de Shortcodes y Redacción</h1>
+    <p class="text-muted" style="font-size:1.05rem">Todo lo que necesitas saber para crear artículos interactivos y profesionales.</p>
   </div>
 
   <!-- TOC -->
   <div class="eu-card p-4 mb-5">
-    <h4>Contenido de esta guía</h4>
+    <h4 class="mb-3">Contenido de esta guía</h4>
     <div class="row">
-      <div class="col-md-6">
+      <div class="col-md-4">
         <ul class="mb-0">
           <li><a href="#markdown">Markdown básico</a></li>
+          <li><a href="#summary">Resumen con Markdown</a></li>
+          <li><a href="#fuentes">Fuentes y citas</a></li>
+          <li><a href="#imagenes">Imágenes</a></li>
           <li><a href="#tooltip">Tooltips</a></li>
           <li><a href="#alert">Alertas</a></li>
-          <li><a href="#callout">Callouts</a></li>
-          <li><a href="#accordion">Acordeón</a></li>
         </ul>
       </div>
-      <div class="col-md-6">
+      <div class="col-md-4">
         <ul class="mb-0">
+          <li><a href="#callout">Callouts</a></li>
+          <li><a href="#accordion">Acordeón</a></li>
           <li><a href="#tabs">Pestañas</a></li>
+          <li><a href="#highlight">Resaltado</a></li>
+          <li><a href="#formula">Fórmulas</a></li>
+          <li><a href="#youtube">YouTube</a></li>
+        </ul>
+      </div>
+      <div class="col-md-4">
+        <ul class="mb-0">
           <li><a href="#card">Tarjetas</a></li>
-          <li><a href="#diagram">Diagrama interactivo</a></li>
-          <li><a href="#image">Imágenes</a></li>
+          <li><a href="#modal">Modales</a></li>
           <li><a href="#ref">Referencias</a></li>
+          <li><a href="#source-ref">Citar fuentes</a></li>
+          <li><a href="#sinoptico">Cuadro sinóptico</a></li>
+          <li><a href="#diagram">Diagrama interactivo</a></li>
         </ul>
       </div>
     </div>
@@ -38,47 +50,144 @@ description: Aprende a crear contenido interactivo en la Enciclopedia Universita
   <!-- MARKDOWN -->
   <section id="markdown" class="mb-5">
     <h2 class="eu-section-title">📝 Markdown básico</h2>
-    <p class="text-muted mb-4">Todo el contenido se escribe en Markdown estándar.</p>
+    <p class="text-muted mb-4">Todo el contenido se escribe en Markdown estándar compatible con GitHub Flavored Markdown (GFM). Usa Ctrl+B para negrita, Ctrl+I para cursiva.</p>
     <div class="row g-4">
       <div class="col-md-6">
         <div class="eu-card p-3">
           <div class="eu-label mb-2">Código:</div>
-          <pre class="mb-0" style="background:var(--eu-code-bg);padding:12px;border-radius:6px;font-size:0.85rem"># Título principal
-## Sección
-### Subsección
+          <pre class="mb-0 eu-sc-code"># Título principal (H1)
+## Sección (H2)
+### Subsección (H3)
+#### Cuarto nivel (H4)
 
 **Texto en negrita**
 *Texto en cursiva*
+~~Texto tachado~~
+`código inline`
 
-- Item 1
-- Item 2
-  - Subitem
+- Item de lista
+- Otro item
+  - Subitem anidado
 
 1. Primero
 2. Segundo
+3. Tercero
 
-[Enlace](https://url.com)
+[Texto del enlace](https://url.com)
+![Alt imagen](https://url.com/img.jpg)
 
 > Cita o referencia importante
 
-`código inline`
-
 ```
-bloque de código
-```</pre>
+bloque de código multiparagrafo
+```
+
+| Columna 1 | Columna 2 |
+|-----------|-----------|
+| Dato A    | Dato B    |
+
+---  (línea separadora)</pre>
         </div>
       </div>
       <div class="col-md-6">
         <div class="eu-card p-3">
-          <div class="eu-label mb-2">Resultado:</div>
+          <div class="eu-label mb-2">Atajos de teclado:</div>
+          <table class="table table-sm" style="font-size:.85rem">
+            <tr><td><kbd>Ctrl+B</kbd></td><td>Negrita</td></tr>
+            <tr><td><kbd>Ctrl+I</kbd></td><td>Cursiva</td></tr>
+            <tr><td><kbd>Ctrl+K</kbd></td><td>Insertar enlace</td></tr>
+            <tr><td><kbd>Tab</kbd></td><td>2 espacios de indentación</td></tr>
+          </table>
+          <div class="eu-label mb-2 mt-3">Resultado:</div>
           <div class="eu-article-content">
             <h2 style="font-size:1.1rem">Título principal</h2>
-            <p><strong>Texto en negrita</strong> y <em>cursiva</em></p>
+            <p><strong>Negrita</strong> y <em>cursiva</em> y <s>tachado</s> y <code>código</code></p>
             <ul><li>Item 1</li><li>Item 2</li></ul>
             <blockquote>Cita importante</blockquote>
-            <p><code>código inline</code></p>
+            <table class="table table-bordered table-sm"><tr><th>Col 1</th><th>Col 2</th></tr><tr><td>A</td><td>B</td></tr></table>
           </div>
         </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SUMMARY -->
+  <section id="summary" class="mb-5">
+    <h2 class="eu-section-title">📋 Resumen con Markdown e índice</h2>
+    <p class="text-muted mb-3">El resumen (introducción) del artículo soporta Markdown completo. Puedes crear un índice con enlaces que llevan a secciones del artículo usando anclas.</p>
+    <div class="eu-card p-4">
+      <div class="eu-label mb-1">Cómo crear un índice en el resumen:</div>
+      <pre class="eu-sc-code mb-3">## Contenidos
+- [Introducción](#introduccion)
+- [Metabolismo celular](#metabolismo-celular)
+- [Tipos de células](#tipos-de-celulas)
+- [Conclusiones](#conclusiones)
+
+**Definición:** Una célula es la unidad básica de la vida...</pre>
+      <div class="alert alert-info">
+        <i class="bi bi-info-circle me-2"></i>
+        Las anclas se generan automáticamente desde los títulos del artículo. Para "## Metabolismo Celular" el ID es <code>#metabolismo-celular</code> (minúsculas, guiones en lugar de espacios).
+      </div>
+    </div>
+  </section>
+
+  <!-- FUENTES -->
+  <section id="fuentes" class="mb-5">
+    <h2 class="eu-section-title">📚 Fuentes y bibliografía</h2>
+    <p class="text-muted mb-3">Las fuentes se añaden desde el panel lateral del editor. Aparecen en el sidebar del artículo con favicon para URLs y ícono PDF para documentos.</p>
+    <div class="row g-4">
+      <div class="col-md-6">
+        <div class="eu-card p-3">
+          <div class="fw-semibold mb-2">🔗 Fuentes URL (enlace web)</div>
+          <ul class="small text-muted mb-0">
+            <li>Título personalizado (ej: "Wikipedia - Célula")</li>
+            <li>URL completa con https://</li>
+            <li>Se muestra el favicon del sitio automáticamente</li>
+            <li>Límite: 20 enlaces por artículo</li>
+          </ul>
+        </div>
+      </div>
+      <div class="col-md-6">
+        <div class="eu-card p-3">
+          <div class="fw-semibold mb-2">📄 Fuentes PDF</div>
+          <ul class="small text-muted mb-0">
+            <li>Sube archivos PDF desde tu computadora</li>
+            <li>Tamaño máximo: 10 MB por archivo</li>
+            <li>Límite: 5 PDFs por artículo</li>
+            <li>Se abre en el navegador al hacer clic</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SOURCE-REF -->
+  <section id="source-ref" class="mb-5">
+    <h2 class="eu-section-title">🔢 Citar fuentes en el texto</h2>
+    <p class="text-muted mb-3">Usa el botón "Citar" en el panel de fuentes del editor para insertar una referencia numeral dentro del texto.</p>
+    <div class="eu-card p-4">
+      <div class="eu-label mb-1">Shortcode generado automáticamente:</div>
+      <pre class="eu-sc-code mb-3">[source-ref title="Wikipedia - Fotosíntesis"]</pre>
+      <div class="eu-label mb-1">Resultado en el artículo:</div>
+      <p>La fotosíntesis es el proceso por el cual las plantas convierten luz en energía<sup class="eu-source-ref">[1]</sup>.</p>
+      <div class="small text-muted mt-2">La numeración se asigna automáticamente según el orden de las fuentes.</div>
+    </div>
+  </section>
+
+  <!-- IMAGENES -->
+  <section id="imagenes" class="mb-5">
+    <h2 class="eu-section-title">🖼️ Imágenes</h2>
+    <p class="text-muted mb-3">Sube imágenes desde el panel "Multimedia" del editor. Haz clic en la miniatura para insertarlas automáticamente en el texto.</p>
+    <div class="eu-card p-4">
+      <div class="eu-label mb-1">Shortcodes de imagen:</div>
+      <pre class="eu-sc-code">[img file="https://url.com/imagen.jpg" alt="Descripción" caption="Pie de foto opcional" width="800"]
+
+[image src="https://url.com/imagen.jpg" alt="Descripción" caption="Pie de foto"]
+
+<!-- Markdown estándar también funciona: -->
+![Descripción de la imagen](https://url.com/imagen.jpg)</pre>
+      <div class="small text-muted mt-3">
+        <strong>Formatos soportados:</strong> JPG, PNG, GIF, WebP · <strong>Tamaño máximo:</strong> 5MB · Las imágenes se comprimen automáticamente a WebP.
       </div>
     </div>
   </section>
@@ -88,57 +197,34 @@ bloque de código
     <h2 class="eu-section-title">💬 Tooltips</h2>
     <p class="text-muted mb-3">Añade definiciones que aparecen al pasar el mouse sobre términos técnicos.</p>
     <div class="eu-card p-4">
-      <div class="eu-label mb-1">Código:</div>
-      <pre style="background:var(--eu-code-bg);padding:12px;border-radius:6px;font-size:0.85rem">[tooltip text="Orgánulo responsable de la respiración celular y producción de ATP"]mitocondria[/tooltip]</pre>
-      <div class="eu-label mt-3 mb-1">Resultado:</div>
-      <p>La <span class="eu-tooltip" data-bs-toggle="tooltip" data-bs-placement="top" title="Orgánulo responsable de la respiración celular y producción de ATP" style="border-bottom:1px dashed #666;cursor:help">mitocondria</span> es esencial para la vida celular.</p>
+      <pre class="eu-sc-code mb-3">[tooltip text="Orgánulo responsable de la respiración celular y producción de ATP"]mitocondria[/tooltip]</pre>
+      <div class="eu-label mb-1">Resultado:</div>
+      <p>La <span class="eu-tooltip" data-bs-toggle="tooltip" data-bs-placement="top" title="Orgánulo responsable de la respiración celular y producción de ATP" style="border-bottom:1px dashed #666;cursor:help">mitocondria</span> es esencial para la vida.</p>
     </div>
   </section>
 
   <!-- ALERT -->
   <section id="alert" class="mb-5">
     <h2 class="eu-section-title">⚠️ Alertas</h2>
-    <p class="text-muted mb-3">Muestra mensajes importantes con diferentes niveles de urgencia.</p>
     <div class="eu-card p-4">
-      <div class="eu-label mb-1">Código:</div>
-      <pre style="background:var(--eu-code-bg);padding:12px;border-radius:6px;font-size:0.85rem">[alert type="info"]Información importante[/alert]
-[alert type="warning"]Precaución con este procedimiento[/alert]
-[alert type="danger"]Peligroso para la salud[/alert]
+      <pre class="eu-sc-code mb-3">[alert type="info"]Información importante[/alert]
+[alert type="warning"]Precaución[/alert]
+[alert type="danger"]Peligroso[/alert]
 [alert type="success"]Resultado exitoso[/alert]</pre>
-      <div class="eu-label mt-3 mb-1">Resultado:</div>
       <div class="alert alert-info">Información importante</div>
-      <div class="alert alert-warning">Precaución con este procedimiento</div>
-      <div class="alert alert-danger">Peligroso para la salud</div>
+      <div class="alert alert-warning">Precaución</div>
+      <div class="alert alert-danger">Peligroso</div>
       <div class="alert alert-success">Resultado exitoso</div>
     </div>
   </section>
 
-  <!-- DIAGRAM -->
-  <section id="diagram" class="mb-5">
-    <h2 class="eu-section-title">🔬 Diagrama interactivo</h2>
-    <p class="text-muted mb-3">El componente más poderoso. Crea diagramas donde cada elemento es clickeable y muestra información detallada con opción de enlazar a artículos relacionados.</p>
+  <!-- CALLOUT -->
+  <section id="callout" class="mb-5">
+    <h2 class="eu-section-title">📌 Callouts</h2>
     <div class="eu-card p-4">
-      <div class="eu-label mb-1">Código:</div>
-      <pre style="background:var(--eu-code-bg);padding:12px;border-radius:6px;font-size:0.82rem;overflow-x:auto">[interactive-diagram title="Estructura de la célula animal"]
-[cell label="Núcleo" article="nucleo-celular" x="50" y="45" color="#6366f1"]
-  El núcleo contiene el ADN y controla todas las funciones celulares.
-[/cell]
-[cell label="Mitocondria" article="mitocondria" x="75" y="30" color="#f59e0b"]
-  Central energética de la célula. Produce ATP mediante respiración celular.
-[/cell]
-[cell label="Membrana" article="membrana-celular" x="20" y="50" color="#10b981"]
-  Regula el paso de sustancias dentro y fuera de la célula.
-[/cell]
-[/interactive-diagram]</pre>
-      <div class="eu-label mt-3 mb-1">Parámetros de [cell]:</div>
-      <ul class="small text-muted">
-        <li><strong>label</strong>: Nombre del elemento que aparece en el diagrama</li>
-        <li><strong>article</strong>: Slug del artículo relacionado (opcional)</li>
-        <li><strong>x</strong>: Posición horizontal en % (0-95)</li>
-        <li><strong>y</strong>: Posición vertical en % (0-95)</li>
-        <li><strong>color</strong>: Color hexadecimal del elemento</li>
-        <li><strong>Contenido interno</strong>: Descripción que aparece en el popup</li>
-      </ul>
+      <pre class="eu-sc-code mb-3">[callout icon="💡"]Dato curioso o nota científica importante[/callout]
+[callout icon="⚠️"]Advertencia[/callout]
+[callout icon="🔬"]Nota experimental[/callout]</pre>
     </div>
   </section>
 
@@ -146,8 +232,8 @@ bloque de código
   <section id="accordion" class="mb-5">
     <h2 class="eu-section-title">📂 Acordeón</h2>
     <div class="eu-card p-4">
-      <pre style="background:var(--eu-code-bg);padding:12px;border-radius:6px;font-size:0.85rem">[accordion title="¿Por qué ocurre la fotosíntesis?"]
-La fotosíntesis ocurre porque las plantas necesitan convertir energía lumínica en energía química para sobrevivir...
+      <pre class="eu-sc-code mb-3">[accordion title="¿Por qué ocurre la fotosíntesis?"]
+La fotosíntesis ocurre porque las plantas necesitan convertir energía lumínica en energía química...
 [/accordion]</pre>
     </div>
   </section>
@@ -156,7 +242,7 @@ La fotosíntesis ocurre porque las plantas necesitan convertir energía lumínic
   <section id="tabs" class="mb-5">
     <h2 class="eu-section-title">📑 Pestañas</h2>
     <div class="eu-card p-4">
-      <pre style="background:var(--eu-code-bg);padding:12px;border-radius:6px;font-size:0.85rem">[tabs]
+      <pre class="eu-sc-code">[tabs]
 [tab title="Definición"]
 Contenido de la primera pestaña...
 [/tab]
@@ -170,39 +256,125 @@ Aplicaciones prácticas...
     </div>
   </section>
 
-  <!-- IMAGE -->
-  <section id="image" class="mb-5">
-    <h2 class="eu-section-title">🖼️ Imágenes</h2>
+  <!-- HIGHLIGHT -->
+  <section id="highlight" class="mb-5">
+    <h2 class="eu-section-title">🖊️ Resaltado de texto</h2>
     <div class="eu-card p-4">
-      <pre style="background:var(--eu-code-bg);padding:12px;border-radius:6px;font-size:0.85rem">[image src="URL_DE_LA_IMAGEN" alt="Descripción" caption="Pie de foto opcional"]</pre>
-      <div class="small text-muted mt-2">
-        Sube tus imágenes desde el editor de artículos y el shortcode se generará automáticamente.
-        También puedes referenciar imágenes de otros artículos usando su URL pública.
-      </div>
+      <pre class="eu-sc-code mb-3">[highlight]texto resaltado en amarillo[/highlight]
+[highlight color="#fca5a5"]resaltado en rojo claro[/highlight]
+[highlight color="#86efac"]resaltado en verde[/highlight]</pre>
+      <div class="eu-label mb-1">Resultado:</div>
+      <p><mark style="background-color:#fef08a;padding:0 3px;border-radius:3px">texto resaltado</mark> en un párrafo.</p>
+    </div>
+  </section>
+
+  <!-- FORMULA -->
+  <section id="formula" class="mb-5">
+    <h2 class="eu-section-title">∑ Fórmulas matemáticas</h2>
+    <p class="text-muted mb-3">Usa LaTeX para fórmulas matemáticas. Se renderizan con MathJax.</p>
+    <div class="eu-card p-4">
+      <pre class="eu-sc-code">[formula]E = mc^2[/formula]
+[formula]\int_{a}^{b} f(x)\,dx = F(b) - F(a)[/formula]
+[formula]\frac{-b \pm \sqrt{b^2 - 4ac}}{2a}[/formula]</pre>
+    </div>
+  </section>
+
+  <!-- YOUTUBE -->
+  <section id="youtube" class="mb-5">
+    <h2 class="eu-section-title">▶️ Videos de YouTube</h2>
+    <div class="eu-card p-4">
+      <pre class="eu-sc-code">[youtube id="dQw4w9WgXcQ"]</pre>
+      <div class="small text-muted mt-2">El ID es la parte de la URL después de <code>?v=</code> (ej: <code>https://youtube.com/watch?v=<strong>dQw4w9WgXcQ</strong></code>)</div>
+    </div>
+  </section>
+
+  <!-- CARD -->
+  <section id="card" class="mb-5">
+    <h2 class="eu-section-title">🃏 Tarjetas</h2>
+    <div class="eu-card p-4">
+      <pre class="eu-sc-code">[card title="Fotosíntesis" image="https://url.com/foto.jpg"]
+La fotosíntesis es el proceso mediante el cual las plantas convierten la luz solar en glucosa.
+[/card]</pre>
+    </div>
+  </section>
+
+  <!-- MODAL -->
+  <section id="modal" class="mb-5">
+    <h2 class="eu-section-title">⬜ Modales</h2>
+    <div class="eu-card p-4">
+      <pre class="eu-sc-code">[modal id="cel1" title="Célula eucariota"]
+Las células eucariotas tienen un núcleo definido rodeado por membrana nuclear...
+[/modal]
+
+[modal-trigger modal="cel1"]Ver más sobre células eucariotas[/modal-trigger]</pre>
     </div>
   </section>
 
   <!-- REF -->
   <section id="ref" class="mb-5">
-    <h2 class="eu-section-title">🔗 Referencias a artículos</h2>
+    <h2 class="eu-section-title">🔗 Referencias a otros artículos</h2>
     <div class="eu-card p-4">
-      <pre style="background:var(--eu-code-bg);padding:12px;border-radius:6px;font-size:0.85rem">[ref article="fotosintesis"]Ver artículo completo sobre fotosíntesis[/ref]
+      <pre class="eu-sc-code">[ref article="fotosintesis"]Ver artículo completo sobre fotosíntesis[/ref]
 [ref article="atp-energia-celular"]ATP y energía celular[/ref]</pre>
+      <div class="small text-muted mt-2">El <strong>article</strong> es el slug del artículo destino (el identificador en la URL, ej: <code>articulo.html?slug=<strong>fotosintesis</strong></code>).</div>
+    </div>
+  </section>
+
+  <!-- CUADRO SINOPTICO -->
+  <section id="sinoptico" class="mb-5">
+    <h2 class="eu-section-title">⚡ Cuadro sinóptico</h2>
+    <p class="text-muted mb-3">Crea diagramas sinópticos visuales con un tema principal y múltiples etapas o ramas.</p>
+    <div class="eu-card p-4">
+      <pre class="eu-sc-code">[cuadro-sinoptico main="Proceso de fotosíntesis" main_color="#16a34a"]
+[etapa title="FASE 1" color="#22c55e"]
+Absorción de luz por los cloroplastos
+[/etapa]
+[etapa title="FASE 2" color="#86efac"]
+Fijación de CO₂ en el ciclo de Calvin
+[/etapa]
+[etapa title="RESULTADO" color="#4ade80"]
+Producción de glucosa y liberación de O₂
+[/etapa]
+[/cuadro-sinoptico]</pre>
+      <div class="small text-muted mt-2"><strong>main_color</strong>: Color del bloque central (hexadecimal). <strong>color</strong> en etapa: Color de cada rama.</div>
+    </div>
+  </section>
+
+  <!-- DIAGRAM -->
+  <section id="diagram" class="mb-5">
+    <h2 class="eu-section-title">🔬 Diagrama interactivo</h2>
+    <p class="text-muted mb-3">Crea diagramas donde cada elemento es clickeable y muestra información al hacer clic.</p>
+    <div class="eu-card p-4">
+      <pre class="eu-sc-code">[interactive-diagram title="Estructura de la célula animal"]
+[cell label="Núcleo" article="nucleo-celular" x="50" y="45" color="#6366f1"]
+  El núcleo contiene el ADN y controla todas las funciones celulares.
+[/cell]
+[cell label="Mitocondria" article="mitocondria" x="75" y="30" color="#f59e0b"]
+  Central energética. Produce ATP mediante respiración celular.
+[/cell]
+[cell label="Membrana" x="20" y="50" color="#10b981"]
+  Regula el paso de sustancias dentro y fuera de la célula.
+[/cell]
+[/interactive-diagram]</pre>
       <div class="small text-muted mt-2">
-        El <strong>article</strong> es el "slug" del artículo destino (el identificador en la URL).
+        <strong>Parámetros de [cell]:</strong> <code>label</code> (nombre), <code>article</code> (slug del artículo, opcional), <code>x</code>/<code>y</code> (posición 0–95%), <code>color</code> (hexadecimal).
       </div>
     </div>
   </section>
 
-  <!-- CALLOUT -->
-  <section id="callout" class="mb-5">
-    <h2 class="eu-section-title">📌 Callouts</h2>
-    <div class="eu-card p-4">
-      <pre style="background:var(--eu-code-bg);padding:12px;border-radius:6px;font-size:0.85rem">[callout icon="💡"]Dato curioso o nota científica importante aquí[/callout]
-[callout icon="⚠️"]Advertencia importante[/callout]
-[callout icon="🔬"]Nota experimental[/callout]</pre>
-    </div>
-  </section>
+  <!-- TIPS -->
+  <div class="eu-card p-4 mb-5" style="border-left:4px solid var(--eu-success)">
+    <h4 class="mb-3">💡 Consejos para artículos de calidad</h4>
+    <ul class="mb-0">
+      <li>Usa <strong>encabezados jerárquicos</strong> (H2, H3) para estructurar el contenido</li>
+      <li>Añade <strong>fuentes y bibliografía</strong> para respaldar la información</li>
+      <li>Incluye <strong>imágenes descriptivas</strong> con pie de foto</li>
+      <li>Usa <strong>tooltips</strong> para definir términos técnicos en el primer uso</li>
+      <li>Crea un <strong>resumen/índice</strong> al inicio para artículos largos</li>
+      <li>Usa <strong>alertas y callouts</strong> para destacar información importante</li>
+      <li>Añade <strong>referencias cruzadas</strong> a otros artículos relacionados con [ref]</li>
+    </ul>
+  </div>
 
   <div class="text-center mt-5 p-5" style="background:var(--eu-bg-secondary);border-radius:var(--eu-radius-lg)">
     <h3>¿Listo para publicar?</h3>
@@ -214,7 +386,6 @@ Aplicaciones prácticas...
 </div>
 
 <script>
-// Inicializar tooltips de la guía
 document.addEventListener('DOMContentLoaded', () => {
   document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(el => new bootstrap.Tooltip(el));
 });

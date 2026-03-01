@@ -1398,3 +1398,433 @@ a.eu-notif-item:hover,
 /* ── THEME OUTLINE COLOR ───────────────────────────────── */
 :root { --eu-source-outline: #6b7280; }
 [data-theme="dark"] { --eu-source-outline: #9ca3af; }
+
+/* ================================================================
+   DARK MODE FIXES & NEW FEATURES - 2026 Update
+================================================================ */
+
+/* Fix: Bootstrap text-muted and text classes in dark mode */
+[data-theme="dark"] .text-muted,
+[data-theme="dark"] p.text-muted,
+[data-theme="dark"] span.text-muted,
+[data-theme="dark"] .small.text-muted,
+[data-theme="dark"] small.text-muted {
+  color: var(--eu-text-secondary) !important;
+}
+
+/* Fix: Footer text in dark mode */
+[data-theme="dark"] .eu-footer p,
+[data-theme="dark"] .eu-footer span,
+[data-theme="dark"] .eu-footer .text-muted {
+  color: var(--eu-text-secondary) !important;
+}
+
+[data-theme="dark"] .eu-footer-bottom .text-muted {
+  color: var(--eu-text-secondary) !important;
+}
+
+/* Fix: Profile dropdown (Bootstrap .dropdown-menu) dark mode */
+[data-theme="dark"] .dropdown-menu,
+[data-theme="dark"] .eu-dropdown-menu {
+  background-color: var(--eu-surface) !important;
+  border-color: var(--eu-border) !important;
+  color: var(--eu-text) !important;
+}
+
+[data-theme="dark"] .dropdown-item {
+  color: var(--eu-text) !important;
+}
+
+[data-theme="dark"] .dropdown-item:hover,
+[data-theme="dark"] .dropdown-item:focus {
+  background-color: var(--eu-bg-secondary) !important;
+  color: var(--eu-text) !important;
+}
+
+[data-theme="dark"] .dropdown-divider {
+  border-color: var(--eu-border) !important;
+}
+
+[data-theme="dark"] .dropdown-menu .px-3.py-2 {
+  color: var(--eu-text-secondary) !important;
+}
+
+/* Fix: Mark all as read button - should be white/light not blue */
+#markAllRead {
+  color: var(--eu-text-secondary) !important;
+  border: 1px solid var(--eu-border);
+  background: var(--eu-bg-secondary);
+  border-radius: var(--eu-radius);
+  padding: 2px 10px;
+  font-size: 0.78rem;
+  text-decoration: none;
+}
+#markAllRead:hover {
+  background: var(--eu-border);
+  color: var(--eu-text) !important;
+}
+
+/* Fix: Notification items clickable */
+a.eu-notif-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 16px;
+  text-decoration: none !important;
+  color: var(--eu-text) !important;
+  border-bottom: 1px solid var(--eu-border);
+  transition: background var(--eu-transition);
+  cursor: pointer;
+}
+
+/* ── SOURCES SIDEBAR ──────────────────────────────────── */
+.eu-sources-list { display: flex; flex-direction: column; gap: 6px; }
+
+.eu-source-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border: 1px solid var(--eu-border);
+  border-radius: var(--eu-radius);
+  background: var(--eu-bg-secondary);
+  text-decoration: none !important;
+  color: var(--eu-text) !important;
+  transition: all var(--eu-transition);
+  min-width: 0;
+}
+
+.eu-source-item:hover {
+  background: var(--eu-bg-tertiary);
+  border-color: var(--eu-text);
+  transform: translateX(2px);
+}
+
+.eu-source-favicon {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  border-radius: 2px;
+  object-fit: contain;
+}
+
+.eu-source-icon {
+  flex-shrink: 0;
+  color: var(--eu-danger);
+  font-size: 1.1rem;
+}
+
+.eu-source-title {
+  font-size: 0.82rem;
+  font-weight: 500;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.eu-source-size {
+  font-size: 0.7rem;
+  color: var(--eu-text-muted);
+  flex-shrink: 0;
+}
+
+/* PDF source icon SVG style */
+.eu-source-pdf-icon {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  color: #dc2626;
+}
+
+/* ── SOURCES EDITOR PANEL ─────────────────────────────── */
+.eu-sources-editor {
+  border: 1px solid var(--eu-border);
+  border-radius: var(--eu-radius);
+  overflow: hidden;
+}
+
+.eu-source-editor-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--eu-border);
+  background: var(--eu-bg);
+  font-size: 0.82rem;
+}
+
+.eu-source-editor-item:last-child { border-bottom: none; }
+
+.eu-source-insert-btn {
+  padding: 2px 8px;
+  font-size: 0.72rem;
+  border: 1px solid var(--eu-border);
+  border-radius: 4px;
+  background: var(--eu-bg-secondary);
+  color: var(--eu-text);
+  cursor: pointer;
+  transition: all .15s;
+  white-space: nowrap;
+}
+
+.eu-source-insert-btn:hover {
+  background: var(--eu-text);
+  color: var(--eu-bg);
+}
+
+.eu-source-delete-btn {
+  padding: 2px 6px;
+  font-size: 0.72rem;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  background: none;
+  color: var(--eu-danger);
+  cursor: pointer;
+  transition: all .15s;
+}
+
+.eu-source-delete-btn:hover { background: #fee2e2; }
+[data-theme="dark"] .eu-source-delete-btn:hover { background: #450a0a; }
+
+/* ── SUMMARY MARKDOWN ─────────────────────────────────── */
+.eu-article-summary .eu-summary-content {
+  font-size: 1.05rem;
+  color: var(--eu-text-secondary);
+  font-style: italic;
+  line-height: 1.7;
+}
+
+.eu-article-summary .eu-summary-content h1,
+.eu-article-summary .eu-summary-content h2,
+.eu-article-summary .eu-summary-content h3 {
+  font-size: 1rem;
+  font-style: normal;
+  color: var(--eu-text);
+  margin: 8px 0 4px;
+}
+
+.eu-article-summary .eu-summary-content ul,
+.eu-article-summary .eu-summary-content ol {
+  padding-left: 1.4em;
+  margin: 4px 0;
+}
+
+.eu-article-summary .eu-summary-content p { margin: 4px 0; }
+
+/* ── SUMMARY INDEX LINKS ──────────────────────────────── */
+.eu-summary-index a {
+  color: var(--eu-link);
+  text-decoration: none;
+  border-bottom: 1px solid var(--eu-border);
+  padding-bottom: 1px;
+  transition: color var(--eu-transition);
+}
+.eu-summary-index a:hover { color: var(--eu-link-hover); }
+
+/* ── EDITOR IMPROVEMENTS ──────────────────────────────── */
+.eu-editor-area {
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 0.88rem;
+  line-height: 1.7;
+  min-height: 450px;
+  resize: vertical;
+}
+
+.eu-editor-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  padding: 6px 8px;
+  background: var(--eu-bg-secondary);
+  border: 1px solid var(--eu-border);
+  border-bottom: none;
+  border-radius: var(--eu-radius) var(--eu-radius) 0 0;
+}
+
+.eu-editor-btn {
+  padding: 4px 9px;
+  background: none;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.8rem;
+  color: var(--eu-text);
+  transition: all .15s;
+  font-family: var(--eu-font-body);
+  white-space: nowrap;
+}
+
+.eu-editor-btn:hover { background: var(--eu-border); }
+.eu-editor-btn.active { background: var(--eu-text); color: var(--eu-bg); }
+
+.eu-editor-separator {
+  width: 1px;
+  background: var(--eu-border);
+  margin: 2px 4px;
+  align-self: stretch;
+}
+
+/* ── MOBILE RESPONSIVE ────────────────────────────────── */
+@media (max-width: 768px) {
+  .eu-navbar-inner { padding: 0 12px; gap: 8px; }
+  
+  .eu-article-wrapper {
+    flex-direction: column;
+    padding: 16px;
+  }
+  
+  .eu-article-sidebar {
+    width: 100% !important;
+    min-width: unset !important;
+  }
+  
+  .eu-article-title { font-size: 1.6rem !important; }
+  
+  .eu-editor-toolbar { gap: 1px; }
+  .eu-editor-btn { padding: 3px 6px; font-size: 0.75rem; }
+  
+  .eu-card { padding: 16px !important; }
+  
+  .eu-sources-editor-form { flex-direction: column; }
+}
+
+@media (max-width: 480px) {
+  .eu-article-meta { flex-direction: column; gap: 4px !important; }
+  .eu-article-meta span:nth-child(even) { display: none; }
+  
+  .eu-btn-primary, .eu-btn-outline { 
+    padding: 8px 14px;
+    font-size: 0.88rem;
+  }
+}
+
+/* ── REF SHORTCODE (inline source cite) ───────────────── */
+.eu-source-ref {
+  display: inline;
+  cursor: pointer;
+  color: var(--eu-info);
+  font-size: 0.8em;
+  vertical-align: super;
+  text-decoration: none;
+  border-bottom: none !important;
+  font-weight: 600;
+}
+.eu-source-ref:hover { color: var(--eu-link-hover); }
+
+/* ── IMAGE UPLOAD GRID ────────────────────────────────── */
+.eu-media-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.eu-media-thumb {
+  position: relative;
+  border-radius: 6px;
+  overflow: hidden;
+  aspect-ratio: 1;
+  background: var(--eu-bg-secondary);
+  border: 1px solid var(--eu-border);
+}
+
+.eu-media-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.eu-media-thumb-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.6);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  opacity: 0;
+  transition: opacity .2s;
+}
+
+.eu-media-thumb:hover .eu-media-thumb-overlay { opacity: 1; }
+
+.eu-media-thumb-overlay button {
+  font-size: 0.65rem;
+  padding: 3px 8px;
+  border-radius: 3px;
+  border: 1px solid rgba(255,255,255,.5);
+  background: rgba(255,255,255,.2);
+  color: white;
+  cursor: pointer;
+  width: 90%;
+  transition: background .15s;
+}
+
+.eu-media-thumb-overlay button:hover { background: rgba(255,255,255,.35); }
+
+/* ── SUMMARY EDITOR TOOLBAR ───────────────────────────── */
+.eu-summary-toolbar {
+  display: flex;
+  gap: 2px;
+  padding: 4px 6px;
+  background: var(--eu-bg-secondary);
+  border: 1px solid var(--eu-border);
+  border-bottom: none;
+  border-radius: var(--eu-radius) var(--eu-radius) 0 0;
+  flex-wrap: wrap;
+}
+
+.eu-summary-textarea {
+  border-radius: 0 0 var(--eu-radius) var(--eu-radius) !important;
+  border-top: none !important;
+}
+
+/* ── SHORTCODES GUIDE ─────────────────────────────────── */
+.eu-sc-card {
+  border: 1px solid var(--eu-border);
+  border-radius: var(--eu-radius);
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+
+.eu-sc-header {
+  background: var(--eu-bg-secondary);
+  padding: 10px 16px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  border-bottom: 1px solid var(--eu-border);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.eu-sc-body { padding: 16px; }
+
+.eu-sc-code {
+  font-family: 'Courier New', monospace;
+  font-size: 0.8rem;
+  background: var(--eu-code-bg);
+  border: 1px solid var(--eu-border);
+  border-radius: 4px;
+  padding: 10px 14px;
+  white-space: pre-wrap;
+  word-break: break-all;
+  color: var(--eu-text);
+  line-height: 1.6;
+}
+
+/* Dark mode: ensure all Bootstrap alerts are themed */
+[data-theme="dark"] .alert-info {
+  background: #1e3a5f;
+  color: #93c5fd;
+  border-color: #1d4ed8;
+}
+[data-theme="dark"] .alert-success {
+  background: #14532d;
+  color: #86efac;
+  border-color: #15803d;
+}
+

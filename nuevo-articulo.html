@@ -14,10 +14,12 @@ title: Nuevo artículo
 (function() {
   const API = window.EU_CONFIG.backendUrl;
   const BASE = window.EU_CONFIG.baseUrl;
+  let articleId = null;
+  let localSources = [];
 
   document.addEventListener('DOMContentLoaded', () => {
     if (!Auth.isLoggedIn()) {
-      window.location.href = `${BASE}/login.html?redirect=${encodeURIComponent(window.location.href)}`;
+      window.location.href = BASE + '/login.html?redirect=' + encodeURIComponent(window.location.href);
       return;
     }
     renderEditor();
@@ -25,7 +27,7 @@ title: Nuevo artículo
 
   async function loadCategories() {
     try {
-      const res = await fetch(`${API}/api/articles/meta/categories`);
+      const res = await fetch(API + '/api/articles/meta/categories');
       if (!res.ok) return [];
       return await res.json();
     } catch { return []; }
@@ -33,198 +35,268 @@ title: Nuevo artículo
 
   async function renderEditor() {
     const cats = await loadCategories();
-    const catOptions = cats.map(c => `<option value="${c.slug}">${c.name}</option>`).join('');
+    const catOptions = cats.map(c => '<option value="' + c.slug + '">' + c.name + '</option>').join('');
 
-    document.getElementById('editorPage').innerHTML = `
-      <div style="max-width:1100px;margin:0 auto">
-        <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-3">
-          <div>
-            <h1 class="eu-section-title">Nuevo artículo</h1>
-            <p class="eu-section-subtitle">Usa Markdown y shortcodes para crear contenido interactivo.</p>
-          </div>
-          <div class="d-flex gap-2">
-            <a href="${BASE}/shortcodes.html" class="eu-btn-outline eu-btn-sm" target="_blank">
-              <i class="bi bi-code-slash"></i> Guía de shortcodes
-            </a>
-          </div>
-        </div>
+    document.getElementById('editorPage').innerHTML = [
+      '<div style="max-width:1200px;margin:0 auto">',
+      '<div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-3">',
+      '<div><h1 class="eu-section-title">Nuevo artículo</h1>',
+      '<p class="eu-section-subtitle">Usa Markdown y shortcodes para crear contenido interactivo.</p></div>',
+      '<a href="' + BASE + '/shortcodes.html" class="eu-btn-outline eu-btn-sm" target="_blank"><i class="bi bi-code-slash"></i> Guía de shortcodes</a>',
+      '</div>',
+      '<div id="publishAlert" class="alert d-none mb-4"></div>',
+      '<div class="row g-4">',
+      // Main col
+      '<div class="col-lg-8">',
+      // Metadata card
+      '<div class="eu-card p-4 mb-4">',
+      '<h5 class="mb-3">Información del artículo</h5>',
+      '<div class="eu-form-group">',
+      '<label class="eu-label" for="artTitle">Título <span class="text-danger">*</span></label>',
+      '<input type="text" id="artTitle" class="eu-input" placeholder="Ej: La fotosíntesis en plantas C4" maxlength="500">',
+      '</div>',
+      '<div class="eu-form-group">',
+      '<label class="eu-label">Resumen <span class="text-danger">*</span> <span class="text-muted small fw-normal">— soporta Markdown, listas y enlaces a secciones</span></label>',
+      '<div class="eu-summary-toolbar">',
+      '<button class="eu-editor-btn" onclick="summaryWrap(\'**\',\'**\')" title="Negrita"><b>B</b></button>',
+      '<button class="eu-editor-btn" onclick="summaryWrap(\'*\',\'*\')" title="Cursiva"><i>I</i></button>',
+      '<button class="eu-editor-btn" onclick="summaryLine(\'- \')" title="Lista">• Lista</button>',
+      '<button class="eu-editor-btn" onclick="summaryLine(\'1. \')" title="Lista numerada">1. Lista</button>',
+      '<button class="eu-editor-btn" onclick="summaryAnchor()" title="Ancla a sección">⚓ Sección</button>',
+      '</div>',
+      '<textarea id="artSummary" class="eu-textarea eu-summary-textarea" placeholder="Breve descripción. Puedes usar listas, **negrita** y [Ver sección](#id-titulo)" maxlength="4000" rows="4"></textarea>',
+      '<div class="text-muted small mt-1"><span id="summaryCount">0</span>/4000 · Markdown habilitado</div>',
+      '</div>',
+      '<div class="row g-3"><div class="col-md-6">',
+      '<label class="eu-label" for="artCategory">Categoría</label>',
+      '<select id="artCategory" class="eu-select"><option value="">Sin categoría</option>' + catOptions + '</select>',
+      '</div></div>',
+      '</div>',
+      // Content card
+      '<div class="eu-card p-4 mb-4">',
+      '<div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">',
+      '<h5 class="m-0">Contenido del artículo</h5>',
+      '<button class="eu-btn-outline eu-btn-sm" id="previewBtn" onclick="togglePreview()"><i class="bi bi-eye"></i> Vista previa</button>',
+      '</div>',
+      buildToolbar(),
+      '<textarea id="artContent" class="eu-input eu-editor-area" style="border-radius:0 0 var(--eu-radius) var(--eu-radius);border-top:none" placeholder="# Título principal&#10;&#10;Escribe el contenido en Markdown..."></textarea>',
+      '<div id="previewContainer" class="d-none mt-3">',
+      '<div class="eu-label mb-2">Vista previa:</div>',
+      '<div class="eu-preview-area eu-article-content p-3 border rounded" id="previewArea"></div>',
+      '</div>',
+      '</div>',
+      '<div class="d-flex gap-3 justify-content-end flex-wrap">',
+      '<a href="' + BASE + '/" class="eu-btn-outline">Cancelar</a>',
+      '<button class="eu-btn-primary" id="publishBtn" onclick="publishArticle()"><i class="bi bi-send"></i> Enviar para revisión</button>',
+      '</div>',
+      '</div>',
+      // Sidebar col
+      '<div class="col-lg-4">',
+      buildImagePanel(),
+      buildSourcesPanel(),
+      buildQuickRef(),
+      '</div>',
+      '</div>',
+      '</div>'
+    ].join('');
 
-        <div id="publishAlert" class="alert d-none mb-4"></div>
-
-        <div class="row g-4">
-          <div class="col-lg-8">
-            <!-- Metadatos -->
-            <div class="eu-card p-4 mb-4">
-              <h5 class="mb-3">Información del artículo</h5>
-              <div class="eu-form-group">
-                <label class="eu-label" for="artTitle">Título <span class="text-danger">*</span></label>
-                <input type="text" id="artTitle" class="eu-input" placeholder="Ej: La fotosíntesis en plantas C4" maxlength="500">
-              </div>
-              <div class="eu-form-group">
-                <label class="eu-label" for="artSummary">Resumen / Introducción <span class="text-danger">*</span></label>
-                <textarea id="artSummary" class="eu-textarea" placeholder="Breve descripción del artículo (1-3 oraciones)..." maxlength="2000" rows="3"></textarea>
-                <div class="text-muted small mt-1"><span id="summaryCount">0</span>/2000 caracteres</div>
-              </div>
-              <div class="row g-3">
-                <div class="col-md-6">
-                  <label class="eu-label" for="artCategory">Categoría</label>
-                  <select id="artCategory" class="eu-select">
-                    <option value="">Sin categoría</option>
-                    ${catOptions}
-                  </select>
-                </div>
-              </div>
-            </div>
-
-            <!-- Editor Markdown -->
-            <div class="eu-card p-4 mb-4">
-              <div class="d-flex align-items-center justify-content-between mb-3">
-                <h5 class="m-0">Contenido</h5>
-                <div class="d-flex gap-2">
-                  <button class="eu-btn-outline eu-btn-sm" id="previewBtn" onclick="togglePreview()">
-                    <i class="bi bi-eye"></i> Vista previa
-                  </button>
-                </div>
-              </div>
-
-              <!-- Barra de herramientas -->
-              <div class="eu-editor-toolbar" id="editorToolbar">
-                <button class="eu-editor-btn" onclick="insertMd('**', '**')" title="Negrita"><b>B</b></button>
-                <button class="eu-editor-btn" onclick="insertMd('*', '*')" title="Cursiva"><i>I</i></button>
-                <button class="eu-editor-btn" onclick="insertMd('\n## ', '')" title="Título">H2</button>
-                <button class="eu-editor-btn" onclick="insertMd('\n### ', '')" title="Subtítulo">H3</button>
-                <button class="eu-editor-btn" onclick="insertMd('\n- ', '')" title="Lista">• Lista</button>
-                <button class="eu-editor-btn" onclick="insertMd('\`', '\`')" title="Código">Code</button>
-                <button class="eu-editor-btn" onclick="insertMd('\n> ', '')" title="Cita">❝</button>
-                <span style="border-left:1px solid var(--eu-border);margin:0 4px"></span>
-                <!-- Shortcodes frecuentes -->
-                <button class="eu-editor-btn" onclick="insertShortcode('tooltip')" title="Tooltip">[tooltip]</button>
-                <button class="eu-editor-btn" onclick="insertShortcode('alert')" title="Alerta">[alert]</button>
-                <button class="eu-editor-btn" onclick="insertShortcode('accordion')" title="Acordeón">[accordion]</button>
-                <button class="eu-editor-btn" onclick="insertShortcode('tabs')" title="Pestañas">[tabs]</button>
-                <button class="eu-editor-btn" onclick="insertShortcode('callout')" title="Callout">[callout]</button>
-                <button class="eu-editor-btn" onclick="insertShortcode('diagram')" title="Diagrama interactivo">[diagram]</button>
-                <button class="eu-editor-btn" onclick="insertShortcode('ref')" title="Referencia">[ref]</button>
-              </div>
-
-              <textarea id="artContent" class="eu-input eu-editor-area" 
-                placeholder="# Título principal&#10;&#10;Escribe aquí el contenido de tu artículo usando Markdown...&#10;&#10;Puedes usar [tooltip text=&quot;Definición&quot;]términos técnicos[/tooltip] y otros shortcodes."></textarea>
-              
-              <!-- Vista previa -->
-              <div id="previewContainer" class="d-none mt-3">
-                <div class="eu-label mb-2">Vista previa (aproximada):</div>
-                <div class="eu-preview-area eu-article-content" id="previewArea">
-                  <div class="text-muted">La vista previa se mostrará aquí...</div>
-                </div>
-              </div>
-            </div>
-
-            <div class="d-flex gap-3 justify-content-end">
-              <a href="${BASE}/" class="eu-btn-outline">Cancelar</a>
-              <button class="eu-btn-primary" id="publishBtn" onclick="publishArticle()">
-                <i class="bi bi-send"></i> Enviar para revisión
-              </button>
-            </div>
-          </div>
-
-          <!-- Sidebar del editor -->
-          <div class="col-lg-4">
-            <!-- Subir imágenes -->
-            <div class="eu-card p-4 mb-4">
-              <h5 class="mb-3"><i class="bi bi-images me-2"></i>Multimedia</h5>
-              <div id="uploadArea" class="border-2 border-dashed rounded-2 p-4 text-center mb-3" 
-                   style="border-color:var(--eu-border);cursor:pointer;transition:all .2s"
-                   ondragover="event.preventDefault();this.style.borderColor='var(--eu-text)'"
-                   ondragleave="this.style.borderColor='var(--eu-border)'"
-                   ondrop="handleDrop(event)">
-                <i class="bi bi-cloud-upload fs-3 mb-2 d-block text-muted"></i>
-                <div class="small text-muted">Arrastra imágenes aquí o</div>
-                <label for="imageInput" class="eu-btn-outline eu-btn-sm mt-2" style="cursor:pointer">
-                  Seleccionar archivos
-                </label>
-                <input type="file" id="imageInput" multiple accept="image/*" class="d-none" onchange="uploadImages(this.files)">
-                <div class="text-muted" style="font-size:0.72rem;margin-top:6px">PNG, JPG, GIF, WebP · Máx 5MB</div>
-              </div>
-              <div id="uploadedImages" class="d-flex flex-wrap gap-2"></div>
-            </div>
-
-            <!-- Ayuda rápida -->
-            <div class="eu-card p-4">
-              <h5 class="mb-3"><i class="bi bi-question-circle me-2"></i>Referencia rápida</h5>
-              <div style="font-size:0.8rem;line-height:1.8;font-family:monospace;color:var(--eu-text-secondary)">
-                <div><strong>**negrita**</strong></div>
-                <div><em>*cursiva*</em></div>
-                <div>## Título</div>
-                <div>### Subtítulo</div>
-                <div>- Item de lista</div>
-                <div>[enlace](url)</div>
-                <div class="mt-2"><strong>Shortcodes:</strong></div>
-                <div>[tooltip text="def"]palabra[/tooltip]</div>
-                <div>[alert type="info"]msg[/alert]</div>
-                <div>[ref article="slug"]texto[/ref]</div>
-              </div>
-              <a href="${BASE}/shortcodes.html" class="eu-btn-outline eu-btn-sm w-100 mt-3 text-center">
-                Ver guía completa
-              </a>
-            </div>
-          </div>
-        </div>
-      </div>`;
-
-    // Contador resumen
     document.getElementById('artSummary').addEventListener('input', function() {
       document.getElementById('summaryCount').textContent = this.value.length;
     });
+    document.getElementById('artContent').addEventListener('keydown', handleEditorKeys);
   }
 
-  // Insertar Markdown
+  function buildToolbar() {
+    const btns = [
+      {label:'<b>B</b>', fn:"insertMd('**','**')", title:'Negrita'},
+      {label:'<i>I</i>', fn:"insertMd('*','*')", title:'Cursiva'},
+      {label:'<s>S</s>', fn:"insertMd('~~','~~')", title:'Tachado'},
+      {label:'<code style="font-size:.75rem">{ }</code>', fn:"insertMd('\\`','\\`')", title:'Código inline'},
+      {sep:true},
+      {label:'H1', fn:"insertLine('# ')", title:'Título H1'},
+      {label:'H2', fn:"insertLine('## ')", title:'Título H2'},
+      {label:'H3', fn:"insertLine('### ')", title:'Subtítulo H3'},
+      {label:'H4', fn:"insertLine('#### ')", title:'H4'},
+      {sep:true},
+      {label:'• Lista', fn:"insertLine('- ')", title:'Lista'},
+      {label:'1. Lista', fn:"insertLine('1. ')", title:'Lista numerada'},
+      {label:'❝ Cita', fn:"insertLine('> ')", title:'Cita'},
+      {label:'⌨ Código', fn:"insertMd('\\n```\\n','\\n```\\n')", title:'Bloque código'},
+      {label:'─ HR', fn:"insertLine('---')", title:'Línea horizontal'},
+      {sep:true},
+      {label:'🔗 Link', fn:'insertLink()', title:'Enlace'},
+      {label:'⊞ Tabla', fn:"insertMd('\\n| Col1 | Col2 |\\n|---|---|\\n| ','  |  |\\n')", title:'Tabla'},
+      {sep:true},
+      {label:'💬 Tooltip', fn:"insertSC('[tooltip text=\"Def\"]término[/tooltip]')", title:'Tooltip'},
+      {label:'⚠️ Alert', fn:"insertSC('[alert type=\"info\"]Mensaje[/alert]')", title:'Alerta'},
+      {label:'📌 Callout', fn:"insertSC('[callout icon=\"💡\"]Nota[/callout]')", title:'Callout'},
+      {label:'▶ Acordeón', fn:"insertSC('[accordion title=\"¿Pregunta?\"]\\nRespuesta\\n[/accordion]')", title:'Acordeón'},
+      {label:'⊟ Tabs', fn:"insertSC('[tabs]\\n[tab title=\"Tab 1\"]Contenido 1[/tab]\\n[tab title=\"Tab 2\"]Contenido 2[/tab]\\n[/tabs]')", title:'Pestañas'},
+      {label:'🖊 Resaltar', fn:"insertSC('[highlight]texto[/highlight]')", title:'Resaltar'},
+      {label:'∑ Fórmula', fn:"insertSC('[formula]E = mc^2[/formula]')", title:'Fórmula'},
+      {label:'▶ YouTube', fn:"insertSC('[youtube id=\"ID_VIDEO\"]')", title:'YouTube'},
+      {label:'↗ Ref Art.', fn:"insertSC('[ref article=\"slug\"]texto[/ref]')", title:'Referencia artículo'},
+      {label:'⚡ Sinóptico', fn:"insertSC('[cuadro-sinoptico main=\"Título\"]\\n[etapa title=\"ETAPA 1\" color=\"#3b82f6\"]Descripción[/etapa]\\n[/cuadro-sinoptico]')", title:'Cuadro sinóptico'},
+      {label:'🃏 Card', fn:"insertSC('[card title=\"Título\"]Contenido[/card]')", title:'Tarjeta'},
+      {label:'⬜ Modal', fn:"insertSC('[modal id=\"m1\" title=\"Modal\"]Contenido[/modal]\\n[modal-trigger modal=\"m1\"]Abrir[/modal-trigger]')", title:'Modal'},
+    ];
+
+    return '<div class="eu-editor-toolbar" id="editorToolbar">' +
+      btns.map(b => b.sep
+        ? '<div class="eu-editor-separator"></div>'
+        : '<button class="eu-editor-btn" onclick="' + b.fn + '" title="' + b.title + '">' + b.label + '</button>'
+      ).join('') +
+      '</div>';
+  }
+
+  function buildImagePanel() {
+    return [
+      '<div class="eu-card p-4 mb-4">',
+      '<h5 class="mb-3"><i class="bi bi-images me-2"></i>Multimedia</h5>',
+      '<div id="uploadArea" class="border rounded-2 p-3 text-center mb-3" style="border-style:dashed;border-color:var(--eu-border);cursor:pointer"',
+      ' ondragover="event.preventDefault();this.style.borderColor=\'var(--eu-text)\'"',
+      ' ondragleave="this.style.borderColor=\'var(--eu-border)\'"',
+      ' ondrop="handleDrop(event)">',
+      '<i class="bi bi-cloud-upload fs-3 mb-2 d-block text-muted"></i>',
+      '<div class="small text-muted mb-2">Arrastra imágenes aquí o</div>',
+      '<label for="imageInput" class="eu-btn-outline eu-btn-sm" style="cursor:pointer">Seleccionar archivos</label>',
+      '<input type="file" id="imageInput" multiple accept="image/*" class="d-none" onchange="uploadImages(this.files)">',
+      '<div class="text-muted mt-1" style="font-size:.7rem">PNG, JPG, GIF, WebP · Máx 5MB</div>',
+      '</div>',
+      '<div id="uploadedImages" class="eu-media-grid"></div>',
+      '</div>'
+    ].join('');
+  }
+
+  function buildSourcesPanel() {
+    return [
+      '<div class="eu-card p-4 mb-4">',
+      '<h5 class="mb-3"><i class="bi bi-link-45deg me-2"></i>Fuentes</h5>',
+      '<p class="text-muted small mb-3">Aparecerán en el sidebar del artículo. Máx: 20 enlaces + 5 PDFs.</p>',
+      '<div class="mb-3"><div class="fw-semibold small mb-2">➕ Añadir enlace</div>',
+      '<input type="text" id="srcLinkTitle" class="eu-input mb-2" placeholder="Título (ej: Wikipedia - Fotosíntesis)">',
+      '<input type="url" id="srcLinkUrl" class="eu-input mb-2" placeholder="https://...">',
+      '<button class="eu-btn-outline eu-btn-sm w-100" onclick="addLinkSource()"><i class="bi bi-plus-circle"></i> Añadir enlace</button>',
+      '</div>',
+      '<div class="mb-3"><div class="fw-semibold small mb-2">📄 Añadir PDF</div>',
+      '<input type="text" id="srcPdfTitle" class="eu-input mb-2" placeholder="Título del PDF">',
+      '<label class="eu-btn-outline eu-btn-sm w-100 text-center" style="cursor:pointer">',
+      '<i class="bi bi-file-earmark-pdf"></i> Seleccionar PDF (máx 10MB)',
+      '<input type="file" id="srcPdfInput" accept=".pdf" class="d-none" onchange="addPdfSource(this)">',
+      '</label></div>',
+      '<div id="sourcesList" class="eu-sources-editor">',
+      '<div class="text-muted text-center p-3 small">No hay fuentes aún</div>',
+      '</div>',
+      '<div id="sourcesMsg" class="mt-2"></div>',
+      '</div>'
+    ].join('');
+  }
+
+  function buildQuickRef() {
+    return [
+      '<div class="eu-card p-4">',
+      '<h5 class="mb-3"><i class="bi bi-question-circle me-2"></i>Referencia rápida</h5>',
+      '<div style="font-size:.78rem;line-height:1.9;font-family:monospace;color:var(--eu-text-secondary)">',
+      '<div>**negrita** / *cursiva* / ~~tachado~~</div>',
+      '<div># H1 / ## H2 / ### H3</div>',
+      '<div>- Lista · 1. Numerada</div>',
+      '<div>&gt; Cita en bloque</div>',
+      '<div>[texto](url) · ![alt](img)</div>',
+      '<div>| Col1 | Col2 |</div>',
+      '<div>`código` · ```bloque```</div>',
+      '</div>',
+      '<a href="' + BASE + '/shortcodes.html" class="eu-btn-outline eu-btn-sm w-100 mt-3 text-center">Ver guía completa</a>',
+      '</div>'
+    ].join('');
+  }
+
+  // ── SUMMARY HELPERS
+  window.summaryWrap = function(before, after) {
+    const ta = document.getElementById('artSummary');
+    const s = ta.selectionStart, e = ta.selectionEnd;
+    const sel = ta.value.substring(s, e) || 'texto';
+    ta.value = ta.value.substring(0, s) + before + sel + after + ta.value.substring(e);
+    ta.selectionStart = s + before.length;
+    ta.selectionEnd = s + before.length + sel.length;
+    ta.focus();
+  };
+  window.summaryLine = function(prefix) {
+    const ta = document.getElementById('artSummary');
+    const s = ta.selectionStart;
+    const start = ta.value.lastIndexOf('\n', s - 1) + 1;
+    ta.value = ta.value.substring(0, start) + prefix + ta.value.substring(start);
+    ta.selectionStart = ta.selectionEnd = start + prefix.length;
+    ta.focus();
+  };
+  window.summaryAnchor = function() {
+    const id = prompt('ID del título (ej: para "## Metabolismo" escribe "metabolismo"):');
+    if (!id) return;
+    const label = prompt('Texto del enlace:') || id;
+    const ta = document.getElementById('artSummary');
+    const pos = ta.selectionStart;
+    const ins = '[' + label + '](#' + id + ')';
+    ta.value = ta.value.slice(0, pos) + ins + ta.value.slice(pos);
+    ta.focus();
+  };
+
+  // ── CONTENT HELPERS
   window.insertMd = function(before, after) {
     const ta = document.getElementById('artContent');
-    const start = ta.selectionStart, end = ta.selectionEnd;
-    const sel = ta.value.slice(start, end) || 'texto';
-    ta.value = ta.value.slice(0, start) + before + sel + after + ta.value.slice(end);
+    const s = ta.selectionStart, e = ta.selectionEnd;
+    const sel = ta.value.slice(s, e) || 'texto';
+    ta.value = ta.value.slice(0, s) + before + sel + after + ta.value.slice(e);
     ta.focus();
-    ta.setSelectionRange(start + before.length, start + before.length + sel.length);
+    ta.setSelectionRange(s + before.length, s + before.length + sel.length);
   };
-
-  // Insertar shortcodes con plantillas
-  const shortcodeTemplates = {
-    tooltip: '[tooltip text="Definición aquí"]término técnico[/tooltip]',
-    alert: '[alert type="info"]Mensaje importante aquí[/alert]',
-    accordion: '[accordion title="¿Pregunta frecuente?"]\nRespuesta detallada aquí.\n[/accordion]',
-    tabs: '[tabs]\n[tab title="Pestaña 1"]Contenido de la primera pestaña[/tab]\n[tab title="Pestaña 2"]Contenido de la segunda pestaña[/tab]\n[/tabs]',
-    callout: '[callout icon="💡"]Nota importante o curiosidad científica[/callout]',
-    diagram: '[interactive-diagram title="Estructura celular"]\n[cell label="Núcleo" article="nucleo-celular" x="50" y="50" color="#6366f1"]El núcleo controla las funciones celulares[/cell]\n[cell label="Mitocondria" article="mitocondria" x="70" y="30" color="#f59e0b"]Genera energía (ATP)[/cell]\n[/interactive-diagram]',
-    ref: '[ref article="slug-del-articulo"]Texto del enlace[/ref]'
-  };
-
-  window.insertShortcode = function(type) {
+  window.insertLine = function(prefix) {
     const ta = document.getElementById('artContent');
-    const template = shortcodeTemplates[type] || '';
+    const s = ta.selectionStart;
+    const start = ta.value.lastIndexOf('\n', s - 1) + 1;
+    ta.value = ta.value.substring(0, start) + prefix + ta.value.substring(start);
+    ta.selectionStart = ta.selectionEnd = start + prefix.length;
+    ta.focus();
+  };
+  window.insertSC = function(sc) {
+    const ta = document.getElementById('artContent');
     const pos = ta.selectionStart;
-    ta.value = ta.value.slice(0, pos) + '\n' + template + '\n' + ta.value.slice(pos);
+    const ins = '\n' + sc + '\n';
+    ta.value = ta.value.slice(0, pos) + ins + ta.value.slice(pos);
+    ta.focus();
+  };
+  window.insertLink = function() {
+    const url = prompt('URL del enlace:');
+    if (!url) return;
+    const label = prompt('Texto del enlace:') || url;
+    const ta = document.getElementById('artContent');
+    const pos = ta.selectionStart;
+    const ins = '[' + label + '](' + url + ')';
+    ta.value = ta.value.slice(0, pos) + ins + ta.value.slice(pos);
     ta.focus();
   };
 
-  // Toggle preview
+  function handleEditorKeys(e) {
+    if (e.ctrlKey || e.metaKey) {
+      if (e.key === 'b') { e.preventDefault(); insertMd('**','**'); }
+      if (e.key === 'i') { e.preventDefault(); insertMd('*','*'); }
+      if (e.key === 'k') { e.preventDefault(); insertLink(); }
+    }
+    if (e.key === 'Tab') {
+      e.preventDefault();
+      const ta = e.target;
+      const s = ta.selectionStart;
+      ta.value = ta.value.slice(0, s) + '  ' + ta.value.slice(s);
+      ta.selectionStart = ta.selectionEnd = s + 2;
+    }
+  }
+
+  // ── PREVIEW
   window.togglePreview = function() {
     const container = document.getElementById('previewContainer');
     const area = document.getElementById('previewArea');
     const content = document.getElementById('artContent').value;
-
     if (container.classList.contains('d-none')) {
       container.classList.remove('d-none');
-      // Preview aproximado sin shortcodes
-      const simplified = content
-        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-        .replace(/\*(.*?)\*/g, '<em>$1</em>')
-        .replace(/^## (.*)/gm, '<h2>$1</h2>')
-        .replace(/^### (.*)/gm, '<h3>$1</h3>')
-        .replace(/^- (.*)/gm, '<li>$1</li>')
-        .replace(/\[(.*?)\]\((.*?)\)/g, '<a href="$2">$1</a>')
-        .replace(/\[\/?\w[^\]]*\]/g, '<em class="text-muted">[shortcode]</em>')
-        .replace(/\n/g, '<br>');
-      area.innerHTML = `<div class="text-muted small mb-2">Vista previa aproximada (los shortcodes se renderizan en el servidor)</div>${simplified}`;
+      area.innerHTML = simplePreview(content);
       document.getElementById('previewBtn').innerHTML = '<i class="bi bi-pencil"></i> Editar';
     } else {
       container.classList.add('d-none');
@@ -232,36 +304,45 @@ title: Nuevo artículo
     }
   };
 
-  // Subir imágenes
-  let articleIdForUpload = null;
+  function simplePreview(md) {
+    return md
+      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+      .replace(/\*(.*?)\*/g, '<em>$1</em>')
+      .replace(/~~(.*?)~~/g, '<s>$1</s>')
+      .replace(/^#### (.*)/gm, '<h4>$1</h4>')
+      .replace(/^### (.*)/gm, '<h3 style="font-family:var(--eu-font-display)">$1</h3>')
+      .replace(/^## (.*)/gm, '<h2 style="font-family:var(--eu-font-display)">$1</h2>')
+      .replace(/^# (.*)/gm, '<h1 style="font-family:var(--eu-font-display)">$1</h1>')
+      .replace(/^- (.*)/gm, '<li>$1</li>')
+      .replace(/^> (.*)/gm, '<blockquote style="border-left:3px solid var(--eu-border);padding-left:12px;color:var(--eu-text-secondary)">$1</blockquote>')
+      .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>')
+      .replace(/`([^`]+)`/g, '<code style="background:var(--eu-code-bg);padding:0 4px;border-radius:3px">$1</code>')
+      .replace(/\[\/?\w[^\]]*\]/g, '<span style="opacity:.5;font-style:italic">[shortcode]</span>')
+      .replace(/\n/g, '<br>');
+  }
 
+  // ── IMAGE UPLOAD
   window.uploadImages = async function(files) {
     const formData = new FormData();
     for (const f of files) formData.append('images', f);
-    if (articleIdForUpload) formData.append('articleId', articleIdForUpload);
-
+    if (articleId) formData.append('articleId', articleId);
     const token = Auth.getToken();
     try {
-      const res = await fetch(`${API}/api/media/upload`, {
+      const res = await fetch(API + '/api/media/upload', {
         method: 'POST',
-        headers: { Authorization: `Bearer ${token}` },
+        headers: { Authorization: 'Bearer ' + token },
         body: formData
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
-
       const container = document.getElementById('uploadedImages');
-      data.files.forEach(f => {
+      data.files.forEach(function(f) {
         const div = document.createElement('div');
-        div.style.position = 'relative';
-        div.innerHTML = `
-          <img src="${f.publicUrl}" style="width:80px;height:80px;object-fit:cover;border-radius:6px;cursor:pointer" 
-               onclick="insertImageShortcode('${f.publicUrl}', '${f.filename.replace(/\.[^.]+$/,'')}')" 
-               title="Click para insertar en el artículo">
-          <div style="font-size:0.65rem;text-align:center;color:var(--eu-text-muted);margin-top:2px">Insertar</div>`;
+        div.className = 'eu-media-thumb';
+        div.innerHTML = '<img src="' + f.publicUrl + '" alt="' + f.filename + '" loading="lazy"><div class="eu-media-thumb-overlay"><button onclick="insertImageShortcode(\'' + f.publicUrl + '\',\'' + f.filename.replace(/\.[^.]+$/,'') + '\')">📥 Insertar</button></div>';
         container.appendChild(div);
       });
-      window.showToast(`${data.files.length} imagen(s) subida(s)`, 'success');
+      window.showToast(data.files.length + ' imagen(s) subida(s)', 'success');
     } catch (err) {
       window.showToast(err.message, 'error');
     }
@@ -270,9 +351,10 @@ title: Nuevo artículo
   window.insertImageShortcode = function(url, alt) {
     const ta = document.getElementById('artContent');
     const pos = ta.selectionStart;
-    const shortcode = `\n[image src="${url}" alt="${alt}" caption=""]\n`;
-    ta.value = ta.value.slice(0, pos) + shortcode + ta.value.slice(pos);
+    const sc = '\n[img file="' + url + '" alt="' + alt + '" caption=""]\n';
+    ta.value = ta.value.slice(0, pos) + sc + ta.value.slice(pos);
     ta.focus();
+    window.showToast('Imagen insertada', 'success');
   };
 
   window.handleDrop = function(e) {
@@ -281,44 +363,150 @@ title: Nuevo artículo
     if (e.dataTransfer.files.length) uploadImages(e.dataTransfer.files);
   };
 
-  // Publicar artículo
+  // ── SOURCES
+  window.addLinkSource = function() {
+    const title = document.getElementById('srcLinkTitle').value.trim();
+    const url = document.getElementById('srcLinkUrl').value.trim();
+    const msgEl = document.getElementById('sourcesMsg');
+    if (!title || !url) { msgEl.innerHTML = '<div class="alert alert-warning p-2 small">Título y URL son obligatorios</div>'; return; }
+    try { new URL(url); } catch { msgEl.innerHTML = '<div class="alert alert-warning p-2 small">URL inválida</div>'; return; }
+    if (localSources.filter(function(s){return s.type==='link';}).length >= 20) {
+      msgEl.innerHTML = '<div class="alert alert-warning p-2 small">Límite de 20 enlaces alcanzado</div>'; return;
+    }
+    localSources.push({ id: Date.now(), type: 'link', title: title, url: url });
+    renderLocalSources();
+    document.getElementById('srcLinkTitle').value = '';
+    document.getElementById('srcLinkUrl').value = '';
+    msgEl.innerHTML = '';
+  };
+
+  window.addPdfSource = function(input) {
+    const file = input.files[0];
+    if (!file) return;
+    const msgEl = document.getElementById('sourcesMsg');
+    if (file.size > 10 * 1024 * 1024) { msgEl.innerHTML = '<div class="alert alert-warning p-2 small">El PDF supera 10MB</div>'; input.value = ''; return; }
+    if (localSources.filter(function(s){return s.type==='pdf';}).length >= 5) {
+      msgEl.innerHTML = '<div class="alert alert-warning p-2 small">Límite de 5 PDFs alcanzado</div>'; input.value = ''; return;
+    }
+    const title = document.getElementById('srcPdfTitle').value.trim() || file.name.replace(/\.pdf$/i,'');
+    localSources.push({ id: Date.now(), type: 'pdf', title: title, file: file, fileName: file.name });
+    renderLocalSources();
+    document.getElementById('srcPdfTitle').value = '';
+    input.value = '';
+    msgEl.innerHTML = '';
+  };
+
+  function renderLocalSources() {
+    const container = document.getElementById('sourcesList');
+    if (!localSources.length) {
+      container.innerHTML = '<div class="text-muted text-center p-3 small">No hay fuentes aún</div>';
+      return;
+    }
+    container.innerHTML = localSources.map(function(s) {
+      var iconHtml = s.type === 'pdf'
+        ? '<svg class="eu-source-pdf-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z"/></svg>'
+        : '<img src="https://www.google.com/s2/favicons?sz=16&domain=' + encodeURIComponent(new URL(s.url).hostname) + '" class="eu-source-favicon" onerror="this.style.display=\'none\'">';
+      return '<div class="eu-source-editor-item">' + iconHtml +
+        '<span class="eu-source-title" style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="' + escHtml(s.title) + '">' + escHtml(s.title) + '</span>' +
+        '<button class="eu-source-insert-btn" onclick="insertSourceRef(' + s.id + ')" title="Citar en el texto">Citar</button>' +
+        '<button class="eu-source-delete-btn" onclick="removeLocalSource(' + s.id + ')">✕</button>' +
+        '</div>';
+    }).join('');
+  }
+
+  window.insertSourceRef = function(id) {
+    var src = localSources.find(function(s){return s.id===id;});
+    if (!src) return;
+    var ta = document.getElementById('artContent');
+    var pos = ta.selectionStart;
+    var ref = '[source-ref title="' + escAttr(src.title) + '"]';
+    ta.value = ta.value.slice(0, pos) + ref + ta.value.slice(pos);
+    ta.focus();
+    window.showToast('Referencia insertada', 'success');
+  };
+
+  window.removeLocalSource = function(id) {
+    localSources = localSources.filter(function(s){return s.id!==id;});
+    renderLocalSources();
+  };
+
+  // ── PUBLISH
   window.publishArticle = async function() {
-    const title = document.getElementById('artTitle').value.trim();
-    const summary = document.getElementById('artSummary').value.trim();
-    const content = document.getElementById('artContent').value.trim();
-    const category = document.getElementById('artCategory').value;
-    const btn = document.getElementById('publishBtn');
-    const alert = document.getElementById('publishAlert');
+    var title = document.getElementById('artTitle').value.trim();
+    var summary = document.getElementById('artSummary').value.trim();
+    var content = document.getElementById('artContent').value.trim();
+    var category = document.getElementById('artCategory').value;
+    var btn = document.getElementById('publishBtn');
+    var alertEl = document.getElementById('publishAlert');
 
     if (!title || !summary || !content) {
-      alert.className = 'alert alert-danger';
-      alert.textContent = 'El título, resumen y contenido son obligatorios';
-      alert.classList.remove('d-none');
+      alertEl.className = 'alert alert-danger';
+      alertEl.textContent = 'El título, resumen y contenido son obligatorios';
+      alertEl.classList.remove('d-none');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
       return;
     }
 
     btn.disabled = true;
     btn.innerHTML = '<span class="eu-spinner" style="width:18px;height:18px;border-width:2px"></span> Enviando...';
+    alertEl.classList.add('d-none');
 
     try {
-      const res = await Auth.authFetch(`${API}/api/articles`, {
+      var res = await Auth.authFetch(API + '/api/articles', {
         method: 'POST',
-        body: JSON.stringify({ title, summary, content, category })
+        body: JSON.stringify({ title: title, summary: summary, content: content, category: category })
       });
-      const data = await res.json();
+      var data = await res.json();
       if (!res.ok) throw new Error(data.error);
 
-      alert.className = 'alert alert-success';
-      alert.innerHTML = `✓ <strong>Artículo enviado exitosamente.</strong> Quedará visible cuando un moderador lo apruebe. <a href="${BASE}/articulo.html?slug=${data.slug}" class="alert-link">Ver artículo</a>`;
-      alert.classList.remove('d-none');
+      articleId = data.articleId;
+
+      if (localSources.length) {
+        await uploadPendingSources(articleId);
+      }
+
+      alertEl.className = 'alert alert-success';
+      alertEl.innerHTML = '✓ <strong>Artículo enviado.</strong> Quedará visible cuando un moderador lo apruebe. <a href="' + BASE + '/articulo.html?slug=' + data.slug + '" class="alert-link">Ver artículo</a>';
+      alertEl.classList.remove('d-none');
       btn.innerHTML = '<i class="bi bi-check-lg"></i> Enviado';
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     } catch (err) {
-      alert.className = 'alert alert-danger';
-      alert.textContent = err.message;
-      alert.classList.remove('d-none');
+      alertEl.className = 'alert alert-danger';
+      alertEl.textContent = err.message;
+      alertEl.classList.remove('d-none');
       btn.disabled = false;
       btn.innerHTML = '<i class="bi bi-send"></i> Enviar para revisión';
     }
   };
+
+  async function uploadPendingSources(artId) {
+    var token = Auth.getToken();
+    for (var i = 0; i < localSources.length; i++) {
+      var src = localSources[i];
+      try {
+        if (src.type === 'link') {
+          await fetch(API + '/api/articles/' + artId + '/sources', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+            body: JSON.stringify({ type: 'link', title: src.title, url: src.url })
+          });
+        } else if (src.type === 'pdf') {
+          var fd = new FormData();
+          fd.append('pdf', src.file);
+          fd.append('title', src.title);
+          await fetch(API + '/api/articles/' + artId + '/sources/pdf', {
+            method: 'POST',
+            headers: { 'Authorization': 'Bearer ' + token },
+            body: fd
+          });
+        }
+      } catch (e) { console.warn('Source upload failed:', e); }
+    }
+  }
+
+  function escHtml(s) {
+    return String(s||'').replace(/[&<>"']/g, function(c){ return({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]); });
+  }
+  function escAttr(s) { return escHtml(s); }
 })();
 </script>
