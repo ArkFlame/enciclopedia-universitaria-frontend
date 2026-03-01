@@ -2,73 +2,74 @@
 .eu-mapa-sinoptico {
   margin: 2.5rem 0;
 }
-.eu-mapa-sinoptico .eu-mapa-sinoptico-wrapper {
+.eu-mapa-sinoptico-wrapper {
   position: relative;
-  padding: 36px 24px;
+  overflow-x: auto;
+  padding: 32px 30px;
   background: var(--eu-bg-secondary);
   border: 1px solid var(--eu-border);
   border-radius: var(--eu-radius-lg);
-  overflow: hidden;
 }
-.eu-mapa-sinoptico .eu-mapa-sinoptico-wrapper::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  background: linear-gradient(135deg, rgba(255,255,255,0.08), transparent 60%);
-  opacity: 0.6;
-}
-.eu-mapa-sinoptico .eu-mapa-sinoptico-svg {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
-  color: var(--eu-text);
-  z-index: 0;
-}
-.eu-mapa-sinoptico-svg line {
-  stroke: currentColor;
-  stroke-width: 2;
-}
-.eu-mapa-sinoptico .eu-mapa-sinoptico-levels {
-  position: relative;
+.eu-mapa-sinoptico-tree {
+  min-width: 840px;
   display: flex;
   flex-direction: column;
-  gap: 2rem;
-  z-index: 1;
-}
-.eu-mapa-sinoptico .eu-mapa-sinoptico-level {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 1rem;
-  align-items: center;
 }
 .eu-mapa-sinoptico-node {
-  border-radius: var(--eu-radius-sm, 0.4rem);
-  border: 1px solid var(--node-border, var(--eu-border));
-  padding: 0.55rem 1.2rem;
-  min-width: 120px;
-  font-weight: 600;
-  font-size: 0.9rem;
-  background: var(--node-bg, var(--eu-bg));
-  color: var(--node-text, var(--eu-text));
-  transition: transform .2s ease, box-shadow .2s ease;
-  cursor: pointer;
   position: relative;
-  z-index: 1;
+  padding-left: 60px;
+  margin-bottom: 30px;
 }
-
-.eu-mapa-sinoptico-data {
-  display: none !important;
+.eu-mapa-sinoptico-node::before {
+  content: '';
+  position: absolute;
+  top: 20px;
+  left: 0;
+  width: 60px;
+  height: 2px;
+  background: var(--eu-border);
 }
-.eu-mapa-sinoptico-node:hover {
-  box-shadow: 0 8px 18px rgba(0,0,0,.2);
+.eu-mapa-sinoptico-node.root::before {
+  display: none;
 }
-.eu-mapa-sinoptico-node-active {
-  transform: scale(1.05);
-  box-shadow: 0 10px 20px rgba(0,0,0,.25);
+.eu-mapa-sinoptico-children {
+  margin-top: 15px;
+  border-left: 2px solid var(--eu-border);
+  padding-left: 40px;
+}
+.eu-mapa-sinoptico-content {
+  display: inline-block;
+  padding: 10px 20px;
+  border-radius: 7px;
+  font-weight: 600;
+  min-width: 200px;
+  color: #fff;
+  background: var(--eu-border);
+  box-shadow: 0 6px 14px rgba(15, 23, 42, 0.1);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  border: 2px solid transparent;
+}
+.eu-mapa-sinoptico-content:hover {
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 12px 20px rgba(15, 23, 42, 0.2);
+}
+.eu-mapa-sinoptico-node.level-1 > .eu-mapa-sinoptico-content {
+  background: #1f2d3d;
+}
+.eu-mapa-sinoptico-node.level-2 > .eu-mapa-sinoptico-content {
+  background: #0066cc;
+}
+.eu-mapa-sinoptico-node.level-3 > .eu-mapa-sinoptico-content {
+  background: #00a65a;
+}
+.eu-mapa-sinoptico-node.level-4 > .eu-mapa-sinoptico-content {
+  background: #8e44ad;
+}
+.eu-mapa-sinoptico-node.level-5 > .eu-mapa-sinoptico-content {
+  background: #d35400;
+}
+.eu-mapa-sinoptico-node.level-6 > .eu-mapa-sinoptico-content {
+  background: #c0392b;
 }
 .eu-mapa-sinoptico-caption {
   margin-top: 1rem;
@@ -82,22 +83,31 @@
   font-size: 0.9rem;
   color: var(--eu-text-muted);
 }
+.eu-mapa-sinoptico-data {
+  display: none !important;
+}
 @media (max-width: 768px) {
-  .eu-mapa-sinoptico .eu-mapa-sinoptico-wrapper {
-    padding: 28px 18px;
-  }
-  .eu-mapa-sinoptico .eu-mapa-sinoptico-levels {
-    gap: 1.5rem;
+  .eu-mapa-sinoptico-wrapper {
+    padding: 24px 20px;
   }
   .eu-mapa-sinoptico-node {
-    max-width: 260px;
-    width: 100%;
+    padding-left: 45px;
+    margin-bottom: 22px;
+  }
+  .eu-mapa-sinoptico-node::before {
+    width: 45px;
+  }
+  .eu-mapa-sinoptico-content {
+    min-width: 160px;
+    padding: 8px 16px;
+    font-size: 0.85rem;
   }
 }
-[data-theme="dark"] .eu-mapa-sinoptico .eu-mapa-sinoptico-wrapper {
+[data-theme="dark"] .eu-mapa-sinoptico-wrapper {
   background: var(--eu-bg-tertiary);
   border-color: var(--eu-border);
+  box-shadow: 0 25px 40px rgba(0, 0, 0, 0.15);
 }
-[data-theme="dark"] .eu-mapa-sinoptico-node {
-  box-shadow: 0 6px 18px rgba(0,0,0,.4);
+[data-theme="dark"] .eu-mapa-sinoptico-content {
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.6);
 }
