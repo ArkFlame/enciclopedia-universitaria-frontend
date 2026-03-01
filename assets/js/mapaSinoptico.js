@@ -271,7 +271,11 @@ body {
   function hydrateMapaControls(container) {
     const header = container.querySelector('.eu-mapa-sinoptico-header');
     if (!header) return { toggle: null, download: null };
-    let toggle = header.querySelector('.eu-mapa-sinoptico-toggle');
+    const existingToggles = Array.from(header.querySelectorAll('.eu-mapa-sinoptico-toggle'));
+    let toggle = existingToggles[0] || null;
+    if (existingToggles.length > 1) {
+      existingToggles.slice(1).forEach(node => node.remove());
+    }
     if (!toggle) {
       toggle = document.createElement('button');
       toggle.type = 'button';
@@ -345,6 +349,7 @@ body {
       toggle.setAttribute('aria-expanded', open);
       if (body) {
         body.setAttribute('aria-hidden', !open);
+        body.style.maxHeight = open ? `${body.scrollHeight}px` : '0';
       }
       if (label) {
         label.textContent = open ? TOGGLE_LABELS.open : TOGGLE_LABELS.closed;

@@ -9,6 +9,9 @@
   gap: 12px;
   margin-bottom: 12px;
 }
+.eu-mapa-sinoptico-header .eu-mapa-sinoptico-toggle:not(:first-of-type) {
+  display: none;
+}
 .eu-mapa-sinoptico-toggle {
   flex: 0 1 auto;
   text-align: left;
