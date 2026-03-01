@@ -263,12 +263,79 @@ body {
   }
 
   function initMapaInteractions(container) {
-    initMapaToggle(container);
-    initMapaDownload(container);
+    const controls = hydrateMapaControls(container);
+    initMapaToggle(container, controls.toggle);
+    initMapaDownload(container, controls.download);
   }
 
-  function initMapaToggle(container) {
-    const toggle = container.querySelector('.eu-mapa-sinoptico-toggle');
+  function hydrateMapaControls(container) {
+    const header = container.querySelector('.eu-mapa-sinoptico-header');
+    if (!header) return { toggle: null, download: null };
+    let toggle = header.querySelector('.eu-mapa-sinoptico-toggle');
+    if (!toggle) {
+      toggle = document.createElement('button');
+      toggle.type = 'button';
+      toggle.className = 'eu-mapa-sinoptico-toggle';
+      toggle.setAttribute('aria-expanded', 'false');
+      toggle.appendChild(createToggleIcon());
+      toggle.appendChild(createToggleLabel(TOGGLE_LABELS.closed));
+      header.insertBefore(toggle, header.firstChild);
+    } else {
+      if (!toggle.querySelector('.eu-mapa-sinoptico-toggle-icon')) {
+        toggle.insertBefore(createToggleIcon(), toggle.firstChild);
+      }
+      if (!toggle.querySelector('.eu-mapa-sinoptico-toggle-label')) {
+        toggle.appendChild(createToggleLabel(TOGGLE_LABELS.closed));
+      }
+    }
+
+    let download = header.querySelector('.eu-mapa-sinoptico-download');
+    if (!download) {
+      const actions = container.querySelector('.eu-mapa-sinoptico-actions');
+      if (actions) {
+        const legacyDownload = actions.querySelector('.eu-mapa-sinoptico-download');
+        if (legacyDownload) {
+          download = legacyDownload;
+          header.appendChild(download);
+        }
+        actions.remove();
+      }
+    }
+    if (!download) {
+      download = createDownloadButton();
+      header.appendChild(download);
+    }
+    return { toggle, download };
+  }
+
+  function createToggleIcon() {
+    const icon = document.createElement('span');
+    icon.className = 'eu-mapa-sinoptico-toggle-icon';
+    icon.setAttribute('aria-hidden', 'true');
+    return icon;
+  }
+
+  function createToggleLabel(text) {
+    const label = document.createElement('span');
+    label.className = 'eu-mapa-sinoptico-toggle-label';
+    label.textContent = text;
+    return label;
+  }
+
+  function createDownloadButton() {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'eu-mapa-sinoptico-download';
+    button.innerHTML = `
+      <svg class="eu-mapa-sinoptico-download-icon" viewBox="0 0 24 24" role="presentation" aria-hidden="true">
+        <path d="M12 6v10m0 0l-4-4m4 4l4-4M6 18h12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+      </svg>
+      <span>Descargar Mapa Sinoptico</span>`;
+    return button;
+  }
+
+  function initMapaToggle(container, toggleEl) {
+    const toggle = toggleEl || container.querySelector('.eu-mapa-sinoptico-toggle');
     if (!toggle) return;
     const body = container.querySelector('.eu-mapa-sinoptico-body');
     const label = toggle.querySelector('.eu-mapa-sinoptico-toggle-label');
@@ -296,8 +363,8 @@ body {
     toggle.dataset.euMapaToggleInit = 'true';
   }
 
-  function initMapaDownload(container) {
-    const button = container.querySelector('.eu-mapa-sinoptico-download');
+  function initMapaDownload(container, downloadEl) {
+    const button = downloadEl || container.querySelector('.eu-mapa-sinoptico-download');
     if (!button) return;
     if (button.dataset.euMapaDownloadInit === 'true') {
       return;
