@@ -20,7 +20,6 @@ title: Guía completa para publicar artículos
           <li><a href="#tooltip">Tooltips</a></li>
           <li><a href="#alert">Alertas</a></li>
           <li><a href="#callout">Callouts</a></li>
-          <li><a href="#accordion">Acordeón</a></li>
         </ul>
       </div>
       <div class="col-md-6">
@@ -133,28 +132,6 @@ La <strong>mitocondria</strong> produce energía.
         <span class="eu-callout-icon">⚠️</span>
         <div class="eu-callout-body">
           Advertencia de seguridad: utilizá protección al manipular reactivos ácidos.
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <section id="accordion" class="mb-5">
-    <h2 class="eu-section-title">📂 Acordeón</h2>
-    <p class="text-muted mb-3">Organizá preguntas frecuentes o explicaciones detalladas.</p>
-    <div class="eu-card p-4">
-      <div class="eu-label mb-1">Código:</div>
-      <pre style="background:var(--eu-code-bg);padding:12px;border-radius:8px;">
-[accordion title="¿Qué es la fotosíntesis C4?"]
-La planta fija CO₂ en compuestos de cuatro carbonos antes del ciclo de Calvin.
-[/accordion]
-      </pre>
-      <div class="eu-label mt-3 mb-1">Resultado:</div>
-      <div class="eu-accordion" data-accordion>
-        <button class="accordion-button collapsed" type="button" data-accordion-target="faqFotosintesis">
-          ¿Qué es la fotosíntesis C4?
-        </button>
-        <div class="accordion-body" id="faqFotosintesis" style="display:none;">
-          La fotosíntesis C4 fija CO₂ en compuestos de cuatro carbonos antes de entrar al ciclo de Calvin, reduciendo la fotorespiración y aprovechando mejor la luz en climas cálidos.
         </div>
       </div>
     </div>
@@ -289,17 +266,6 @@ Procariota -> Archaea
 
 <script>
 (function() {
-  const accordionButtons = document.querySelectorAll('[data-accordion] .accordion-button');
-  accordionButtons.forEach(button => {
-    button.addEventListener('click', () => {
-      const targetId = button.dataset.accordionTarget;
-      const panel = document.getElementById(targetId);
-      const isOpen = panel.style.display === 'block';
-      panel.style.display = isOpen ? 'none' : 'block';
-      button.classList.toggle('collapsed', isOpen);
-    });
-  });
-
   const tabContainers = document.querySelectorAll('[data-tabs-demo]');
   tabContainers.forEach(container => {
     const buttons = container.querySelectorAll('[data-tab-target]');
@@ -352,10 +318,6 @@ Procariota -> Archaea
       '```markdown',
       '[callout icon="💡"]Nota importante o curiosidad científica[/callout]',
       '```',
-      '### Accordion',
-      '```markdown',
-      '[accordion title="¿Qué es la fotosíntesis C4?"]\nLa planta fija CO₂ en compuestos de cuatro carbonos antes del ciclo de Calvin.\n[/accordion]',
-      '```',
       '### Tabs',
       '```markdown',
       '[tabs]\n[tab title="Definición"]La teoría del caos estudia sistemas sobre sensibilidad a condiciones iniciales.[/tab]\n[tab title="Ejemplos"]Péndulo doble, clima y logística.[/tab]\n[/tabs]',
@@ -393,7 +355,7 @@ Procariota -> Archaea
       '4. Si se rechaza, corregir la versión y reenviar.',
       '',
       '## Resultado',
-      'El artículo aprobado muestra exactamente los componentes interactivos de esta guía, incluyendo tooltip, alertas, acordeones, tabs, mapas sinópticos y referencias internas.'
+      'El artículo aprobado muestra exactamente los componentes interactivos de esta guía, incluyendo tooltip, alertas, tabs, mapas sinópticos y referencias internas.'
     ].join('\n');
   }
 

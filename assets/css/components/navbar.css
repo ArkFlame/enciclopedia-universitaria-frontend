@@ -11,6 +11,7 @@
   width: 100%;
   min-width: 100%;
   box-sizing: border-box;
+  max-width: 100vw;
 }
 .eu-navbar-inner {
   display: flex;
@@ -295,14 +296,6 @@
 html, body {
   overflow-x: hidden;
   max-width: 100%;
-}
-
-/* Navbar itself must never exceed the viewport */
-.eu-navbar {
-  width: 100%;
-  max-width: 100vw;
-  overflow: hidden;        /* clip any child that bleeds */
-  box-sizing: border-box;
 }
 
 /* Inner row: shrink padding and gap on small screens */
