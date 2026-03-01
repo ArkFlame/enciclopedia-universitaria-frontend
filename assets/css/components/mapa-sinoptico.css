@@ -1,38 +1,56 @@
+/* mapa-sinoptico.css */
 /* ── MAPA SINÓPTICO ────────────────────────────────────────── */
 .eu-mapa-sinoptico {
   margin: 2.5rem 0;
 }
+
 .eu-mapa-sinoptico-header {
   display: flex;
-  align-items: center;
   justify-content: space-between;
+  align-items: center;
   gap: 12px;
+  margin-bottom: 12px;
   flex-wrap: wrap;
-  width: 100%;
 }
+
 .eu-mapa-sinoptico-header .eu-mapa-sinoptico-download:not(:first-of-type) {
   display: none;
 }
+
 .eu-mapa-sinoptico-toggle {
   flex: 0 1 auto;
   text-align: left;
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  padding: 12px 18px;
+  padding: 12px 16px;
   border-radius: var(--eu-radius-lg);
   border: 1px solid var(--eu-border);
-  background: var(--eu-bg-secondary);
+  background: var(--eu-bg-surface, #fff);
   font-size: 0.95rem;
   font-weight: 600;
   color: var(--eu-text);
   cursor: pointer;
-  transition: background var(--eu-transition), border-color var(--eu-transition);
+  transition: background var(--eu-transition), border-color var(--eu-transition), color var(--eu-transition);
 }
+
 .eu-mapa-sinoptico-toggle:hover {
-  background: var(--eu-bg-surface, #fff);
+  background: var(--eu-bg-secondary);
   border-color: var(--eu-border);
 }
+
+/* Dark mode specific styles for toggle button - darker background, visible text */
+[data-theme="dark"] .eu-mapa-sinoptico-toggle {
+  background: var(--eu-bg-secondary, #1e293b);
+  border-color: var(--eu-border, #334155);
+  color: var(--eu-text, #e2e8f0);
+}
+
+[data-theme="dark"] .eu-mapa-sinoptico-toggle:hover {
+  background: var(--eu-bg-tertiary, #0f172a);
+  border-color: var(--eu-border-hover, #475569);
+}
+
 .eu-mapa-sinoptico-toggle-icon {
   width: 20px;
   height: 20px;
@@ -44,7 +62,15 @@
   transform-origin: center;
   transition: transform 0.3s ease;
   position: relative;
+  flex-shrink: 0;
 }
+
+/* Dark mode icon styling */
+[data-theme="dark"] .eu-mapa-sinoptico-toggle-icon {
+  border-color: var(--eu-border, #475569);
+  color: var(--eu-text, #e2e8f0);
+}
+
 .eu-mapa-sinoptico-toggle-icon::after {
   content: '';
   width: 0;
@@ -55,6 +81,7 @@
   border-bottom: 6px solid currentColor;
   display: inline-block;
 }
+
 .eu-mapa-sinoptico-body {
   overflow: hidden;
   max-height: 0;
@@ -65,42 +92,67 @@
   gap: 14px;
   pointer-events: none;
 }
+
 .eu-mapa-sinoptico.eu-mapa-sinoptico-open .eu-mapa-sinoptico-body {
   max-height: 9999px;
   opacity: 1;
   pointer-events: auto;
 }
+
+/* Download button with proper styling and SVG icon */
 .eu-mapa-sinoptico-download {
   display: inline-flex;
   align-items: center;
-  justify-content: center;
-  gap: 6px;
-  padding: 6px 18px;
-  border-radius: 999px;
-  border: 1px solid transparent;
-  background: var(--eu-bg-surface, #fff);
+  gap: 8px;
+  padding: 8px 16px;
+  border: 1px solid var(--eu-border);
+  border-radius: var(--eu-radius);
+  background: var(--eu-bg-surface);
   color: var(--eu-link);
   font-weight: 600;
   font-size: 0.9rem;
   text-decoration: none;
   cursor: pointer;
-  transition: background var(--eu-transition), border-color var(--eu-transition), color var(--eu-transition);
+  transition: all 0.2s ease;
+  white-space: nowrap;
 }
+
 .eu-mapa-sinoptico-download:hover {
   background: var(--eu-bg-secondary);
-  border-color: var(--eu-border);
-  color: var(--eu-link-hover, var(--eu-link));
+  border-color: var(--eu-border-hover);
+  color: var(--eu-link-hover);
+  transform: translateY(-1px);
 }
+
+.eu-mapa-sinoptico-download:active {
+  transform: translateY(0);
+}
+
+/* Dark mode download button */
+[data-theme="dark"] .eu-mapa-sinoptico-download {
+  background: var(--eu-bg-secondary, #1e293b);
+  border-color: var(--eu-border, #334155);
+  color: var(--eu-link, #60a5fa);
+}
+
+[data-theme="dark"] .eu-mapa-sinoptico-download:hover {
+  background: var(--eu-bg-tertiary, #0f172a);
+  border-color: var(--eu-border-hover, #475569);
+}
+
 .eu-mapa-sinoptico-download-icon {
   width: 18px;
   height: 18px;
   display: inline-block;
   flex-shrink: 0;
   vertical-align: middle;
-  color: inherit;
   stroke: currentColor;
   fill: none;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
+
 .eu-mapa-sinoptico-wrapper {
   position: relative;
   width: 100%;
@@ -115,6 +167,7 @@
   overscroll-behavior-x: contain;
   -webkit-overflow-scrolling: touch;
 }
+
 .eu-mapa-sinoptico-tree {
   width: max-content;
   min-width: 100%;
@@ -122,11 +175,13 @@
   flex-direction: column;
   box-sizing: border-box;
 }
+
 .eu-mapa-sinoptico-node {
   position: relative;
   padding-left: 45px;
   margin-bottom: 24px;
 }
+
 .eu-mapa-sinoptico-node::before {
   content: '';
   position: absolute;
@@ -136,14 +191,17 @@
   height: 2px;
   background: var(--eu-border);
 }
+
 .eu-mapa-sinoptico-node.root::before {
   display: none;
 }
+
 .eu-mapa-sinoptico-children {
   margin-top: 12px;
   border-left: 2px solid var(--eu-border);
   padding-left: 30px;
 }
+
 .eu-mapa-sinoptico-content {
   display: inline-block;
   padding: 10px 20px;
@@ -156,87 +214,117 @@
   transition: transform 0.2s ease, box-shadow 0.2s ease;
   border: 2px solid transparent;
 }
+
 .eu-mapa-sinoptico-content:hover {
   transform: translateY(-2px) scale(1.02);
   box-shadow: 0 12px 20px rgba(15, 23, 42, 0.2);
 }
+
 .eu-mapa-sinoptico-node.level-1 > .eu-mapa-sinoptico-content {
   background: #1f2d3d;
 }
+
 .eu-mapa-sinoptico-node.level-2 > .eu-mapa-sinoptico-content {
   background: #0066cc;
 }
+
 .eu-mapa-sinoptico-node.level-3 > .eu-mapa-sinoptico-content {
   background: #00a65a;
 }
+
 .eu-mapa-sinoptico-node.level-4 > .eu-mapa-sinoptico-content {
   background: #8e44ad;
 }
+
 .eu-mapa-sinoptico-node.level-5 > .eu-mapa-sinoptico-content {
   background: #d35400;
 }
+
 .eu-mapa-sinoptico-node.level-6 > .eu-mapa-sinoptico-content {
   background: #c0392b;
 }
+
 .eu-mapa-sinoptico-caption {
   margin: 0;
   font-size: 0.85rem;
   color: var(--eu-text-muted);
   text-align: left;
 }
+
 .eu-mapa-sinoptico-empty {
   padding: 1rem 0;
   text-align: center;
   font-size: 0.9rem;
   color: var(--eu-text-muted);
 }
+
 .eu-mapa-sinoptico-data {
   display: none !important;
 }
+
+/* Mobile responsiveness */
 @media (max-width: 768px) {
   .eu-mapa-sinoptico-header {
-    flex-direction: column;
-    align-items: stretch;
+    gap: 8px;
   }
-  .eu-mapa-sinoptico-toggle,
+  
+  .eu-mapa-sinoptico-toggle {
+    padding: 10px 12px;
+    font-size: 0.85rem;
+    flex: 1;
+  }
+  
   .eu-mapa-sinoptico-download {
-    width: 100%;
-    justify-content: center;
+    padding: 6px 12px;
+    font-size: 0.8rem;
   }
+  
+  .eu-mapa-sinoptico-download span {
+    display: none; /* Hide text on small screens, show only icon */
+  }
+  
   .eu-mapa-sinoptico-wrapper {
     padding: 24px 20px;
   }
+  
   .eu-mapa-sinoptico-node {
     padding-left: 35px;
     margin-bottom: 18px;
   }
+  
   .eu-mapa-sinoptico-node::before {
     width: 35px;
   }
+  
   .eu-mapa-sinoptico-content {
     min-width: 120px;
     padding: 6px 14px;
     font-size: 0.8rem;
   }
 }
+
+@media (max-width: 480px) {
+  .eu-mapa-sinoptico-toggle {
+    width: 100%;
+    justify-content: center;
+  }
+  
+  .eu-mapa-sinoptico-download {
+    width: 100%;
+    justify-content: center;
+  }
+  
+  .eu-mapa-sinoptico-download span {
+    display: inline; /* Show text again on very small screens if stacked */
+  }
+}
+
 [data-theme="dark"] .eu-mapa-sinoptico-wrapper {
   background: var(--eu-bg-tertiary);
   border-color: var(--eu-border);
   box-shadow: 0 25px 40px rgba(0, 0, 0, 0.15);
 }
+
 [data-theme="dark"] .eu-mapa-sinoptico-content {
   box-shadow: 0 6px 18px rgba(0, 0, 0, 0.6);
-}
-[data-theme="dark"] .eu-mapa-sinoptico-toggle {
-  background: var(--eu-bg-secondary);
-  border-color: var(--eu-border);
-  color: var(--eu-text);
-}
-[data-theme="dark"] .eu-mapa-sinoptico-toggle:hover {
-  background: var(--eu-bg-tertiary);
-}
-[data-theme="dark"] .eu-mapa-sinoptico-download {
-  background: var(--eu-bg-secondary);
-  border-color: var(--eu-border);
-  color: var(--eu-link);
 }

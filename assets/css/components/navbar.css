@@ -1,4 +1,7 @@
+/* navbar.css */
+
 /* ── NAVBAR ─────────────────────────────────────────────────── */
+
 .eu-navbar {
   position: sticky;
   top: 0;
@@ -8,19 +11,28 @@
   box-shadow: var(--eu-shadow);
   transition: background var(--eu-transition);
   width: 100%;
+  min-width: 100%; /* Ensure full width */
   box-sizing: border-box;
 }
+
 .eu-navbar-inner {
   display: flex;
   align-items: center;
   gap: 16px;
-  padding: 0 clamp(16px, 3vw, 32px);
+  padding: 0 16px; /* Reduced padding for mobile */
   height: var(--eu-navbar-h);
-  width: min(1400px, 100%);
+  width: 100%;
+  max-width: 1400px;
   margin: 0 auto;
   box-sizing: border-box;
-  justify-content: space-between;
 }
+
+@media (min-width: 768px) {
+  .eu-navbar-inner {
+    padding: 0 24px;
+  }
+}
+
 .eu-logo {
   display: flex;
   align-items: center;
@@ -29,6 +41,7 @@
   flex-shrink: 0;
   color: var(--eu-text) !important;
 }
+
 .eu-logo-icon {
   font-family: var(--eu-font-display);
   font-size: 1.75rem;
@@ -36,6 +49,7 @@
   color: var(--eu-text);
   line-height: 1;
 }
+
 .eu-logo-text {
   font-family: var(--eu-font-body);
   font-size: 0.78rem;
@@ -43,22 +57,29 @@
   color: var(--eu-text-secondary);
   font-weight: 400;
 }
+
 .eu-logo-text strong {
   font-size: 0.88rem;
   font-weight: 600;
   color: var(--eu-text);
   display: block;
 }
+
 /* Búsqueda */
+
 .eu-search-wrapper {
   flex: 1;
   max-width: 520px;
   margin: 0 auto;
+  width: 100%;
+  min-width: 0; /* Prevent flex item overflow */
 }
+
 .eu-search-box {
   position: relative;
   width: 100%;
 }
+
 .eu-search-icon {
   position: absolute;
   left: 12px;
@@ -68,6 +89,7 @@
   font-size: 0.9rem;
   pointer-events: none;
 }
+
 .eu-search-input {
   width: 100%;
   padding: 8px 16px 8px 36px;
@@ -79,12 +101,15 @@
   font-family: var(--eu-font-body);
   transition: all var(--eu-transition);
   outline: none;
+  box-sizing: border-box;
 }
+
 .eu-search-input:focus {
   border-color: var(--eu-text);
   background: var(--eu-surface);
   box-shadow: 0 0 0 3px rgba(0,0,0,.06);
 }
+
 .eu-search-dropdown {
   position: absolute;
   top: calc(100% + 8px);
@@ -98,21 +123,29 @@
   z-index: 2000;
   max-height: 400px;
   overflow-y: auto;
+  width: 100%;
+  box-sizing: border-box;
 }
+
 .eu-search-dropdown.active { display: block; }
+
 .eu-search-result-item {
   padding: 10px 16px;
   cursor: pointer;
   transition: background var(--eu-transition);
   border-bottom: 1px solid var(--eu-border-subtle);
 }
+
 .eu-search-result-item:hover { background: var(--eu-bg-secondary); }
+
 .eu-search-result-item:last-child { border-bottom: none; }
+
 .eu-search-result-title {
   font-weight: 600;
   font-size: 0.9rem;
   color: var(--eu-text);
 }
+
 .eu-search-result-summary {
   font-size: 0.78rem;
   color: var(--eu-text-muted);
@@ -122,13 +155,17 @@
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
+
 /* Controles derechos */
+
 .eu-navbar-right {
   display: flex;
   align-items: center;
   gap: 8px;
   flex-shrink: 0;
+  min-width: 0; /* Prevent overflow */
 }
+
 .eu-icon-btn {
   display: inline-flex;
   align-items: center;
@@ -142,8 +179,185 @@
   cursor: pointer;
   transition: all var(--eu-transition);
   font-size: 1rem;
+  flex-shrink: 0;
 }
+
 .eu-icon-btn:hover {
   background: var(--eu-bg-secondary);
   color: var(--eu-text);
+}
+
+/* Toggle iOS */
+
+.eu-toggle-wrap { 
+  gap: 6px; 
+  display: flex;
+  align-items: center;
+}
+
+.eu-ios-toggle {
+  position: relative;
+  display: inline-block;
+  width: 40px;
+  height: 22px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.eu-ios-toggle input { 
+  opacity: 0; 
+  width: 0; 
+  height: 0; 
+  position: absolute;
+}
+
+.eu-toggle-slider {
+  position: absolute;
+  inset: 0;
+  background: var(--eu-border);
+  border-radius: 22px;
+  transition: .3s;
+}
+
+.eu-toggle-slider::before {
+  content: '';
+  position: absolute;
+  height: 16px;
+  width: 16px;
+  left: 3px;
+  bottom: 3px;
+  background: white;
+  border-radius: 50%;
+  transition: .3s;
+  box-shadow: 0 1px 4px rgba(0,0,0,.2);
+}
+
+.eu-ios-toggle input:checked + .eu-toggle-slider { background: var(--eu-text); }
+.eu-ios-toggle input:checked + .eu-toggle-slider::before { transform: translateX(18px); }
+
+.eu-toggle-label { 
+  font-size: 0.78rem; 
+  color: var(--eu-text-muted); 
+  white-space: nowrap; 
+}
+
+/* Contador artículos */
+
+.eu-read-counter {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.78rem;
+  color: var(--eu-text-muted);
+  background: var(--eu-bg-secondary);
+  padding: 4px 10px;
+  border-radius: 20px;
+  border: 1px solid var(--eu-border);
+  cursor: default;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.eu-read-counter.near-limit { color: var(--eu-warning); border-color: var(--eu-warning); }
+.eu-read-counter.at-limit { color: var(--eu-danger); border-color: var(--eu-danger); }
+
+/* ── SEARCH SEE-ALL ──────────────────────────────────────── */
+
+.eu-search-see-all {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px;
+  font-size: .83rem;
+  font-weight: 600;
+  color: var(--eu-text);
+  text-decoration: none;
+  border-top: 1px solid var(--eu-border);
+  background: var(--eu-bg-secondary);
+  transition: background .15s;
+}
+
+.eu-search-see-all:hover { background: var(--eu-border); color: var(--eu-text); }
+
+/* Hamburguesa */
+
+.eu-hamburger {
+  display: none; /* Hidden on desktop */
+  flex-direction: column;
+  gap: 5px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  flex-shrink: 0;
+}
+
+.eu-hamburger span {
+  display: block;
+  width: 22px;
+  height: 2px;
+  background: var(--eu-text);
+  border-radius: 2px;
+  transition: all var(--eu-transition);
+}
+
+/* Mobile search bar */
+.eu-mobile-search {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.eu-mobile-search .eu-search-box {
+  width: 100%;
+}
+
+/* Mobile responsiveness */
+@media (max-width: 767.98px) {
+  .eu-navbar {
+    width: 100vw; /* Full viewport width on mobile */
+    max-width: 100vw;
+    left: 0;
+    right: 0;
+  }
+  
+  .eu-navbar-inner {
+    padding: 0 12px;
+    gap: 8px;
+  }
+  
+  .eu-hamburger {
+    display: flex; /* Show hamburger on mobile */
+  }
+  
+  .eu-logo-text {
+    font-size: 0.7rem;
+  }
+  
+  .eu-logo-icon {
+    font-size: 1.5rem;
+  }
+  
+  .eu-navbar-right {
+    gap: 4px;
+  }
+  
+  .eu-icon-btn {
+    width: 32px;
+    height: 32px;
+    font-size: 0.9rem;
+  }
+}
+
+@media (max-width: 575.98px) {
+  .eu-navbar-inner {
+    padding: 0 8px;
+  }
+  
+  .eu-logo-text {
+    display: none; /* Hide text on very small screens, keep icon only */
+  }
+  
+  .eu-read-counter span {
+    display: none; /* Hide counter text, show only icon */
+  }
 }

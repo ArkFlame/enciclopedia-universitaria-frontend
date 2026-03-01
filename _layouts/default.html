@@ -1,20 +1,24 @@
 <!-- default.html -->
+
 <!DOCTYPE html>
 <html lang="es" data-theme="light">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
   <meta name="description" content="{{ page.description | default: site.description }}">
   <title>{% if page.title %}{{ page.title }} — {% endif %}{{ site.title }}</title>
 
   <!-- Bootstrap 5 CSS -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous">
+
   <!-- Bootstrap Icons -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet" crossorigin="anonymous">
+
   <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Source+Sans+3:wght@300;400;500;600&display=swap" rel="stylesheet">
+
   <!-- Main CSS -->
   <link rel="stylesheet" href="{{ '/assets/css/main.css' | relative_url }}">
   {% if page.custom_css %}<link rel="stylesheet" href="{{ page.custom_css | relative_url }}">{% endif %}
@@ -39,13 +43,6 @@
     })();
   </script>
 
-  <!--
-    IMPORTANT: auth.js, search.js, and app.js are loaded at the
-    END of <body> as regular synchronous scripts (no defer/async).
-    Page-specific inline scripts use DOMContentLoaded so they always run
-    AFTER these files are parsed — regardless of Cloudflare Rocket Loader
-    or any other script optimizer that might reorder deferred scripts.
-  -->
 </head>
 <body>
 
@@ -118,6 +115,7 @@
         <button class="eu-hamburger d-md-none" id="hamburgerBtn" aria-label="Menú">
           <span></span><span></span><span></span>
         </button>
+
       </div>
     </div>
 
@@ -126,7 +124,7 @@
       <div class="eu-search-box w-100">
         <i class="bi bi-search eu-search-icon"></i>
         <input type="text" id="mobileSearch" placeholder="Buscar artículos..."
-               class="eu-search-input" autocomplete="off">
+               class="eu-search-input" autocomplete="off" aria-label="Buscar artículos">
         <div class="eu-search-dropdown" id="mobileSearchDropdown"></div>
       </div>
     </div>
@@ -137,7 +135,7 @@
   <aside class="eu-mobile-sidebar d-md-none" id="mobileSidebar">
     <div class="eu-sidebar-header">
       <span class="eu-logo-text">Menú</span>
-      <button class="eu-icon-btn" id="closeSidebar"><i class="bi bi-x-lg"></i></button>
+      <button class="eu-icon-btn" id="closeSidebar" aria-label="Cerrar menú"><i class="bi bi-x-lg"></i></button>
     </div>
     <nav class="eu-sidebar-nav">
       <a href="{{ '/' | relative_url }}"><i class="bi bi-house"></i> Inicio</a>
@@ -222,7 +220,6 @@
           console.warn(LOG, '#themeIcon not found');
         }
       }
-
       var btn = document.getElementById('themeToggle');
       if (btn) {
         console.log(LOG, '#themeToggle found, attaching listener');
@@ -230,21 +227,15 @@
           console.log(LOG, 'click! current theme:', getTheme());
           applyTheme(getTheme() === 'dark' ? 'light' : 'dark');
         });
-        // Apply current theme & update icon now
         applyTheme(getTheme());
       } else {
         console.error(LOG, 'CRITICAL: #themeToggle not found! Cannot attach theme toggle.');
       }
-
-      // Expose globally so other scripts can call applyTheme if needed
       window._applyTheme = applyTheme;
     })();
   </script>
 
-  <!--
-    External scripts loaded synchronously (no defer/async = predictable order).
-    data-cfasync="false" tells Cloudflare Rocket Loader to skip these.
-  -->
+  <!-- External scripts -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous" data-cfasync="false"></script>
   <script src="{{ '/assets/js/auth.js' | relative_url }}" data-cfasync="false"></script>
   <script src="{{ '/assets/js/search.js' | relative_url }}" data-cfasync="false"></script>
@@ -252,5 +243,6 @@
   <script src="{{ '/assets/js/mapaSinoptico.js' | relative_url }}" data-cfasync="false"></script>
   <script src="{{ '/assets/js/app.js' | relative_url }}" data-cfasync="false"></script>
   {% if page.extra_js %}<script src="{{ page.extra_js | relative_url }}" data-cfasync="false"></script>{% endif %}
+
 </body>
 </html>
