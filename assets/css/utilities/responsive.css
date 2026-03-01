@@ -33,6 +33,33 @@
     top: auto;
   }
 
+  .eu-article-wrapper article {
+    width: 100%;
+    padding-inline: 0;
+    margin-inline: 0;
+  }
+
+  .eu-article-meta {
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .eu-article-meta span {
+    flex: 0 1 auto;
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .eu-article-meta span:nth-child(even) {
+    display: none;
+  }
+
+  .eu-article-content,
+  .eu-article-summary {
+    margin-inline: 0;
+    padding-inline: 0;
+  }
+
   .eu-article-title { font-size: 1.6rem !important; }
 
   .eu-editor-toolbar { gap: 1px; }
