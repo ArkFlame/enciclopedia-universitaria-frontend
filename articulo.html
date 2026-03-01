@@ -195,6 +195,22 @@ title: Cargando artículo...
       document.head.appendChild(script);
     }
 
+    // Mermaid para Mapas Sinópticos
+    if (document.querySelector('.eu-mapa-sinoptico')) {
+      const mermaidScript = document.createElement('script');
+      mermaidScript.src = 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js';
+      mermaidScript.onload = function() {
+        window.mermaid.initialize({
+          startOnLoad: false,
+          theme: document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'default',
+          flowchart: { curve: 'basis', useMaxWidth: true },
+          securityLevel: 'loose'
+        });
+        window.mermaid.run({ querySelector: '.eu-mapa-sinoptico .mermaid' });
+      };
+      document.head.appendChild(mermaidScript);
+    }
+
   } catch (err) {
     document.getElementById('articlePage').innerHTML = `
       <div class="eu-empty-state text-danger">

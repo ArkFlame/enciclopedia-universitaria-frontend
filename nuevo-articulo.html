@@ -12,12 +12,13 @@ title: Nuevo artículo
 
 <script>
 (function() {
-  const API = window.EU_CONFIG.backendUrl;
-  const BASE = window.EU_CONFIG.baseUrl;
-  let articleId = null;
-  let localSources = [];
+  var API = window.EU_CONFIG.backendUrl;
+  var BASE = window.EU_CONFIG.baseUrl;
+  var articleId = null;
+  var localSources = [];
+  var pendingPdf = null;
 
-  document.addEventListener('DOMContentLoaded', () => {
+  document.addEventListener('DOMContentLoaded', function() {
     if (!Auth.isLoggedIn()) {
       window.location.href = BASE + '/login.html?redirect=' + encodeURIComponent(window.location.href);
       return;
@@ -27,15 +28,15 @@ title: Nuevo artículo
 
   async function loadCategories() {
     try {
-      const res = await fetch(API + '/api/articles/meta/categories');
+      var res = await fetch(API + '/api/articles/meta/categories');
       if (!res.ok) return [];
       return await res.json();
-    } catch { return []; }
+    } catch(e) { return []; }
   }
 
   async function renderEditor() {
-    const cats = await loadCategories();
-    const catOptions = cats.map(c => '<option value="' + c.slug + '">' + c.name + '</option>').join('');
+    var cats = await loadCategories();
+    var catOptions = cats.map(function(c){ return '<option value="' + c.slug + '">' + c.name + '</option>'; }).join('');
 
     document.getElementById('editorPage').innerHTML = [
       '<div style="max-width:1200px;margin:0 auto">',
@@ -46,9 +47,7 @@ title: Nuevo artículo
       '</div>',
       '<div id="publishAlert" class="alert d-none mb-4"></div>',
       '<div class="row g-4">',
-      // Main col
       '<div class="col-lg-8">',
-      // Metadata card
       '<div class="eu-card p-4 mb-4">',
       '<h5 class="mb-3">Información del artículo</h5>',
       '<div class="eu-form-group">',
@@ -56,15 +55,15 @@ title: Nuevo artículo
       '<input type="text" id="artTitle" class="eu-input" placeholder="Ej: La fotosíntesis en plantas C4" maxlength="500">',
       '</div>',
       '<div class="eu-form-group">',
-      '<label class="eu-label">Resumen <span class="text-danger">*</span> <span class="text-muted small fw-normal">— soporta Markdown, listas y enlaces a secciones</span></label>',
+      '<label class="eu-label">Resumen <span class="text-danger">*</span> <span class="text-muted small fw-normal">— soporta Markdown</span></label>',
       '<div class="eu-summary-toolbar">',
-      '<button class="eu-editor-btn" onclick="summaryWrap(\'**\',\'**\')" title="Negrita"><b>B</b></button>',
-      '<button class="eu-editor-btn" onclick="summaryWrap(\'*\',\'*\')" title="Cursiva"><i>I</i></button>',
-      '<button class="eu-editor-btn" onclick="summaryLine(\'- \')" title="Lista">• Lista</button>',
-      '<button class="eu-editor-btn" onclick="summaryLine(\'1. \')" title="Lista numerada">1. Lista</button>',
-      '<button class="eu-editor-btn" onclick="summaryAnchor()" title="Ancla a sección">⚓ Sección</button>',
+      '<button class="eu-editor-btn" type="button" onclick="summaryWrap(\'**\',\'**\')" title="Negrita"><b>B</b></button>',
+      '<button class="eu-editor-btn" type="button" onclick="summaryWrap(\'*\',\'*\')" title="Cursiva"><i>I</i></button>',
+      '<button class="eu-editor-btn" type="button" onclick="summaryLine(\'- \')" title="Lista">• Lista</button>',
+      '<button class="eu-editor-btn" type="button" onclick="summaryLine(\'1. \')" title="Lista numerada">1. Lista</button>',
+      '<button class="eu-editor-btn" type="button" onclick="summaryAnchor()" title="Ancla">⚓ Sección</button>',
       '</div>',
-      '<textarea id="artSummary" class="eu-textarea eu-summary-textarea" placeholder="Breve descripción. Puedes usar listas, **negrita** y [Ver sección](#id-titulo)" maxlength="4000" rows="4"></textarea>',
+      '<textarea id="artSummary" class="eu-textarea eu-summary-textarea" placeholder="Breve descripción" maxlength="4000" rows="4"></textarea>',
       '<div class="text-muted small mt-1"><span id="summaryCount">0</span>/4000 · Markdown habilitado</div>',
       '</div>',
       '<div class="row g-3"><div class="col-md-6">',
@@ -72,11 +71,10 @@ title: Nuevo artículo
       '<select id="artCategory" class="eu-select"><option value="">Sin categoría</option>' + catOptions + '</select>',
       '</div></div>',
       '</div>',
-      // Content card
       '<div class="eu-card p-4 mb-4">',
       '<div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">',
       '<h5 class="m-0">Contenido del artículo</h5>',
-      '<button class="eu-btn-outline eu-btn-sm" id="previewBtn" onclick="togglePreview()"><i class="bi bi-eye"></i> Vista previa</button>',
+      '<button class="eu-btn-outline eu-btn-sm" id="previewBtn" type="button" onclick="togglePreview()"><i class="bi bi-eye"></i> Vista previa</button>',
       '</div>',
       buildToolbar(),
       '<textarea id="artContent" class="eu-input eu-editor-area" style="border-radius:0 0 var(--eu-radius) var(--eu-radius);border-top:none" placeholder="# Título principal&#10;&#10;Escribe el contenido en Markdown..."></textarea>',
@@ -87,10 +85,9 @@ title: Nuevo artículo
       '</div>',
       '<div class="d-flex gap-3 justify-content-end flex-wrap">',
       '<a href="' + BASE + '/" class="eu-btn-outline">Cancelar</a>',
-      '<button class="eu-btn-primary" id="publishBtn" onclick="publishArticle()"><i class="bi bi-send"></i> Enviar para revisión</button>',
+      '<button class="eu-btn-primary" type="button" id="publishBtn" onclick="publishArticle()"><i class="bi bi-send"></i> Enviar para revisión</button>',
       '</div>',
       '</div>',
-      // Sidebar col
       '<div class="col-lg-4">',
       buildImagePanel(),
       buildSourcesPanel(),
@@ -107,11 +104,11 @@ title: Nuevo artículo
   }
 
   function buildToolbar() {
-    const btns = [
-      {label:'<b>B</b>', fn:"insertMd('**','**')", title:'Negrita'},
-      {label:'<i>I</i>', fn:"insertMd('*','*')", title:'Cursiva'},
+    var btns = [
+      {label:'<b>B</b>', fn:"insertMd('**','**')", title:'Negrita (Ctrl+B)'},
+      {label:'<i>I</i>', fn:"insertMd('*','*')", title:'Cursiva (Ctrl+I)'},
       {label:'<s>S</s>', fn:"insertMd('~~','~~')", title:'Tachado'},
-      {label:'<code style="font-size:.75rem">{ }</code>', fn:"insertMd('\\`','\\`')", title:'Código inline'},
+      {label:'<code style="font-size:.75rem">{ }</code>', fn:"insertMd('`','`')", title:'Código inline'},
       {sep:true},
       {label:'H1', fn:"insertLine('# ')", title:'Título H1'},
       {label:'H2', fn:"insertLine('## ')", title:'Título H2'},
@@ -121,47 +118,50 @@ title: Nuevo artículo
       {label:'• Lista', fn:"insertLine('- ')", title:'Lista'},
       {label:'1. Lista', fn:"insertLine('1. ')", title:'Lista numerada'},
       {label:'❝ Cita', fn:"insertLine('> ')", title:'Cita'},
-      {label:'⌨ Código', fn:"insertMd('\\n```\\n','\\n```\\n')", title:'Bloque código'},
       {label:'─ HR', fn:"insertLine('---')", title:'Línea horizontal'},
       {sep:true},
-      {label:'🔗 Link', fn:'insertLink()', title:'Enlace'},
-      {label:'⊞ Tabla', fn:"insertMd('\\n| Col1 | Col2 |\\n|---|---|\\n| ','  |  |\\n')", title:'Tabla'},
+      {label:'🔗 Link', fn:'insertLink()', title:'Enlace (Ctrl+K)'},
+      {label:'⊞ Tabla', fn:"insertSC('| Col1 | Col2 |\n|---|---|\n| valor | valor |')", title:'Tabla'},
       {sep:true},
-      {label:'💬 Tooltip', fn:"insertSC('[tooltip text=\"Def\"]término[/tooltip]')", title:'Tooltip'},
+      {label:'💬 Tooltip', fn:"insertSC('[tooltip text=\"Definición\"]término[/tooltip]')", title:'Tooltip'},
       {label:'⚠️ Alert', fn:"insertSC('[alert type=\"info\"]Mensaje[/alert]')", title:'Alerta'},
       {label:'📌 Callout', fn:"insertSC('[callout icon=\"💡\"]Nota[/callout]')", title:'Callout'},
-      {label:'▶ Acordeón', fn:"insertSC('[accordion title=\"¿Pregunta?\"]\\nRespuesta\\n[/accordion]')", title:'Acordeón'},
-      {label:'⊟ Tabs', fn:"insertSC('[tabs]\\n[tab title=\"Tab 1\"]Contenido 1[/tab]\\n[tab title=\"Tab 2\"]Contenido 2[/tab]\\n[/tabs]')", title:'Pestañas'},
+      {label:'▶ Acordeón', fn:"insertSC('[accordion title=\"¿Pregunta?\"]\nRespuesta\n[/accordion]')", title:'Acordeón'},
+      {label:'⊟ Tabs', fn:"insertSC('[tabs]\n[tab title=\"Tab 1\"]Contenido 1[/tab]\n[tab title=\"Tab 2\"]Contenido 2[/tab]\n[/tabs]')", title:'Pestañas'},
       {label:'🖊 Resaltar', fn:"insertSC('[highlight]texto[/highlight]')", title:'Resaltar'},
       {label:'∑ Fórmula', fn:"insertSC('[formula]E = mc^2[/formula]')", title:'Fórmula'},
       {label:'▶ YouTube', fn:"insertSC('[youtube id=\"ID_VIDEO\"]')", title:'YouTube'},
       {label:'↗ Ref Art.', fn:"insertSC('[ref article=\"slug\"]texto[/ref]')", title:'Referencia artículo'},
-      {label:'⚡ Sinóptico', fn:"insertSC('[cuadro-sinoptico main=\"Título\"]\\n[etapa title=\"ETAPA 1\" color=\"#3b82f6\"]Descripción[/etapa]\\n[/cuadro-sinoptico]')", title:'Cuadro sinóptico'},
+      {label:'🗺️ Mapa', fn:"insertSC('[mapa-sinoptico dir=\"LR\"]\nPadre -> Hijo1\nPadre -> Hijo2\nHijo1 -> Subhijo\n[/mapa-sinoptico]')", title:'Mapa Sinóptico'},
+      {label:'⚡ Cuadro', fn:"insertSC('[cuadro-sinoptico main=\"Título\"]\n[etapa title=\"ETAPA 1\" color=\"#3b82f6\"]Descripción[/etapa]\n[/cuadro-sinoptico]')", title:'Cuadro sinóptico'},
       {label:'🃏 Card', fn:"insertSC('[card title=\"Título\"]Contenido[/card]')", title:'Tarjeta'},
-      {label:'⬜ Modal', fn:"insertSC('[modal id=\"m1\" title=\"Modal\"]Contenido[/modal]\\n[modal-trigger modal=\"m1\"]Abrir[/modal-trigger]')", title:'Modal'},
+      {label:'⬜ Modal', fn:"insertSC('[modal id=\"m1\" title=\"Modal\"]Contenido[/modal]\n[modal-trigger modal=\"m1\"]Abrir[/modal-trigger]')", title:'Modal'},
     ];
-
     return '<div class="eu-editor-toolbar" id="editorToolbar">' +
-      btns.map(b => b.sep
+      btns.map(function(b){ return b.sep
         ? '<div class="eu-editor-separator"></div>'
-        : '<button class="eu-editor-btn" onclick="' + b.fn + '" title="' + b.title + '">' + b.label + '</button>'
-      ).join('') +
-      '</div>';
+        : '<button type="button" class="eu-editor-btn" onclick="' + b.fn + '" title="' + b.title + '">' + b.label + '</button>';
+      }).join('') + '</div>';
   }
 
   function buildImagePanel() {
     return [
-      '<div class="eu-card p-4 mb-4">',
-      '<h5 class="mb-3"><i class="bi bi-images me-2"></i>Multimedia</h5>',
-      '<div id="uploadArea" class="border rounded-2 p-3 text-center mb-3" style="border-style:dashed;border-color:var(--eu-border);cursor:pointer"',
-      ' ondragover="event.preventDefault();this.style.borderColor=\'var(--eu-text)\'"',
-      ' ondragleave="this.style.borderColor=\'var(--eu-border)\'"',
+      '<div class="eu-card p-4 mb-4" id="imagePanel">',
+      '<h5 class="mb-1"><i class="bi bi-images me-2"></i>Multimedia</h5>',
+      '<p class="text-muted small mb-3">Imágenes en borrador hasta aprobación del artículo.</p>',
+      '<div id="uploadArea" class="eu-upload-zone mb-3"',
+      ' ondragover="event.preventDefault();this.classList.add(\'dragover\')"',
+      ' ondragleave="this.classList.remove(\'dragover\')"',
       ' ondrop="handleDrop(event)">',
       '<i class="bi bi-cloud-upload fs-3 mb-2 d-block text-muted"></i>',
       '<div class="small text-muted mb-2">Arrastra imágenes aquí o</div>',
-      '<label for="imageInput" class="eu-btn-outline eu-btn-sm" style="cursor:pointer">Seleccionar archivos</label>',
+      '<label for="imageInput" class="eu-btn-outline eu-btn-sm" style="cursor:pointer"><i class="bi bi-plus-circle"></i> Seleccionar</label>',
       '<input type="file" id="imageInput" multiple accept="image/*" class="d-none" onchange="uploadImages(this.files)">',
-      '<div class="text-muted mt-1" style="font-size:.7rem">PNG, JPG, GIF, WebP · Máx 5MB</div>',
+      '<div class="text-muted mt-2" style="font-size:.7rem">PNG, JPG, GIF, WebP · Máx 5MB</div>',
+      '</div>',
+      '<div id="imgUploadProgress" class="d-none mb-3">',
+      '<div class="eu-progress-bar-wrap"><div id="imgProgressBar" class="eu-progress-bar" style="width:0%"></div></div>',
+      '<div class="small text-muted mt-1" id="imgProgressLabel">Subiendo...</div>',
       '</div>',
       '<div id="uploadedImages" class="eu-media-grid"></div>',
       '</div>'
@@ -170,24 +170,35 @@ title: Nuevo artículo
 
   function buildSourcesPanel() {
     return [
-      '<div class="eu-card p-4 mb-4">',
-      '<h5 class="mb-3"><i class="bi bi-link-45deg me-2"></i>Fuentes</h5>',
-      '<p class="text-muted small mb-3">Aparecerán en el sidebar del artículo. Máx: 20 enlaces + 5 PDFs.</p>',
-      '<div class="mb-3"><div class="fw-semibold small mb-2">➕ Añadir enlace</div>',
+      '<div class="eu-card p-4 mb-4" id="sourcesPanel">',
+      '<h5 class="mb-1"><i class="bi bi-link-45deg me-2"></i>Fuentes</h5>',
+      '<p class="text-muted small mb-3">Aparecerán en el sidebar del artículo publicado.</p>',
+      '<div class="mb-3 pb-3" style="border-bottom:1px solid var(--eu-border)">',
+      '<div class="fw-semibold small mb-2">🔗 Añadir enlace</div>',
       '<input type="text" id="srcLinkTitle" class="eu-input mb-2" placeholder="Título (ej: Wikipedia - Fotosíntesis)">',
       '<input type="url" id="srcLinkUrl" class="eu-input mb-2" placeholder="https://...">',
-      '<button class="eu-btn-outline eu-btn-sm w-100" onclick="addLinkSource()"><i class="bi bi-plus-circle"></i> Añadir enlace</button>',
+      '<button type="button" class="eu-btn-outline eu-btn-sm w-100" onclick="addLinkSource()"><i class="bi bi-plus-circle"></i> Añadir enlace</button>',
       '</div>',
-      '<div class="mb-3"><div class="fw-semibold small mb-2">📄 Añadir PDF</div>',
-      '<input type="text" id="srcPdfTitle" class="eu-input mb-2" placeholder="Título del PDF">',
+      '<div class="mb-3">',
+      '<div class="fw-semibold small mb-2">📄 Añadir PDF</div>',
+      '<input type="text" id="srcPdfTitle" class="eu-input mb-2" placeholder="Título del PDF (opcional)">',
+      '<div id="pdfAttachZone">',
       '<label class="eu-btn-outline eu-btn-sm w-100 text-center" style="cursor:pointer">',
-      '<i class="bi bi-file-earmark-pdf"></i> Seleccionar PDF (máx 10MB)',
-      '<input type="file" id="srcPdfInput" accept=".pdf" class="d-none" onchange="addPdfSource(this)">',
-      '</label></div>',
-      '<div id="sourcesList" class="eu-sources-editor">',
+      '<i class="bi bi-paperclip"></i> Adjuntar PDF (máx 10MB)',
+      '<input type="file" id="srcPdfInput" accept=".pdf" class="d-none" onchange="attachPdf(this)">',
+      '</label>',
+      '</div>',
+      '<div id="pdfPreview" class="d-none mt-2 p-2 rounded d-flex align-items-center gap-2" style="background:var(--eu-bg-secondary);border:1px solid var(--eu-border)">',
+      '<svg viewBox="0 0 24 24" fill="currentColor" style="width:16px;height:16px;flex-shrink:0;color:#dc2626"><path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z"/></svg>',
+      '<span class="small" id="pdfPreviewName" style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></span>',
+      '<button type="button" class="eu-source-delete-btn" onclick="clearPdfAttach()" title="Quitar">✕</button>',
+      '</div>',
+      '<button type="button" class="eu-btn-primary eu-btn-sm w-100 mt-2 d-none" id="addPdfBtn" onclick="addPdfSource()"><i class="bi bi-plus-circle"></i> Añadir PDF</button>',
+      '</div>',
+      '<div id="sourcesMsg"></div>',
+      '<div id="sourcesList" class="eu-sources-editor mt-2">',
       '<div class="text-muted text-center p-3 small">No hay fuentes aún</div>',
       '</div>',
-      '<div id="sourcesMsg" class="mt-2"></div>',
       '</div>'
     ].join('');
   }
@@ -201,77 +212,99 @@ title: Nuevo artículo
       '<div># H1 / ## H2 / ### H3</div>',
       '<div>- Lista · 1. Numerada</div>',
       '<div>&gt; Cita en bloque</div>',
-      '<div>[texto](url) · ![alt](img)</div>',
-      '<div>| Col1 | Col2 |</div>',
-      '<div>`código` · ```bloque```</div>',
+      '<div>[texto](url)</div>',
+      '<div class="mt-2 pt-2" style="border-top:1px solid var(--eu-border)">🗺️ Mapa Sinóptico:</div>',
+      '<div>[mapa-sinoptico dir="LR"]</div>',
+      '<div>A -> B · B -> C</div>',
+      '<div>[/mapa-sinoptico]</div>',
       '</div>',
       '<a href="' + BASE + '/shortcodes.html" class="eu-btn-outline eu-btn-sm w-100 mt-3 text-center">Ver guía completa</a>',
       '</div>'
     ].join('');
   }
 
-  // ── SUMMARY HELPERS
+  // ── SUMMARY HELPERS ──────────────────────────────────────────────────────
   window.summaryWrap = function(before, after) {
-    const ta = document.getElementById('artSummary');
-    const s = ta.selectionStart, e = ta.selectionEnd;
-    const sel = ta.value.substring(s, e) || 'texto';
+    var ta = document.getElementById('artSummary');
+    var s = ta.selectionStart, e = ta.selectionEnd;
+    var sel = ta.value.substring(s, e) || 'texto';
+    var st = ta.scrollTop;
     ta.value = ta.value.substring(0, s) + before + sel + after + ta.value.substring(e);
     ta.selectionStart = s + before.length;
     ta.selectionEnd = s + before.length + sel.length;
+    ta.scrollTop = st;
     ta.focus();
   };
   window.summaryLine = function(prefix) {
-    const ta = document.getElementById('artSummary');
-    const s = ta.selectionStart;
-    const start = ta.value.lastIndexOf('\n', s - 1) + 1;
+    var ta = document.getElementById('artSummary');
+    var s = ta.selectionStart;
+    var start = ta.value.lastIndexOf('\n', s - 1) + 1;
+    var st = ta.scrollTop;
     ta.value = ta.value.substring(0, start) + prefix + ta.value.substring(start);
     ta.selectionStart = ta.selectionEnd = start + prefix.length;
+    ta.scrollTop = st;
     ta.focus();
   };
   window.summaryAnchor = function() {
-    const id = prompt('ID del título (ej: para "## Metabolismo" escribe "metabolismo"):');
+    var id = prompt('ID del título (ej: "metabolismo" para "## Metabolismo"):');
     if (!id) return;
-    const label = prompt('Texto del enlace:') || id;
-    const ta = document.getElementById('artSummary');
-    const pos = ta.selectionStart;
-    const ins = '[' + label + '](#' + id + ')';
+    var label = prompt('Texto del enlace:') || id;
+    var ta = document.getElementById('artSummary');
+    var pos = ta.selectionStart;
+    var st = ta.scrollTop;
+    var ins = '[' + label + '](#' + id + ')';
     ta.value = ta.value.slice(0, pos) + ins + ta.value.slice(pos);
+    ta.scrollTop = st;
     ta.focus();
   };
 
-  // ── CONTENT HELPERS
+  // ── CONTENT EDITOR HELPERS — NO SCROLL ──────────────────────────────────
+  function noScrollInsert(ta, text, from, to) {
+    var pageY = window.scrollY;
+    var taTop = ta.scrollTop;
+    ta.value = ta.value.slice(0, from) + text + ta.value.slice(to);
+    ta.scrollTop = taTop;
+    window.scrollTo({ top: pageY });
+  }
+
   window.insertMd = function(before, after) {
-    const ta = document.getElementById('artContent');
-    const s = ta.selectionStart, e = ta.selectionEnd;
-    const sel = ta.value.slice(s, e) || 'texto';
-    ta.value = ta.value.slice(0, s) + before + sel + after + ta.value.slice(e);
+    var ta = document.getElementById('artContent');
+    var s = ta.selectionStart, e = ta.selectionEnd;
+    var sel = ta.value.slice(s, e) || 'texto';
+    noScrollInsert(ta, before + sel + after, s, e);
     ta.focus();
     ta.setSelectionRange(s + before.length, s + before.length + sel.length);
   };
   window.insertLine = function(prefix) {
-    const ta = document.getElementById('artContent');
-    const s = ta.selectionStart;
-    const start = ta.value.lastIndexOf('\n', s - 1) + 1;
-    ta.value = ta.value.substring(0, start) + prefix + ta.value.substring(start);
-    ta.selectionStart = ta.selectionEnd = start + prefix.length;
+    var ta = document.getElementById('artContent');
+    var s = ta.selectionStart;
+    var start = ta.value.lastIndexOf('\n', s - 1) + 1;
+    noScrollInsert(ta, prefix, start, start);
     ta.focus();
+    ta.setSelectionRange(start + prefix.length, start + prefix.length);
   };
   window.insertSC = function(sc) {
-    const ta = document.getElementById('artContent');
-    const pos = ta.selectionStart;
-    const ins = '\n' + sc + '\n';
-    ta.value = ta.value.slice(0, pos) + ins + ta.value.slice(pos);
+    var ta = document.getElementById('artContent');
+    var pos = ta.selectionStart;
+    noScrollInsert(ta, '\n' + sc + '\n', pos, pos);
     ta.focus();
+    ta.setSelectionRange(pos + 1, pos + 1 + sc.length);
   };
   window.insertLink = function() {
-    const url = prompt('URL del enlace:');
+    var url = prompt('URL del enlace:');
     if (!url) return;
-    const label = prompt('Texto del enlace:') || url;
-    const ta = document.getElementById('artContent');
-    const pos = ta.selectionStart;
-    const ins = '[' + label + '](' + url + ')';
-    ta.value = ta.value.slice(0, pos) + ins + ta.value.slice(pos);
+    var label = prompt('Texto del enlace:') || url;
+    var ta = document.getElementById('artContent');
+    var pos = ta.selectionStart;
+    noScrollInsert(ta, '[' + label + '](' + url + ')', pos, pos);
     ta.focus();
+  };
+  window.insertImageShortcode = function(url, alt) {
+    var ta = document.getElementById('artContent');
+    var pos = ta.selectionStart;
+    noScrollInsert(ta, '\n[img file="' + url + '" alt="' + alt + '" caption=""]\n', pos, pos);
+    ta.focus();
+    window.showToast('Imagen insertada', 'success');
   };
 
   function handleEditorKeys(e) {
@@ -282,18 +315,20 @@ title: Nuevo artículo
     }
     if (e.key === 'Tab') {
       e.preventDefault();
-      const ta = e.target;
-      const s = ta.selectionStart;
+      var ta = e.target;
+      var s = ta.selectionStart;
+      var st = ta.scrollTop;
       ta.value = ta.value.slice(0, s) + '  ' + ta.value.slice(s);
       ta.selectionStart = ta.selectionEnd = s + 2;
+      ta.scrollTop = st;
     }
   }
 
-  // ── PREVIEW
+  // ── PREVIEW ───────────────────────────────────────────────────────────────
   window.togglePreview = function() {
-    const container = document.getElementById('previewContainer');
-    const area = document.getElementById('previewArea');
-    const content = document.getElementById('artContent').value;
+    var container = document.getElementById('previewContainer');
+    var area = document.getElementById('previewArea');
+    var content = document.getElementById('artContent').value;
     if (container.classList.contains('d-none')) {
       container.classList.remove('d-none');
       area.innerHTML = simplePreview(content);
@@ -303,126 +338,203 @@ title: Nuevo artículo
       document.getElementById('previewBtn').innerHTML = '<i class="bi bi-eye"></i> Vista previa';
     }
   };
-
   function simplePreview(md) {
     return md
-      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-      .replace(/\*(.*?)\*/g, '<em>$1</em>')
-      .replace(/~~(.*?)~~/g, '<s>$1</s>')
-      .replace(/^#### (.*)/gm, '<h4>$1</h4>')
-      .replace(/^### (.*)/gm, '<h3 style="font-family:var(--eu-font-display)">$1</h3>')
-      .replace(/^## (.*)/gm, '<h2 style="font-family:var(--eu-font-display)">$1</h2>')
-      .replace(/^# (.*)/gm, '<h1 style="font-family:var(--eu-font-display)">$1</h1>')
-      .replace(/^- (.*)/gm, '<li>$1</li>')
-      .replace(/^> (.*)/gm, '<blockquote style="border-left:3px solid var(--eu-border);padding-left:12px;color:var(--eu-text-secondary)">$1</blockquote>')
-      .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>')
-      .replace(/`([^`]+)`/g, '<code style="background:var(--eu-code-bg);padding:0 4px;border-radius:3px">$1</code>')
-      .replace(/\[\/?\w[^\]]*\]/g, '<span style="opacity:.5;font-style:italic">[shortcode]</span>')
-      .replace(/\n/g, '<br>');
+      .replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>')
+      .replace(/\*(.*?)\*/g,'<em>$1</em>')
+      .replace(/~~(.*?)~~/g,'<s>$1</s>')
+      .replace(/^#### (.*)/gm,'<h4>$1</h4>')
+      .replace(/^### (.*)/gm,'<h3>$1</h3>')
+      .replace(/^## (.*)/gm,'<h2>$1</h2>')
+      .replace(/^# (.*)/gm,'<h1>$1</h1>')
+      .replace(/^- (.*)/gm,'<li>$1</li>')
+      .replace(/\[([^\]]+)\]\(([^)]+)\)/g,'<a href="$2">$1</a>')
+      .replace(/`([^`]+)`/g,'<code>$1</code>')
+      .replace(/\[\/?\w[^\]]*\]/g,'<span style="opacity:.5;font-style:italic">[shortcode]</span>')
+      .replace(/\n/g,'<br>');
   }
 
-  // ── IMAGE UPLOAD
+  // ── IMAGE UPLOAD ──────────────────────────────────────────────────────────
   window.uploadImages = async function(files) {
-    const formData = new FormData();
-    for (const f of files) formData.append('images', f);
+    var formData = new FormData();
+    for (var i = 0; i < files.length; i++) formData.append('images', files[i]);
     if (articleId) formData.append('articleId', articleId);
-    const token = Auth.getToken();
+
+    var prog = document.getElementById('imgUploadProgress');
+    var bar = document.getElementById('imgProgressBar');
+    var lbl = document.getElementById('imgProgressLabel');
+    prog.classList.remove('d-none');
+    bar.style.width = '15%';
+    bar.style.background = '';
+    lbl.textContent = 'Subiendo ' + files.length + ' imagen(es)...';
+
+    var token = Auth.getToken();
+    var ticker = setInterval(function(){ bar.style.width = Math.min(parseFloat(bar.style.width)+7, 80) + '%'; }, 300);
     try {
-      const res = await fetch(API + '/api/media/upload', {
+      var res = await fetch(API + '/api/media/upload', {
         method: 'POST',
         headers: { Authorization: 'Bearer ' + token },
         body: formData
       });
-      const data = await res.json();
+      clearInterval(ticker);
+      bar.style.width = '100%';
+      var data = await res.json();
       if (!res.ok) throw new Error(data.error);
-      const container = document.getElementById('uploadedImages');
+
+      lbl.textContent = '✓ ' + data.files.length + ' imagen(es) lista(s)';
+      setTimeout(function(){ prog.classList.add('d-none'); }, 2500);
+
+      var container = document.getElementById('uploadedImages');
       data.files.forEach(function(f) {
-        const div = document.createElement('div');
-        div.className = 'eu-media-thumb';
-        div.innerHTML = '<img src="' + f.publicUrl + '" alt="' + f.filename + '" loading="lazy"><div class="eu-media-thumb-overlay"><button onclick="insertImageShortcode(\'' + f.publicUrl + '\',\'' + f.filename.replace(/\.[^.]+$/,'') + '\')">📥 Insertar</button></div>';
-        container.appendChild(div);
+        appendImageThumb(container, f.id, f.publicUrl, f.filename);
       });
-      window.showToast(data.files.length + ' imagen(s) subida(s)', 'success');
-    } catch (err) {
+      window.showToast(data.files.length + ' imagen(es) subida(s)', 'success');
+    } catch(err) {
+      clearInterval(ticker);
+      bar.style.width = '100%';
+      bar.style.background = 'var(--eu-danger)';
+      lbl.textContent = '✗ ' + err.message;
+      setTimeout(function(){ prog.classList.add('d-none'); bar.style.background = ''; }, 3500);
       window.showToast(err.message, 'error');
     }
   };
 
-  window.insertImageShortcode = function(url, alt) {
-    const ta = document.getElementById('artContent');
-    const pos = ta.selectionStart;
-    const sc = '\n[img file="' + url + '" alt="' + alt + '" caption=""]\n';
-    ta.value = ta.value.slice(0, pos) + sc + ta.value.slice(pos);
-    ta.focus();
-    window.showToast('Imagen insertada', 'success');
+  function appendImageThumb(container, mediaId, url, filename) {
+    var altName = filename.replace(/\.[^.]+$/, '');
+    var div = document.createElement('div');
+    div.className = 'eu-media-thumb';
+    div.dataset.mediaId = mediaId;
+    div.innerHTML =
+      '<img src="' + escHtml(url) + '" alt="' + escHtml(filename) + '" loading="lazy">' +
+      '<div class="eu-media-thumb-overlay">' +
+      '<button type="button" onclick="insertImageShortcode(\'' + escAttr(url) + '\',\'' + escAttr(altName) + '\')">📥 Insertar</button>' +
+      '<button type="button" onclick="deleteImage(' + mediaId + ', this)" style="color:#fca5a5">🗑 Eliminar</button>' +
+      '</div>';
+    container.appendChild(div);
+  }
+
+  window.deleteImage = async function(mediaId, btn) {
+    if (!confirm('¿Eliminar esta imagen? No se puede deshacer.')) return;
+    var token = Auth.getToken();
+    btn.disabled = true;
+    btn.textContent = '...';
+    try {
+      var res = await fetch(API + '/api/media/' + mediaId, {
+        method: 'DELETE',
+        headers: { Authorization: 'Bearer ' + token }
+      });
+      if (!res.ok) { var d = await res.json(); throw new Error(d.error); }
+      var thumb = btn.closest('.eu-media-thumb');
+      if (thumb) { thumb.style.transition = 'opacity .3s'; thumb.style.opacity = '0'; setTimeout(function(){ thumb.remove(); }, 300); }
+      window.showToast('Imagen eliminada', 'success');
+    } catch(err) {
+      window.showToast('Error: ' + err.message, 'error');
+      btn.disabled = false;
+      btn.textContent = '🗑 Eliminar';
+    }
   };
 
   window.handleDrop = function(e) {
     e.preventDefault();
-    document.getElementById('uploadArea').style.borderColor = 'var(--eu-border)';
+    document.getElementById('uploadArea').classList.remove('dragover');
     if (e.dataTransfer.files.length) uploadImages(e.dataTransfer.files);
   };
 
-  // ── SOURCES
+  // ── SOURCES — ATTACH & STAGE ──────────────────────────────────────────────
+  window.attachPdf = function(input) {
+    var file = input.files[0];
+    if (!file) return;
+    if (file.size > 10 * 1024 * 1024) { showSourceMsg('warning', 'El PDF supera los 10MB'); input.value = ''; return; }
+    pendingPdf = { file: file, name: file.name };
+    var title = document.getElementById('srcPdfTitle').value.trim() || file.name.replace(/\.pdf$/i,'');
+    document.getElementById('srcPdfTitle').value = title;
+    document.getElementById('pdfPreviewName').textContent = file.name + ' (' + fmtSize(file.size) + ')';
+    document.getElementById('pdfPreview').classList.remove('d-none');
+    document.getElementById('addPdfBtn').classList.remove('d-none');
+    document.getElementById('pdfAttachZone').classList.add('d-none');
+  };
+
+  window.clearPdfAttach = function() {
+    pendingPdf = null;
+    document.getElementById('srcPdfInput').value = '';
+    document.getElementById('pdfPreview').classList.add('d-none');
+    document.getElementById('addPdfBtn').classList.add('d-none');
+    document.getElementById('pdfAttachZone').classList.remove('d-none');
+  };
+
+  window.addPdfSource = function() {
+    if (!pendingPdf) return;
+    var title = document.getElementById('srcPdfTitle').value.trim() || pendingPdf.name.replace(/\.pdf$/i,'');
+    if (localSources.filter(function(s){return s.type==='pdf';}).length >= 5) { showSourceMsg('warning','Límite de 5 PDFs alcanzado'); return; }
+    localSources.push({ id: Date.now(), type: 'pdf', title: title, file: pendingPdf.file, fileName: pendingPdf.name });
+    renderLocalSources();
+    document.getElementById('srcPdfTitle').value = '';
+    clearPdfAttach();
+    showSourceMsg('success', '📄 PDF listo — se subirá al publicar');
+  };
+
   window.addLinkSource = function() {
-    const title = document.getElementById('srcLinkTitle').value.trim();
-    const url = document.getElementById('srcLinkUrl').value.trim();
-    const msgEl = document.getElementById('sourcesMsg');
-    if (!title || !url) { msgEl.innerHTML = '<div class="alert alert-warning p-2 small">Título y URL son obligatorios</div>'; return; }
-    try { new URL(url); } catch { msgEl.innerHTML = '<div class="alert alert-warning p-2 small">URL inválida</div>'; return; }
-    if (localSources.filter(function(s){return s.type==='link';}).length >= 20) {
-      msgEl.innerHTML = '<div class="alert alert-warning p-2 small">Límite de 20 enlaces alcanzado</div>'; return;
-    }
+    var title = document.getElementById('srcLinkTitle').value.trim();
+    var url = document.getElementById('srcLinkUrl').value.trim();
+    if (!title || !url) { showSourceMsg('warning','Título y URL son obligatorios'); return; }
+    try { new URL(url); } catch(e) { showSourceMsg('warning','URL inválida'); return; }
+    if (localSources.filter(function(s){return s.type==='link';}).length >= 20) { showSourceMsg('warning','Límite de 20 enlaces'); return; }
     localSources.push({ id: Date.now(), type: 'link', title: title, url: url });
     renderLocalSources();
     document.getElementById('srcLinkTitle').value = '';
     document.getElementById('srcLinkUrl').value = '';
-    msgEl.innerHTML = '';
+    showSourceMsg('success', '🔗 Enlace añadido');
   };
 
-  window.addPdfSource = function(input) {
-    const file = input.files[0];
-    if (!file) return;
-    const msgEl = document.getElementById('sourcesMsg');
-    if (file.size > 10 * 1024 * 1024) { msgEl.innerHTML = '<div class="alert alert-warning p-2 small">El PDF supera 10MB</div>'; input.value = ''; return; }
-    if (localSources.filter(function(s){return s.type==='pdf';}).length >= 5) {
-      msgEl.innerHTML = '<div class="alert alert-warning p-2 small">Límite de 5 PDFs alcanzado</div>'; input.value = ''; return;
-    }
-    const title = document.getElementById('srcPdfTitle').value.trim() || file.name.replace(/\.pdf$/i,'');
-    localSources.push({ id: Date.now(), type: 'pdf', title: title, file: file, fileName: file.name });
-    renderLocalSources();
-    document.getElementById('srcPdfTitle').value = '';
-    input.value = '';
-    msgEl.innerHTML = '';
-  };
+  function showSourceMsg(type, msg) {
+    var el = document.getElementById('sourcesMsg');
+    el.innerHTML = '<div class="alert alert-' + type + ' py-2 px-3 small mb-0">' + escHtml(msg) + '</div>';
+    setTimeout(function(){ if(el) el.innerHTML=''; }, 3500);
+  }
 
   function renderLocalSources() {
-    const container = document.getElementById('sourcesList');
+    var container = document.getElementById('sourcesList');
     if (!localSources.length) {
       container.innerHTML = '<div class="text-muted text-center p-3 small">No hay fuentes aún</div>';
       return;
     }
     container.innerHTML = localSources.map(function(s) {
-      var iconHtml = s.type === 'pdf'
-        ? '<svg class="eu-source-pdf-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z"/></svg>'
-        : '<img src="https://www.google.com/s2/favicons?sz=16&domain=' + encodeURIComponent(new URL(s.url).hostname) + '" class="eu-source-favicon" onerror="this.style.display=\'none\'">';
-      return '<div class="eu-source-editor-item">' + iconHtml +
-        '<span class="eu-source-title" style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="' + escHtml(s.title) + '">' + escHtml(s.title) + '</span>' +
-        '<button class="eu-source-insert-btn" onclick="insertSourceRef(' + s.id + ')" title="Citar en el texto">Citar</button>' +
-        '<button class="eu-source-delete-btn" onclick="removeLocalSource(' + s.id + ')">✕</button>' +
+      var icon = s.type === 'pdf'
+        ? '<svg viewBox="0 0 24 24" fill="currentColor" style="width:16px;height:16px;flex-shrink:0;color:#dc2626"><path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z"/></svg>'
+        : '<i class="bi bi-link-45deg" style="flex-shrink:0"></i>';
+      return '<div class="eu-source-editor-item" id="lsrc-' + s.id + '">' +
+        icon +
+        '<span class="eu-source-title" title="' + escHtml(s.title) + '">' + escHtml(s.title) + '</span>' +
+        '<button type="button" class="eu-source-action-btn" onclick="editLocalSource(' + s.id + ')" title="Editar">✏️</button>' +
+        '<button type="button" class="eu-source-insert-btn" onclick="insertSourceRef(' + s.id + ')">Citar</button>' +
+        '<button type="button" class="eu-source-delete-btn" onclick="removeLocalSource(' + s.id + ')">✕</button>' +
         '</div>';
     }).join('');
   }
+
+  window.editLocalSource = function(id) {
+    var src = localSources.find(function(s){return s.id===id;});
+    if (!src) return;
+    var newTitle = prompt('Título:', src.title);
+    if (newTitle === null) return;
+    if (newTitle.trim()) src.title = newTitle.trim();
+    if (src.type === 'link') {
+      var newUrl = prompt('URL:', src.url);
+      if (newUrl !== null && newUrl.trim()) {
+        try { new URL(newUrl.trim()); src.url = newUrl.trim(); } catch(e) { window.showToast('URL inválida','error'); return; }
+      }
+    }
+    renderLocalSources();
+  };
 
   window.insertSourceRef = function(id) {
     var src = localSources.find(function(s){return s.id===id;});
     if (!src) return;
     var ta = document.getElementById('artContent');
     var pos = ta.selectionStart;
-    var ref = '[source-ref title="' + escAttr(src.title) + '"]';
-    ta.value = ta.value.slice(0, pos) + ref + ta.value.slice(pos);
+    noScrollInsert(ta, '[source-ref title="' + escAttr(src.title) + '"]', pos, pos);
     ta.focus();
-    window.showToast('Referencia insertada', 'success');
+    window.showToast('Referencia insertada','success');
   };
 
   window.removeLocalSource = function(id) {
@@ -430,7 +542,7 @@ title: Nuevo artículo
     renderLocalSources();
   };
 
-  // ── PUBLISH
+  // ── PUBLISH ───────────────────────────────────────────────────────────────
   window.publishArticle = async function() {
     var title = document.getElementById('artTitle').value.trim();
     var summary = document.getElementById('artSummary').value.trim();
@@ -446,7 +558,6 @@ title: Nuevo artículo
       window.scrollTo({ top: 0, behavior: 'smooth' });
       return;
     }
-
     btn.disabled = true;
     btn.innerHTML = '<span class="eu-spinner" style="width:18px;height:18px;border-width:2px"></span> Enviando...';
     alertEl.classList.add('d-none');
@@ -458,19 +569,16 @@ title: Nuevo artículo
       });
       var data = await res.json();
       if (!res.ok) throw new Error(data.error);
-
       articleId = data.articleId;
 
-      if (localSources.length) {
-        await uploadPendingSources(articleId);
-      }
+      if (localSources.length) await uploadPendingSources(articleId);
 
       alertEl.className = 'alert alert-success';
       alertEl.innerHTML = '✓ <strong>Artículo enviado.</strong> Quedará visible cuando un moderador lo apruebe. <a href="' + BASE + '/articulo.html?slug=' + data.slug + '" class="alert-link">Ver artículo</a>';
       alertEl.classList.remove('d-none');
       btn.innerHTML = '<i class="bi bi-check-lg"></i> Enviado';
       window.scrollTo({ top: 0, behavior: 'smooth' });
-    } catch (err) {
+    } catch(err) {
       alertEl.className = 'alert alert-danger';
       alertEl.textContent = err.message;
       alertEl.classList.remove('d-none');
@@ -487,8 +595,8 @@ title: Nuevo artículo
         if (src.type === 'link') {
           await fetch(API + '/api/articles/' + artId + '/sources', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-            body: JSON.stringify({ type: 'link', title: src.title, url: src.url })
+            headers: { 'Content-Type':'application/json', 'Authorization':'Bearer ' + token },
+            body: JSON.stringify({ type:'link', title:src.title, url:src.url })
           });
         } else if (src.type === 'pdf') {
           var fd = new FormData();
@@ -496,17 +604,26 @@ title: Nuevo artículo
           fd.append('title', src.title);
           await fetch(API + '/api/articles/' + artId + '/sources/pdf', {
             method: 'POST',
-            headers: { 'Authorization': 'Bearer ' + token },
+            headers: { 'Authorization':'Bearer ' + token },
             body: fd
           });
         }
-      } catch (e) { console.warn('Source upload failed:', e); }
+      } catch(e) { console.warn('Source failed:', e); }
     }
   }
 
-  function escHtml(s) {
-    return String(s||'').replace(/[&<>"']/g, function(c){ return({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]); });
+  function fmtSize(bytes) {
+    var k = 1024, s = ['B','KB','MB'];
+    var i = Math.floor(Math.log(bytes) / Math.log(k));
+    return (bytes / Math.pow(k, i)).toFixed(1) + ' ' + s[i];
   }
+  function noScrollInsert(ta, text, from, to) {
+    var pageY = window.scrollY, taTop = ta.scrollTop;
+    ta.value = ta.value.slice(0, from) + text + ta.value.slice(to);
+    ta.scrollTop = taTop;
+    window.scrollTo({ top: pageY });
+  }
+  function escHtml(s) { return String(s||'').replace(/[&<>"']/g,function(c){return({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]);}); }
   function escAttr(s) { return escHtml(s); }
 })();
 </script>

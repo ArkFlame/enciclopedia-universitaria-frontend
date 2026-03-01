@@ -1921,3 +1921,83 @@ a.eu-notif-item {
   color: #86efac;
   border-color: #15803d;
 }
+  background: var(--eu-bg-secondary);
+  color: var(--eu-text);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   MAPA SINÓPTICO (Mermaid)
+   ═══════════════════════════════════════════════════════════ */
+.eu-mapa-sinoptico {
+  border: 1px solid var(--eu-border);
+  border-radius: var(--eu-radius-lg);
+  padding: 20px;
+  background: var(--eu-surface);
+  overflow-x: auto;
+}
+.eu-mermaid-wrap {
+  min-height: 80px;
+  display: flex;
+  justify-content: center;
+}
+.eu-mapa-sinoptico .mermaid svg {
+  max-width: 100%;
+  height: auto;
+}
+/* Mermaid dark theme fix */
+[data-theme="dark"] .eu-mapa-sinoptico .mermaid .label {
+  color: #e2e8f0 !important;
+}
+[data-theme="dark"] .eu-mapa-sinoptico .mermaid .edgePath .path {
+  stroke: #94a3b8 !important;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   CUADRO SINÓPTICO (legacy, cleaner layout)
+   ═══════════════════════════════════════════════════════════ */
+.eu-cuadro-sinoptico {
+  border: 1px solid var(--eu-border);
+  border-radius: var(--eu-radius-lg);
+  overflow: hidden;
+}
+.eu-cs-main {
+  padding: 16px 20px;
+  font-weight: 700;
+  font-size: 1.05rem;
+  font-family: var(--eu-font-display);
+  text-align: center;
+}
+.eu-cs-body {
+  padding: 8px;
+  background: var(--eu-bg);
+}
+.eu-cs-row {
+  display: flex;
+  align-items: stretch;
+  gap: 0;
+  margin-bottom: 6px;
+  border-radius: var(--eu-radius);
+  overflow: hidden;
+  border: 1px solid var(--eu-border);
+}
+.eu-cs-row:last-child { margin-bottom: 0; }
+.eu-cs-etapa-label {
+  min-width: 130px;
+  max-width: 130px;
+  padding: 10px 12px;
+  font-weight: 700;
+  font-size: .82rem;
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.eu-cs-etapa-desc {
+  flex: 1;
+  padding: 10px 14px;
+  font-size: .88rem;
+  color: var(--eu-text);
+  background: var(--eu-surface);
+  display: flex;
+  align-items: center;
+}

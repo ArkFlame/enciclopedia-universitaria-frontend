@@ -31,6 +31,7 @@ title: Editar artículo
   var idParam = params.get('id');
   var articleData = null;
   var existingSources = [];
+  var pendingPdf = null;
 
   document.addEventListener('DOMContentLoaded', async function() {
     await new Promise(function(r){ setTimeout(r, 100); });
@@ -38,10 +39,7 @@ title: Editar artículo
       window.location.href = BASE + '/login.html?redirect=' + encodeURIComponent(window.location.href);
       return;
     }
-    if (!slug && !idParam) {
-      renderError('No se especificó el artículo a editar.');
-      return;
-    }
+    if (!slug && !idParam) { renderError('No se especificó el artículo a editar.'); return; }
     await loadArticle();
   });
 
@@ -49,7 +47,7 @@ title: Editar artículo
     try {
       if (slug) {
         var res = await fetch(API + '/api/articles/' + encodeURIComponent(slug) + '?includePending=true');
-        if (!res.ok) { var err = await res.json().catch(function(){return{};}); throw new Error(err.error || 'Error al cargar el artículo'); }
+        if (!res.ok) { var err = await res.json().catch(function(){return{};}); throw new Error(err.error || 'Error al cargar'); }
         articleData = await res.json();
       } else {
         throw new Error('Se requiere el slug del artículo.');
@@ -62,12 +60,11 @@ title: Editar artículo
         rawContent = cd.content || '';
       }
 
-      // Load existing sources
       try {
         var srcRes = await fetch(API + '/api/articles/' + articleData.id + '/sources');
         if (srcRes.ok) {
           var srcData = await srcRes.json();
-          existingSources = [...(srcData.pdfs || []), ...(srcData.links || [])];
+          existingSources = [].concat(srcData.pdfs || [], srcData.links || []);
         }
       } catch(e) {}
 
@@ -79,10 +76,10 @@ title: Editar artículo
 
   function buildToolbar() {
     var btns = [
-      {label:'<b>B</b>', fn:"wrap('**','**')", title:'Negrita'},
-      {label:'<i>I</i>', fn:"wrap('*','*')", title:'Cursiva'},
+      {label:'<b>B</b>', fn:"wrap('**','**')", title:'Negrita (Ctrl+B)'},
+      {label:'<i>I</i>', fn:"wrap('*','*')", title:'Cursiva (Ctrl+I)'},
       {label:'<s>S</s>', fn:"wrap('~~','~~')", title:'Tachado'},
-      {label:'<code style="font-size:.75rem">{ }</code>', fn:"wrap('\`','\`')", title:'Código'},
+      {label:'<code style="font-size:.75rem">{ }</code>', fn:"wrap('`','`')", title:'Código'},
       {sep:true},
       {label:'H1', fn:"insertLine('# ')", title:'H1'},
       {label:'H2', fn:"insertLine('## ')", title:'H2'},
@@ -91,10 +88,10 @@ title: Editar artículo
       {label:'• Lista', fn:"insertLine('- ')", title:'Lista'},
       {label:'1. Lista', fn:"insertLine('1. ')", title:'Numerada'},
       {label:'❝ Cita', fn:"insertLine('> ')", title:'Cita'},
-      {label:'⌨ Código', fn:"wrap('\n```\n','\n```\n')", title:'Bloque código'},
+      {label:'─ HR', fn:"insertLine('---')", title:'HR'},
       {sep:true},
-      {label:'🔗 Link', fn:'insertLinkEdit()', title:'Enlace'},
-      {label:'⊞ Tabla', fn:"wrap('\n| Col1 | Col2 |\n|---|---|\n| ',' |\n')", title:'Tabla'},
+      {label:'🔗 Link', fn:'insertLinkEdit()', title:'Enlace (Ctrl+K)'},
+      {label:'⊞ Tabla', fn:"insertSCEdit('| Col1 | Col2 |\n|---|---|\n| valor | valor |')", title:'Tabla'},
       {sep:true},
       {label:'💬 Tooltip', fn:"insertSCEdit('[tooltip text=\"Def\"]término[/tooltip]')", title:'Tooltip'},
       {label:'⚠️ Alert', fn:"insertSCEdit('[alert type=\"info\"]Mensaje[/alert]')", title:'Alert'},
@@ -105,18 +102,17 @@ title: Editar artículo
       {label:'∑ Fórmula', fn:"insertSCEdit('[formula]E = mc^2[/formula]')", title:'Fórmula'},
       {label:'▶ YouTube', fn:"insertSCEdit('[youtube id=\"ID_VIDEO\"]')", title:'YouTube'},
       {label:'↗ Ref', fn:"insertSCEdit('[ref article=\"slug\"]texto[/ref]')", title:'Referencia'},
-      {label:'⚡ Sinóptico', fn:"insertSCEdit('[cuadro-sinoptico main=\"Título\"]\n[etapa title=\"ETAPA 1\" color=\"#3b82f6\"]Desc[/etapa]\n[/cuadro-sinoptico]')", title:'Cuadro sinóptico'},
+      {label:'🗺️ Mapa', fn:"insertSCEdit('[mapa-sinoptico dir=\"LR\"]\nPadre -> Hijo1\nPadre -> Hijo2\n[/mapa-sinoptico]')", title:'Mapa Sinóptico'},
+      {label:'⚡ Cuadro', fn:"insertSCEdit('[cuadro-sinoptico main=\"Título\"]\n[etapa title=\"ETAPA 1\" color=\"#3b82f6\"]Desc[/etapa]\n[/cuadro-sinoptico]')", title:'Cuadro sinóptico'},
     ];
     return '<div class="eu-editor-toolbar">' +
       btns.map(function(b){ return b.sep
         ? '<div class="eu-editor-separator"></div>'
         : '<button type="button" class="eu-editor-btn" onclick="' + b.fn + '" title="' + b.title + '">' + b.label + '</button>';
-      }).join('') +
-      '</div>';
+      }).join('') + '</div>';
   }
 
   function renderEditor(article, rawContent) {
-    var user = Auth.getUser();
     var sourcesHtml = buildSourcesPanel(article);
     var imagesPanelHtml = buildImagesPanel(article);
 
@@ -130,13 +126,12 @@ title: Editar artículo
       '<div class="alert alert-info d-flex gap-2 align-items-start mb-4">',
       '<i class="bi bi-info-circle flex-shrink-0 mt-1"></i>',
       '<div>Tu edición quedará <strong>pendiente de aprobación</strong>. El artículo original no cambia hasta que sea aprobada.' +
-      (!rawContent ? '<br><small>No se cargó el contenido original — redacta tu versión completa.</small>' : '') + '</div>',
+      '<br><small>Las imágenes y fuentes que agregues se guardan en un área de revisión hasta ser aprobadas.</small></div>',
       '</div>',
 
       '<div id="submitMsg"></div>',
 
       '<div class="row g-4">',
-      // Main content col
       '<div class="col-lg-8">',
       '<div class="eu-card p-4 mb-4">',
       '<h4 style="font-size:1rem;font-weight:700;margin-bottom:20px">Tu propuesta de edición</h4>',
@@ -147,35 +142,34 @@ title: Editar artículo
       '</div>',
 
       '<div class="mb-3">',
-      '<label class="eu-label">Resumen <span class="text-muted fw-normal small">— dejar igual si no cambia · Markdown habilitado</span></label>',
+      '<label class="eu-label">Resumen <span class="text-muted fw-normal small">— Markdown habilitado</span></label>',
       '<div class="eu-summary-toolbar">',
-      '<button class="eu-editor-btn" onclick="summaryWrapEdit(\'**\',\'**\')"><b>B</b></button>',
-      '<button class="eu-editor-btn" onclick="summaryWrapEdit(\'*\',\'*\')"><i>I</i></button>',
-      '<button class="eu-editor-btn" onclick="summaryLineEdit(\'- \')">• Lista</button>',
-      '<button class="eu-editor-btn" onclick="summaryLineEdit(\'1. \')">1. Lista</button>',
-      '<button class="eu-editor-btn" onclick="summaryAnchorEdit()">⚓ Sección</button>',
+      '<button class="eu-editor-btn" type="button" onclick="summaryWrapEdit(\'**\',\'**\')"><b>B</b></button>',
+      '<button class="eu-editor-btn" type="button" onclick="summaryWrapEdit(\'*\',\'*\')"><i>I</i></button>',
+      '<button class="eu-editor-btn" type="button" onclick="summaryLineEdit(\'- \')">• Lista</button>',
+      '<button class="eu-editor-btn" type="button" onclick="summaryLineEdit(\'1. \')">1. Lista</button>',
+      '<button class="eu-editor-btn" type="button" onclick="summaryAnchorEdit()">⚓ Sección</button>',
       '</div>',
       '<textarea id="editSummary" class="eu-input eu-summary-textarea" rows="4" maxlength="4000">' + escHtml(article.summary) + '</textarea>',
-      '<div class="text-muted small mt-1">Markdown habilitado · soporta listas y enlaces a secciones</div>',
       '</div>',
 
       '<div class="mb-3">',
       '<label class="eu-label">Contenido completo <span class="text-danger">*</span></label>',
       buildToolbar(),
-      '<textarea id="editContent" class="eu-input eu-editor-textarea" spellcheck="true" placeholder="Escribe el contenido en Markdown...">' + escHtml(rawContent) + '</textarea>',
+      '<textarea id="editContent" class="eu-input eu-editor-textarea" spellcheck="true">' + escHtml(rawContent) + '</textarea>',
       '<div class="d-flex justify-content-between mt-1">',
-      '<span class="text-muted small">Ctrl+B negrita · Ctrl+I cursiva · Tab = 2 espacios · <a href="' + BASE + '/shortcodes.html" target="_blank">Guía shortcodes</a></span>',
+      '<span class="text-muted small">Ctrl+B negrita · Ctrl+I cursiva · <a href="' + BASE + '/shortcodes.html" target="_blank">Guía shortcodes</a></span>',
       '<span class="text-muted small" id="charCount">0 car.</span>',
       '</div>',
       '</div>',
 
       '<div class="mb-4">',
-      '<label class="eu-label">Nota para moderadores <span class="text-muted fw-normal small">(opcional pero recomendado)</span></label>',
+      '<label class="eu-label">Nota para moderadores <span class="text-muted fw-normal small">(opcional)</span></label>',
       '<textarea id="editNote" class="eu-input" rows="2" maxlength="1000" placeholder="Ej: Corregí el tercer párrafo con datos actualizados."></textarea>',
       '</div>',
 
       '<div class="d-flex gap-3 align-items-center flex-wrap">',
-      '<button id="submitBtn" class="eu-btn-primary" onclick="submitEdit(' + article.id + ')">',
+      '<button id="submitBtn" type="button" class="eu-btn-primary" onclick="submitEdit(' + article.id + ')">',
       '<i class="bi bi-send me-1"></i> Enviar edición para revisión</button>',
       '<a href="' + BASE + '/articulo.html?slug=' + encodeURIComponent(article.slug) + '" class="eu-btn-outline">Cancelar</a>',
       '<div id="submitSpinner" class="d-none"><div class="eu-spinner" style="width:20px;height:20px"></div></div>',
@@ -186,7 +180,6 @@ title: Editar artículo
 
       '</div>',
 
-      // Sidebar
       '<div class="col-lg-4">',
       imagesPanelHtml,
       sourcesHtml,
@@ -194,14 +187,12 @@ title: Editar artículo
       '</div>'
     ].join('');
 
-    // Char counter
     var ta = document.getElementById('editContent');
     var cc = document.getElementById('charCount');
     function updateCount() { cc.textContent = ta.value.length.toLocaleString('es-AR') + ' car.'; }
     ta.addEventListener('input', updateCount);
     updateCount();
 
-    // Keyboard shortcuts
     ta.addEventListener('keydown', function(e) {
       if (e.ctrlKey || e.metaKey) {
         if (e.key === 'b') { e.preventDefault(); wrap('**','**'); }
@@ -211,27 +202,33 @@ title: Editar artículo
       if (e.key === 'Tab') {
         e.preventDefault();
         var s = ta.selectionStart;
+        var st = ta.scrollTop;
         ta.value = ta.value.slice(0, s) + '  ' + ta.value.slice(s);
         ta.selectionStart = ta.selectionEnd = s + 2;
+        ta.scrollTop = st;
       }
     });
 
-    // Load existing images
     loadExistingImages(article.id);
   }
 
   function buildImagesPanel(article) {
     return [
       '<div class="eu-card p-4 mb-4">',
-      '<h5 class="mb-3"><i class="bi bi-images me-2"></i>Multimedia</h5>',
-      '<div id="editUploadArea" class="border rounded-2 p-3 text-center mb-3" style="border-style:dashed;border-color:var(--eu-border);cursor:pointer"',
-      ' ondragover="event.preventDefault();this.style.borderColor=\'var(--eu-text)\'"',
-      ' ondragleave="this.style.borderColor=\'var(--eu-border)\'"',
+      '<h5 class="mb-1"><i class="bi bi-images me-2"></i>Multimedia</h5>',
+      '<p class="text-muted small mb-3">Imágenes en área de revisión hasta aprobación.</p>',
+      '<div id="editUploadArea" class="eu-upload-zone mb-3"',
+      ' ondragover="event.preventDefault();this.classList.add(\'dragover\')"',
+      ' ondragleave="this.classList.remove(\'dragover\')"',
       ' ondrop="handleEditDrop(event)">',
       '<i class="bi bi-cloud-upload fs-3 mb-2 d-block text-muted"></i>',
-      '<label for="editImageInput" class="eu-btn-outline eu-btn-sm" style="cursor:pointer">Subir imágenes</label>',
+      '<label for="editImageInput" class="eu-btn-outline eu-btn-sm" style="cursor:pointer"><i class="bi bi-plus-circle"></i> Subir imágenes</label>',
       '<input type="file" id="editImageInput" multiple accept="image/*" class="d-none" onchange="uploadEditImages(this.files)">',
       '<div class="text-muted mt-1" style="font-size:.7rem">PNG, JPG, WebP · Máx 5MB</div>',
+      '</div>',
+      '<div id="editImgProgress" class="d-none mb-3">',
+      '<div class="eu-progress-bar-wrap"><div id="editImgBar" class="eu-progress-bar" style="width:0%"></div></div>',
+      '<div class="small text-muted mt-1" id="editImgLabel">Subiendo...</div>',
       '</div>',
       '<div id="editUploadedImages" class="eu-media-grid"></div>',
       '</div>'
@@ -240,101 +237,117 @@ title: Editar artículo
 
   function buildSourcesPanel(article) {
     var existingList = existingSources.length ? existingSources.map(function(s) {
-      var iconHtml = s.type === 'pdf'
-        ? '<svg class="eu-source-pdf-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z"/></svg>'
-        : '<img src="https://www.google.com/s2/favicons?sz=16&domain=' + encodeURIComponent(new URL(s.url||'http://example.com').hostname) + '" class="eu-source-favicon" onerror="this.style.display=\'none\'">';
-      return '<div class="eu-source-editor-item" id="existing-src-' + s.id + '">' + iconHtml +
-        '<span class="eu-source-title" style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + escHtml(s.title) + '</span>' +
-        '<button class="eu-source-insert-btn" onclick="insertExistingSourceRef(' + s.id + ',\'' + escAttr(s.title) + '\')">Citar</button>' +
-        '<button class="eu-source-delete-btn" onclick="deleteExistingSource(' + article.id + ',' + s.id + ')">✕</button>' +
+      var icon = s.type === 'pdf'
+        ? '<svg viewBox="0 0 24 24" fill="currentColor" style="width:16px;height:16px;flex-shrink:0;color:#dc2626"><path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z"/></svg>'
+        : '<i class="bi bi-link-45deg" style="flex-shrink:0"></i>';
+      return '<div class="eu-source-editor-item" id="existing-src-' + s.id + '">' + icon +
+        '<span class="eu-source-title">' + escHtml(s.title) + '</span>' +
+        '<button type="button" class="eu-source-action-btn" onclick="editExistingSource(' + article.id + ',' + s.id + ',\'' + escAttr(s.type) + '\',\'' + escAttr(s.title) + '\',\'' + escAttr(s.url||'') + '\')" title="Editar">✏️</button>' +
+        '<button type="button" class="eu-source-insert-btn" onclick="insertExistingSourceRef(' + s.id + ',\'' + escAttr(s.title) + '\')">Citar</button>' +
+        '<button type="button" class="eu-source-delete-btn" onclick="deleteExistingSource(' + article.id + ',' + s.id + ')">✕</button>' +
         '</div>';
     }).join('') : '<div class="text-muted text-center p-2 small">No hay fuentes existentes</div>';
 
     return [
       '<div class="eu-card p-4 mb-4">',
-      '<h5 class="mb-3"><i class="bi bi-link-45deg me-2"></i>Fuentes del artículo</h5>',
+      '<h5 class="mb-1"><i class="bi bi-link-45deg me-2"></i>Fuentes del artículo</h5>',
 
-      // Existing sources
       '<div class="mb-3">',
       '<div class="fw-semibold small mb-2">Fuentes actuales</div>',
-      '<div class="eu-sources-editor mb-3">' + existingList + '</div>',
+      '<div class="eu-sources-editor mb-2">' + existingList + '</div>',
       '</div>',
 
-      // Add new link
-      '<div class="mb-3">',
-      '<div class="fw-semibold small mb-2">➕ Añadir enlace</div>',
+      '<div class="mb-3 pb-3" style="border-bottom:1px solid var(--eu-border)">',
+      '<div class="fw-semibold small mb-2">🔗 Añadir enlace</div>',
       '<input type="text" id="editSrcLinkTitle" class="eu-input mb-2" placeholder="Título">',
       '<input type="url" id="editSrcLinkUrl" class="eu-input mb-2" placeholder="https://...">',
-      '<button class="eu-btn-outline eu-btn-sm w-100" onclick="addEditLinkSource(' + article.id + ')"><i class="bi bi-plus-circle"></i> Añadir enlace</button>',
+      '<button type="button" class="eu-btn-outline eu-btn-sm w-100" onclick="addEditLinkSource(' + article.id + ')"><i class="bi bi-plus-circle"></i> Añadir enlace</button>',
       '</div>',
 
-      // Add new PDF
       '<div class="mb-2">',
       '<div class="fw-semibold small mb-2">📄 Añadir PDF</div>',
       '<input type="text" id="editSrcPdfTitle" class="eu-input mb-2" placeholder="Título del PDF">',
+      '<div id="editPdfAttachZone">',
       '<label class="eu-btn-outline eu-btn-sm w-100 text-center" style="cursor:pointer">',
-      '<i class="bi bi-file-earmark-pdf"></i> Seleccionar PDF (máx 10MB)',
-      '<input type="file" id="editSrcPdfInput" accept=".pdf" class="d-none" onchange="addEditPdfSource(' + article.id + ', this)">',
+      '<i class="bi bi-paperclip"></i> Adjuntar PDF (máx 10MB)',
+      '<input type="file" id="editSrcPdfInput" accept=".pdf" class="d-none" onchange="attachEditPdf(this)">',
       '</label>',
       '</div>',
+      '<div id="editPdfPreview" class="d-none mt-2 p-2 rounded d-flex align-items-center gap-2" style="background:var(--eu-bg-secondary);border:1px solid var(--eu-border)">',
+      '<svg viewBox="0 0 24 24" fill="currentColor" style="width:16px;height:16px;flex-shrink:0;color:#dc2626"><path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z"/></svg>',
+      '<span class="small" id="editPdfPreviewName" style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></span>',
+      '<button type="button" class="eu-source-delete-btn" onclick="clearEditPdfAttach()">✕</button>',
+      '</div>',
+      '<button type="button" class="eu-btn-primary eu-btn-sm w-100 mt-2 d-none" id="editAddPdfBtn" onclick="uploadEditPdfSource(' + article.id + ')"><i class="bi bi-upload"></i> Subir PDF</button>',
+      '</div>',
 
-      '<div id="editSourcesMsg" class="mt-2"></div>',
+      '<div id="editSourcesMsg" class="mt-1"></div>',
       '</div>'
     ].join('');
   }
 
-  // ── SUMMARY HELPERS (edit)
+  // ── SUMMARY HELPERS (edit) ───────────────────────────────────────────────
   window.summaryWrapEdit = function(before, after) {
     var ta = document.getElementById('editSummary');
     var s = ta.selectionStart, e = ta.selectionEnd;
     var sel = ta.value.substring(s, e) || 'texto';
+    var st = ta.scrollTop;
     ta.value = ta.value.substring(0, s) + before + sel + after + ta.value.substring(e);
     ta.selectionStart = s + before.length;
     ta.selectionEnd = s + before.length + sel.length;
+    ta.scrollTop = st;
     ta.focus();
   };
   window.summaryLineEdit = function(prefix) {
     var ta = document.getElementById('editSummary');
     var s = ta.selectionStart;
     var start = ta.value.lastIndexOf('\n', s - 1) + 1;
+    var st = ta.scrollTop;
     ta.value = ta.value.substring(0, start) + prefix + ta.value.substring(start);
     ta.selectionStart = ta.selectionEnd = start + prefix.length;
+    ta.scrollTop = st;
     ta.focus();
   };
   window.summaryAnchorEdit = function() {
-    var id = prompt('ID del título (ej: "metabolismo" para "## Metabolismo"):');
+    var id = prompt('ID del título:');
     if (!id) return;
     var label = prompt('Texto del enlace:') || id;
     var ta = document.getElementById('editSummary');
     var pos = ta.selectionStart;
-    var ins = '[' + label + '](#' + id + ')';
-    ta.value = ta.value.slice(0, pos) + ins + ta.value.slice(pos);
+    var st = ta.scrollTop;
+    ta.value = ta.value.slice(0, pos) + '[' + label + '](#' + id + ')' + ta.value.slice(pos);
+    ta.scrollTop = st;
     ta.focus();
   };
 
-  // ── CONTENT EDITOR HELPERS (edit)
+  // ── NO-SCROLL INSERT ─────────────────────────────────────────────────────
+  function noScrollInsert(ta, text, from, to) {
+    var pageY = window.scrollY, taTop = ta.scrollTop;
+    ta.value = ta.value.slice(0, from) + text + ta.value.slice(to);
+    ta.scrollTop = taTop;
+    window.scrollTo({ top: pageY });
+  }
+
   window.wrap = function(before, after) {
     var ta = document.getElementById('editContent');
     var s = ta.selectionStart, e = ta.selectionEnd;
     var sel = ta.value.substring(s, e) || 'texto';
-    ta.value = ta.value.substring(0, s) + before + sel + after + ta.value.substring(e);
-    ta.selectionStart = s + before.length;
-    ta.selectionEnd = s + before.length + sel.length;
+    noScrollInsert(ta, before + sel + after, s, e);
     ta.focus();
+    ta.setSelectionRange(s + before.length, s + before.length + sel.length);
   };
   window.insertLine = function(prefix) {
     var ta = document.getElementById('editContent');
     var s = ta.selectionStart;
     var start = ta.value.lastIndexOf('\n', s - 1) + 1;
-    ta.value = ta.value.substring(0, start) + prefix + ta.value.substring(start);
-    ta.selectionStart = ta.selectionEnd = start + prefix.length;
+    noScrollInsert(ta, prefix, start, start);
     ta.focus();
+    ta.setSelectionRange(start + prefix.length, start + prefix.length);
   };
   window.insertSCEdit = function(sc) {
     var ta = document.getElementById('editContent');
     var pos = ta.selectionStart;
-    var ins = '\n' + sc + '\n';
-    ta.value = ta.value.slice(0, pos) + ins + ta.value.slice(pos);
+    noScrollInsert(ta, '\n' + sc + '\n', pos, pos);
     ta.focus();
   };
   window.insertLinkEdit = function() {
@@ -343,12 +356,31 @@ title: Editar artículo
     var label = prompt('Texto:') || url;
     var ta = document.getElementById('editContent');
     var pos = ta.selectionStart;
-    var ins = '[' + label + '](' + url + ')';
-    ta.value = ta.value.slice(0, pos) + ins + ta.value.slice(pos);
+    noScrollInsert(ta, '[' + label + '](' + url + ')', pos, pos);
     ta.focus();
   };
+  window.insertEditImageSC = function(url, alt) {
+    var ta = document.getElementById('editContent');
+    var pos = ta.selectionStart;
+    noScrollInsert(ta, '\n[img file="' + url + '" alt="' + alt + '" caption=""]\n', pos, pos);
+    ta.focus();
+    window.showToast('Imagen insertada', 'success');
+  };
+  window.insertExistingSourceRef = function(id, title) {
+    var ta = document.getElementById('editContent');
+    var pos = ta.selectionStart;
+    noScrollInsert(ta, '[source-ref title="' + escAttr(title) + '"]', pos, pos);
+    ta.focus();
+    window.showToast('Referencia insertada', 'success');
+  };
 
-  // ── IMAGE UPLOAD (edit)
+  window.handleEditDrop = function(e) {
+    e.preventDefault();
+    document.getElementById('editUploadArea').classList.remove('dragover');
+    if (e.dataTransfer.files.length) uploadEditImages(e.dataTransfer.files);
+  };
+
+  // ── IMAGE UPLOAD (edit) ──────────────────────────────────────────────────
   async function loadExistingImages(artId) {
     try {
       var res = await fetch(API + '/api/media/article/' + artId);
@@ -357,13 +389,43 @@ title: Editar artículo
       if (!images.length) return;
       var container = document.getElementById('editUploadedImages');
       images.forEach(function(img) {
-        var div = document.createElement('div');
-        div.className = 'eu-media-thumb';
-        div.innerHTML = '<img src="' + escHtml(img.public_url) + '" alt="' + escHtml(img.filename) + '" loading="lazy"><div class="eu-media-thumb-overlay"><button onclick="insertEditImageSC(\'' + escAttr(img.public_url) + '\',\'' + escAttr(img.filename.replace(/\.[^.]+$/,'')) + '\')">📥 Insertar</button></div>';
-        container.appendChild(div);
+        appendEditThumb(container, img.id, img.public_url, img.filename);
       });
     } catch(e) {}
   }
+
+  function appendEditThumb(container, mediaId, url, filename) {
+    var altName = filename.replace(/\.[^.]+$/, '');
+    var div = document.createElement('div');
+    div.className = 'eu-media-thumb';
+    div.dataset.mediaId = mediaId;
+    div.innerHTML =
+      '<img src="' + escHtml(url) + '" alt="' + escHtml(filename) + '" loading="lazy">' +
+      '<div class="eu-media-thumb-overlay">' +
+      '<button type="button" onclick="insertEditImageSC(\'' + escAttr(url) + '\',\'' + escAttr(altName) + '\')">📥 Insertar</button>' +
+      '<button type="button" onclick="deleteEditImage(' + mediaId + ', this)" style="color:#fca5a5">🗑 Eliminar</button>' +
+      '</div>';
+    container.appendChild(div);
+  }
+
+  window.deleteEditImage = async function(mediaId, btn) {
+    if (!confirm('¿Eliminar esta imagen?')) return;
+    btn.disabled = true; btn.textContent = '...';
+    var token = Auth.getToken();
+    try {
+      var res = await fetch(API + '/api/media/' + mediaId, {
+        method: 'DELETE',
+        headers: { Authorization: 'Bearer ' + token }
+      });
+      if (!res.ok) { var d = await res.json(); throw new Error(d.error); }
+      var thumb = btn.closest('.eu-media-thumb');
+      if (thumb) { thumb.style.transition='opacity .3s'; thumb.style.opacity='0'; setTimeout(function(){thumb.remove();},300); }
+      window.showToast('Imagen eliminada','success');
+    } catch(err) {
+      window.showToast('Error: '+err.message,'error');
+      btn.disabled=false; btn.textContent='🗑 Eliminar';
+    }
+  };
 
   window.uploadEditImages = async function(files) {
     if (!articleData) return;
@@ -371,50 +433,73 @@ title: Editar artículo
     for (var i = 0; i < files.length; i++) formData.append('images', files[i]);
     formData.append('articleId', articleData.id);
     var token = Auth.getToken();
+
+    var prog = document.getElementById('editImgProgress');
+    var bar = document.getElementById('editImgBar');
+    var lbl = document.getElementById('editImgLabel');
+    prog.classList.remove('d-none');
+    bar.style.width = '15%'; bar.style.background = '';
+    lbl.textContent = 'Subiendo ' + files.length + ' imagen(es)...';
+    var ticker = setInterval(function(){ bar.style.width = Math.min(parseFloat(bar.style.width)+7, 80) + '%'; }, 300);
+
     try {
       var res = await fetch(API + '/api/media/upload', {
         method: 'POST',
         headers: { Authorization: 'Bearer ' + token },
         body: formData
       });
+      clearInterval(ticker);
+      bar.style.width = '100%';
       var data = await res.json();
       if (!res.ok) throw new Error(data.error);
+      lbl.textContent = '✓ ' + data.files.length + ' imagen(es) subida(s)';
+      setTimeout(function(){ prog.classList.add('d-none'); }, 2500);
       var container = document.getElementById('editUploadedImages');
-      data.files.forEach(function(f) {
-        var div = document.createElement('div');
-        div.className = 'eu-media-thumb';
-        div.innerHTML = '<img src="' + escHtml(f.publicUrl) + '" alt="' + escHtml(f.filename) + '" loading="lazy"><div class="eu-media-thumb-overlay"><button onclick="insertEditImageSC(\'' + escAttr(f.publicUrl) + '\',\'' + escAttr(f.filename.replace(/\.[^.]+$/,'')) + '\')">📥 Insertar</button></div>';
-        container.appendChild(div);
-      });
-      window.showToast(data.files.length + ' imagen(s) subida(s)', 'success');
+      data.files.forEach(function(f) { appendEditThumb(container, f.id, f.publicUrl, f.filename); });
+      window.showToast(data.files.length + ' imagen(es) subida(s)', 'success');
     } catch(err) {
-      window.showToast(err.message, 'error');
+      clearInterval(ticker);
+      bar.style.width='100%'; bar.style.background='var(--eu-danger)';
+      lbl.textContent = '✗ ' + err.message;
+      setTimeout(function(){ prog.classList.add('d-none'); bar.style.background=''; }, 3500);
+      window.showToast(err.message,'error');
     }
   };
 
-  window.insertEditImageSC = function(url, alt) {
-    var ta = document.getElementById('editContent');
-    var pos = ta.selectionStart;
-    var sc = '\n[img file="' + url + '" alt="' + alt + '" caption=""]\n';
-    ta.value = ta.value.slice(0, pos) + sc + ta.value.slice(pos);
-    ta.focus();
-    window.showToast('Imagen insertada', 'success');
-  };
+  // ── SOURCES (edit) ───────────────────────────────────────────────────────
+  function showEditSourceMsg(type, msg) {
+    var el = document.getElementById('editSourcesMsg');
+    el.innerHTML = '<div class="alert alert-' + type + ' py-2 px-3 small mb-0">' + escHtml(msg) + '</div>';
+    setTimeout(function(){ if(el) el.innerHTML=''; }, 3500);
+  }
 
-  window.handleEditDrop = function(e) {
-    e.preventDefault();
-    document.getElementById('editUploadArea').style.borderColor = 'var(--eu-border)';
-    if (e.dataTransfer.files.length) uploadEditImages(e.dataTransfer.files);
-  };
-
-  // ── SOURCES (edit)
-  window.insertExistingSourceRef = function(id, title) {
-    var ta = document.getElementById('editContent');
-    var pos = ta.selectionStart;
-    var ref = '[source-ref title="' + escAttr(title) + '"]';
-    ta.value = ta.value.slice(0, pos) + ref + ta.value.slice(pos);
-    ta.focus();
-    window.showToast('Referencia insertada', 'success');
+  window.editExistingSource = async function(artId, srcId, type, currentTitle, currentUrl) {
+    var newTitle = prompt('Título:', currentTitle);
+    if (newTitle === null) return;
+    var payload = { title: newTitle.trim() || currentTitle };
+    if (type === 'link') {
+      var newUrl = prompt('URL:', currentUrl);
+      if (newUrl !== null && newUrl.trim()) {
+        try { new URL(newUrl.trim()); payload.url = newUrl.trim(); } catch(e) { window.showToast('URL inválida','error'); return; }
+      }
+    }
+    var token = Auth.getToken();
+    try {
+      var res = await fetch(API + '/api/articles/' + artId + '/sources/' + srcId, {
+        method: 'PUT',
+        headers: { 'Content-Type':'application/json', Authorization:'Bearer ' + token },
+        body: JSON.stringify(payload)
+      });
+      if (!res.ok) { var d = await res.json(); throw new Error(d.error); }
+      var el = document.getElementById('existing-src-' + srcId);
+      if (el) {
+        var span = el.querySelector('.eu-source-title');
+        if (span) span.textContent = payload.title;
+      }
+      window.showToast('Fuente actualizada','success');
+    } catch(e) {
+      window.showToast('Error: ' + e.message,'error');
+    }
   };
 
   window.deleteExistingSource = async function(artId, srcId) {
@@ -427,55 +512,91 @@ title: Editar artículo
       });
       if (!res.ok) throw new Error('Error al eliminar');
       var el = document.getElementById('existing-src-' + srcId);
-      if (el) el.remove();
-      window.showToast('Fuente eliminada', 'success');
+      if (el) { el.style.transition='opacity .3s'; el.style.opacity='0'; setTimeout(function(){el.remove();},300); }
+      window.showToast('Fuente eliminada','success');
     } catch(e) {
-      window.showToast(e.message, 'error');
+      window.showToast(e.message,'error');
     }
   };
 
   window.addEditLinkSource = async function(artId) {
     var title = document.getElementById('editSrcLinkTitle').value.trim();
     var url = document.getElementById('editSrcLinkUrl').value.trim();
-    var msgEl = document.getElementById('editSourcesMsg');
-    if (!title || !url) { msgEl.innerHTML = '<div class="alert alert-warning p-2 small">Título y URL requeridos</div>'; return; }
-    try { new URL(url); } catch { msgEl.innerHTML = '<div class="alert alert-warning p-2 small">URL inválida</div>'; return; }
+    if (!title || !url) { showEditSourceMsg('warning','Título y URL requeridos'); return; }
+    try { new URL(url); } catch(e) { showEditSourceMsg('warning','URL inválida'); return; }
+
+    // Show progress
+    var btn = event.target;
+    btn.disabled = true;
+    btn.innerHTML = '<span class="eu-spinner" style="width:14px;height:14px;border-width:2px"></span> Añadiendo...';
+
     var token = Auth.getToken();
     try {
       var res = await fetch(API + '/api/articles/' + artId + '/sources', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
-        body: JSON.stringify({ type: 'link', title: title, url: url })
+        headers: { 'Content-Type':'application/json', Authorization:'Bearer ' + token },
+        body: JSON.stringify({ type:'link', title:title, url:url })
       });
       var data = await res.json();
       if (!res.ok) throw new Error(data.error);
       document.getElementById('editSrcLinkTitle').value = '';
       document.getElementById('editSrcLinkUrl').value = '';
-      msgEl.innerHTML = '<div class="alert alert-success p-2 small">Fuente añadida</div>';
-      // Add to UI
+      showEditSourceMsg('success','🔗 Enlace añadido');
+
       var srcId = data.source ? data.source.id : Date.now();
       var container = document.querySelector('.eu-sources-editor');
-      var emptyEl = container.querySelector('.text-muted');
-      if (emptyEl) emptyEl.remove();
+      // Remove empty placeholder
+      var emp = container.querySelector('.text-muted.text-center');
+      if (emp) emp.remove();
       var div = document.createElement('div');
       div.className = 'eu-source-editor-item';
       div.id = 'existing-src-' + srcId;
-      div.innerHTML = '<img src="https://www.google.com/s2/favicons?sz=16&domain=' + encodeURIComponent(new URL(url).hostname) + '" class="eu-source-favicon" onerror="this.style.display=\'none\'"><span class="eu-source-title" style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + escHtml(title) + '</span><button class="eu-source-insert-btn" onclick="insertExistingSourceRef(' + srcId + ',\'' + escAttr(title) + '\')">Citar</button><button class="eu-source-delete-btn" onclick="deleteExistingSource(' + artId + ',' + srcId + ')">✕</button>';
+      div.innerHTML =
+        '<i class="bi bi-link-45deg" style="flex-shrink:0"></i>' +
+        '<span class="eu-source-title">' + escHtml(title) + '</span>' +
+        '<button type="button" class="eu-source-action-btn" onclick="editExistingSource(' + artId + ',' + srcId + ',\'link\',\'' + escAttr(title) + '\',\'' + escAttr(url) + '\')" title="Editar">✏️</button>' +
+        '<button type="button" class="eu-source-insert-btn" onclick="insertExistingSourceRef(' + srcId + ',\'' + escAttr(title) + '\')">Citar</button>' +
+        '<button type="button" class="eu-source-delete-btn" onclick="deleteExistingSource(' + artId + ',' + srcId + ')">✕</button>';
       container.appendChild(div);
     } catch(e) {
-      msgEl.innerHTML = '<div class="alert alert-danger p-2 small">' + escHtml(e.message) + '</div>';
+      showEditSourceMsg('danger', escHtml(e.message));
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = '<i class="bi bi-plus-circle"></i> Añadir enlace';
     }
   };
 
-  window.addEditPdfSource = async function(artId, input) {
+  // PDF — attach first, then upload on button click
+  window.attachEditPdf = function(input) {
     var file = input.files[0];
     if (!file) return;
-    var msgEl = document.getElementById('editSourcesMsg');
-    if (file.size > 10 * 1024 * 1024) { msgEl.innerHTML = '<div class="alert alert-warning p-2 small">PDF supera 10MB</div>'; input.value = ''; return; }
+    if (file.size > 10 * 1024 * 1024) { showEditSourceMsg('warning','PDF supera 10MB'); input.value=''; return; }
+    pendingPdf = { file: file, name: file.name };
     var title = document.getElementById('editSrcPdfTitle').value.trim() || file.name.replace(/\.pdf$/i,'');
+    document.getElementById('editSrcPdfTitle').value = title;
+    document.getElementById('editPdfPreviewName').textContent = file.name + ' (' + fmtSize(file.size) + ')';
+    document.getElementById('editPdfPreview').classList.remove('d-none');
+    document.getElementById('editAddPdfBtn').classList.remove('d-none');
+    document.getElementById('editPdfAttachZone').classList.add('d-none');
+  };
+
+  window.clearEditPdfAttach = function() {
+    pendingPdf = null;
+    document.getElementById('editSrcPdfInput').value = '';
+    document.getElementById('editPdfPreview').classList.add('d-none');
+    document.getElementById('editAddPdfBtn').classList.add('d-none');
+    document.getElementById('editPdfAttachZone').classList.remove('d-none');
+  };
+
+  window.uploadEditPdfSource = async function(artId) {
+    if (!pendingPdf) return;
+    var title = document.getElementById('editSrcPdfTitle').value.trim() || pendingPdf.name.replace(/\.pdf$/i,'');
+    var btn = document.getElementById('editAddPdfBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="eu-spinner" style="width:14px;height:14px;border-width:2px"></span> Subiendo...';
     var token = Auth.getToken();
     var fd = new FormData();
-    fd.append('pdf', file);
+    fd.append('pdf', pendingPdf.file);
     fd.append('title', title);
     try {
       var res = await fetch(API + '/api/articles/' + artId + '/sources/pdf', {
@@ -485,24 +606,49 @@ title: Editar artículo
       });
       var data = await res.json();
       if (!res.ok) throw new Error(data.error);
+      clearEditPdfAttach();
       document.getElementById('editSrcPdfTitle').value = '';
-      input.value = '';
-      msgEl.innerHTML = '<div class="alert alert-success p-2 small">PDF subido</div>';
+      showEditSourceMsg('success','📄 PDF subido exitosamente');
+
       var srcId = data.source ? data.source.id : Date.now();
       var container = document.querySelector('.eu-sources-editor');
-      var emptyEl = container.querySelector('.text-muted');
-      if (emptyEl) emptyEl.remove();
+      var emp = container.querySelector('.text-muted.text-center');
+      if (emp) emp.remove();
       var div = document.createElement('div');
       div.className = 'eu-source-editor-item';
       div.id = 'existing-src-' + srcId;
-      div.innerHTML = '<svg class="eu-source-pdf-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z"/></svg><span class="eu-source-title" style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + escHtml(title) + '</span><button class="eu-source-insert-btn" onclick="insertExistingSourceRef(' + srcId + ',\'' + escAttr(title) + '\')">Citar</button><button class="eu-source-delete-btn" onclick="deleteExistingSource(' + artId + ',' + srcId + ')">✕</button>';
+      div.innerHTML =
+        '<svg viewBox="0 0 24 24" fill="currentColor" style="width:16px;height:16px;flex-shrink:0;color:#dc2626"><path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z"/></svg>' +
+        '<span class="eu-source-title">' + escHtml(title) + '</span>' +
+        '<button type="button" class="eu-source-action-btn" title="Renombrar PDF" onclick="renameExistingPdf(' + artId + ',' + srcId + ',\'' + escAttr(title) + '\')">✏️</button>' +
+        '<button type="button" class="eu-source-insert-btn" onclick="insertExistingSourceRef(' + srcId + ',\'' + escAttr(title) + '\')">Citar</button>' +
+        '<button type="button" class="eu-source-delete-btn" onclick="deleteExistingSource(' + artId + ',' + srcId + ')">✕</button>';
       container.appendChild(div);
     } catch(e) {
-      msgEl.innerHTML = '<div class="alert alert-danger p-2 small">' + escHtml(e.message) + '</div>';
+      showEditSourceMsg('danger', escHtml(e.message));
+      btn.disabled = false;
+      btn.innerHTML = '<i class="bi bi-upload"></i> Subir PDF';
     }
   };
 
-  // ── SUBMIT EDIT
+  window.renameExistingPdf = async function(artId, srcId, currentTitle) {
+    var newTitle = prompt('Título del PDF:', currentTitle);
+    if (!newTitle || newTitle.trim() === currentTitle) return;
+    var token = Auth.getToken();
+    try {
+      var res = await fetch(API + '/api/articles/' + artId + '/sources/' + srcId, {
+        method: 'PUT',
+        headers: { 'Content-Type':'application/json', Authorization:'Bearer ' + token },
+        body: JSON.stringify({ title: newTitle.trim() })
+      });
+      if (!res.ok) { var d = await res.json(); throw new Error(d.error); }
+      var el = document.getElementById('existing-src-' + srcId);
+      if (el) { var sp = el.querySelector('.eu-source-title'); if(sp) sp.textContent = newTitle.trim(); }
+      window.showToast('PDF renombrado','success');
+    } catch(e) { window.showToast('Error: '+e.message,'error'); }
+  };
+
+  // ── SUBMIT EDIT ──────────────────────────────────────────────────────────
   window.submitEdit = async function(articleId) {
     var title   = document.getElementById('editTitle')?.value.trim();
     var summary = document.getElementById('editSummary')?.value.trim();
@@ -516,7 +662,6 @@ title: Editar artículo
       msgEl.innerHTML = '<div class="alert alert-warning mb-3"><i class="bi bi-exclamation-triangle me-2"></i>El contenido no puede estar vacío.</div>';
       return;
     }
-
     btn.disabled = true;
     spinner.classList.remove('d-none');
     msgEl.innerHTML = '';
@@ -524,14 +669,12 @@ title: Editar artículo
     try {
       var res = await Auth.authFetch(API + '/api/articles/' + articleId + '/edit', {
         method: 'POST',
-        body: JSON.stringify({ title: title, summary: summary, content: content, editNote: note })
+        body: JSON.stringify({ title:title, summary:summary, content:content, editNote:note })
       });
       var data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Error al enviar edición');
-
       msgEl.innerHTML = '<div class="alert alert-success mb-4"><i class="bi bi-check-circle-fill me-2"></i><strong>¡Edición enviada!</strong> Un moderador la revisará.<div class="mt-3"><a href="' + BASE + '/articulo.html?slug=' + encodeURIComponent(slug) + '" class="btn btn-sm btn-outline-success">Ver artículo original</a></div></div>';
-
-      document.querySelectorAll('.eu-card').forEach(function(el){ el.style.display = 'none'; });
+      document.querySelectorAll('.eu-card').forEach(function(el){ el.style.display='none'; });
     } catch(e) {
       msgEl.innerHTML = '<div class="alert alert-danger mb-3"><i class="bi bi-x-circle me-2"></i>' + escHtml(e.message) + '</div>';
     } finally {
@@ -544,9 +687,12 @@ title: Editar artículo
     document.getElementById('editorPage').innerHTML = '<div class="eu-empty-state" style="min-height:50vh"><i class="bi bi-exclamation-circle" style="font-size:3rem;color:var(--eu-danger)"></i><h3 class="mt-3">No se puede cargar el editor</h3><p class="text-muted">' + escHtml(msg) + '</p><a href="' + BASE + '/" class="eu-btn-primary mt-3">Ir al inicio</a></div>';
   }
 
-  function escHtml(s) {
-    return String(s||'').replace(/[&<>"']/g, function(c){ return({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]); });
+  function fmtSize(bytes) {
+    var k = 1024, s = ['B','KB','MB'];
+    var i = Math.floor(Math.log(bytes) / Math.log(k));
+    return (bytes / Math.pow(k, i)).toFixed(1) + ' ' + s[i];
   }
+  function escHtml(s) { return String(s||'').replace(/[&<>"']/g,function(c){return({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]);}); }
   function escAttr(s) { return escHtml(s); }
 })();
 </script>
