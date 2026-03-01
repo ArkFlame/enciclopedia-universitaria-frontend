@@ -278,29 +278,12 @@ body {
       toggle.setAttribute('aria-expanded', open);
       if (body) {
         body.setAttribute('aria-hidden', !open);
-        const adjustHeight = () => {
-          if (open) {
-            body.style.maxHeight = `${body.scrollHeight}px`;
-            const cleanup = () => {
-              body.style.maxHeight = 'none';
-              body.removeEventListener('transitionend', cleanup);
-            };
-            body.addEventListener('transitionend', cleanup, { once: true });
-          } else {
-            const currentHeight = body.scrollHeight;
-            body.style.maxHeight = `${currentHeight}px`;
-            requestAnimationFrame(() => {
-              body.style.maxHeight = '0';
-            });
-          }
-        };
-        adjustHeight();
       }
       if (label) {
         label.textContent = open ? TOGGLE_LABELS.open : TOGGLE_LABELS.closed;
       }
       if (icon) {
-        icon.style.transform = open ? 'rotate(90deg)' : 'rotate(0deg)';
+        icon.style.transform = open ? 'rotate(180deg)' : 'rotate(0deg)';
       }
     };
     setOpen(false);

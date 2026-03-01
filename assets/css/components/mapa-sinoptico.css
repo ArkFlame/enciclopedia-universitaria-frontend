@@ -10,7 +10,7 @@
   margin-bottom: 12px;
 }
 .eu-mapa-sinoptico-toggle {
-  flex: 1;
+  flex: 0 1 auto;
   text-align: left;
   display: inline-flex;
   align-items: center;
@@ -43,11 +43,12 @@
 }
 .eu-mapa-sinoptico-toggle-icon::after {
   content: '';
-  width: 8px;
-  height: 8px;
-  border-right: 2px solid currentColor;
-  border-bottom: 2px solid currentColor;
-  transform: rotate(45deg);
+  width: 0;
+  height: 0;
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  border-top: 0 solid transparent;
+  border-bottom: 6px solid currentColor;
   display: inline-block;
 }
 .eu-mapa-sinoptico-body {
@@ -61,28 +62,26 @@
   pointer-events: none;
 }
 .eu-mapa-sinoptico.eu-mapa-sinoptico-open .eu-mapa-sinoptico-body {
+  max-height: 1200px;
   opacity: 1;
   pointer-events: auto;
 }
 .eu-mapa-sinoptico-download {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  padding: 10px 18px;
-  border-radius: 999px;
-  border: 1px solid transparent;
-  background: var(--eu-btn-bg, #0f172a);
-  color: var(--eu-btn-text, #fff);
+  gap: 6px;
+  padding: 4px 0;
+  border: none;
+  background: transparent;
+  color: var(--eu-link);
   font-weight: 600;
   font-size: 0.9rem;
+  text-decoration: underline;
   cursor: pointer;
-  transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
-  white-space: nowrap;
+  transition: color 0.2s ease;
 }
 .eu-mapa-sinoptico-download:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.2);
-  background: var(--eu-btn-bg-hover, #0b1220);
+  color: color-mix(in srgb, var(--eu-link) 60%, #000 40%);
 }
 .eu-mapa-sinoptico-download-icon {
   width: 18px;
