@@ -35,19 +35,21 @@
   position: relative;
   display: flex;
   flex-direction: column;
-  gap: 2.5rem;
+  gap: 2rem;
   z-index: 1;
 }
 .eu-mapa-sinoptico .eu-mapa-sinoptico-level {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
-  gap: 1.4rem;
+  gap: 1rem;
+  align-items: center;
 }
 .eu-mapa-sinoptico-node {
-  border-radius: 999px;
+  border-radius: var(--eu-radius-sm, 0.4rem);
   border: 1px solid var(--node-border, var(--eu-border));
-  padding: 0.85rem 1.7rem;
+  padding: 0.65rem 1.4rem;
+  min-width: 150px;
   font-weight: 600;
   font-size: 0.95rem;
   background: var(--node-bg, var(--eu-bg));
@@ -56,6 +58,9 @@
   cursor: pointer;
   position: relative;
   z-index: 1;
+}
+.eu-mapa-sinoptico-node:hover {
+  box-shadow: 0 8px 18px rgba(0,0,0,.2);
 }
 .eu-mapa-sinoptico-node-active {
   transform: scale(1.05);
@@ -78,7 +83,7 @@
     padding: 28px 18px;
   }
   .eu-mapa-sinoptico .eu-mapa-sinoptico-levels {
-    gap: 1.6rem;
+    gap: 1.5rem;
   }
   .eu-mapa-sinoptico-node {
     max-width: 260px;

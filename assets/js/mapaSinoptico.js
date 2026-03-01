@@ -11,7 +11,13 @@
     if (!dataEl) return;
 
     const rawText = dataEl.textContent || '';
-    const { edges, nodes } = parseLines(rawText);
+    let parsed = { edges: [], nodes: [] };
+    try {
+      parsed = parseLines(rawText);
+    } catch (err) {
+      console.warn('[mapaSinoptico] error parsing data', err);
+    }
+    const { edges, nodes } = parsed;
 
     const levelsWrapper = container.querySelector('.eu-mapa-sinoptico-levels');
     const svgEl = container.querySelector('.eu-mapa-sinoptico-svg');
@@ -191,11 +197,11 @@
     return { levels, childrenMap };
   }
 
-  function drawConnections(container, childrenMap, svg) {
+  function drawConnections(container, childrenMap, svg, containerRect = null) {
     if (!svg) return;
     svg.innerHTML = '';
 
-    const wrapperRect = container.getBoundingClientRect();
+    const wrapperRect = containerRect || container.getBoundingClientRect();
     svg.setAttribute('width', wrapperRect.width);
     svg.setAttribute('height', wrapperRect.height);
     svg.setAttribute('viewBox', `0 0 ${wrapperRect.width} ${wrapperRect.height}`);

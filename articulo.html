@@ -12,6 +12,16 @@ title: Cargando artículo...
 
 <script>
 (async function() {
+  function escapeAttr(str) {
+    return String(str || '').replace(/[&<>\"']/g, c => ({
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      '"': '&quot;',
+      "'": '&#39;'
+    }[c] || c));
+  }
+
   const API = window.EU_CONFIG.backendUrl;
   const BASE = window.EU_CONFIG.baseUrl;
   const params = new URLSearchParams(window.location.search);
