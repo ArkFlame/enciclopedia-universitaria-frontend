@@ -1,0 +1,59 @@
+/* ── ADMIN PANEL ─────────────────────────────────────────────── */
+.eu-admin-layout {
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  min-height: calc(100vh - 120px);
+}
+
+.eu-admin-sidebar {
+  border-right: 1px solid var(--eu-border);
+  background: var(--eu-surface);
+}
+
+.eu-admin-main { padding: 32px; }
+.eu-admin-nav { display: flex; flex-direction: column; }
+.eu-admin-nav a {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 20px; color: var(--eu-text); text-decoration: none;
+  font-size: .9rem; transition: background .15s; border-radius: 0;
+}
+.eu-admin-nav a:hover { background: var(--eu-bg-secondary); }
+.eu-admin-nav a.active { background: var(--eu-text); color: var(--eu-surface); font-weight: 600; }
+
+/* Stats cards admin */
+.eu-stat-card {
+  background: var(--eu-surface);
+  border: 1px solid var(--eu-border);
+  border-radius: var(--eu-radius-lg);
+  padding: 20px 24px;
+}
+
+.eu-stat-number { font-size: 2rem; font-weight: 800; line-height: 1; margin-bottom: 4px; }
+.eu-stat-label { font-size: 0.8rem; color: var(--eu-text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
+
+/* Tabla admin */
+.eu-admin-table { width: 100%; border-collapse: collapse; font-size: .88rem; }
+.eu-admin-table th {
+  text-align: left; padding: 10px 12px; font-size: .75rem;
+  letter-spacing: .06em; text-transform: uppercase;
+  border-bottom: 2px solid var(--eu-text); color: var(--eu-text-muted);
+}
+.eu-admin-table td { padding: 12px; border-bottom: 1px solid var(--eu-border); vertical-align: top; }
+.eu-admin-table tr:hover td { background: var(--eu-bg-secondary); }
+
+/* ── PAGINATION ──────────────────────────────────────────── */
+.eu-pagination-inner {
+  display: flex; gap: 4px; justify-content: center; flex-wrap: wrap;
+}
+.eu-pagination-inner button {
+  min-width: 36px; height: 36px; border: 1px solid var(--eu-border);
+  background: var(--eu-surface); color: var(--eu-text);
+  border-radius: var(--eu-radius-sm); cursor: pointer;
+  font-size: .88rem; transition: all .15s; padding: 0 8px;
+}
+.eu-pagination-inner button:hover { background: var(--eu-bg-secondary); }
+.eu-pagination-inner button.active {
+  background: var(--eu-text); color: var(--eu-surface);
+  border-color: var(--eu-text); font-weight: 700;
+}
+.eu-pagination-inner span { display: flex; align-items: center; padding: 0 4px; color: var(--eu-text-muted); }

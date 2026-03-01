@@ -99,6 +99,9 @@ title: Cargando artículo...
     const sources = data.sources || [];
     const pdfSources = sources.filter(s => s.type === 'pdf');
     const linkSources = sources.filter(s => s.type === 'link');
+    const buildSourceAttr = (s) => {
+      return `id="eu-source-${s.id}" data-source-title="${escapeAttr(s.title)}"`;
+    };
     
     const pdfIconSvg = `<svg class="eu-source-pdf-icon" viewBox="0 0 24 24" fill="currentColor" style="width:18px;height:18px;flex-shrink:0;color:#dc2626"><path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z"/></svg>`;
 
@@ -107,7 +110,7 @@ title: Cargando artículo...
         <h4><i class="bi bi-link-45deg me-1"></i>Fuentes</h4>
         <div class="eu-sources-list">
           ${pdfSources.map(s => `
-            <a href="${API}/api/sources/pdf/${s.id}" target="_blank" class="eu-source-item eu-source-pdf">
+            <a ${buildSourceAttr(s)} href="${API}/api/sources/pdf/${s.id}" target="_blank" class="eu-source-item eu-source-pdf">
               ${pdfIconSvg}
               <div style="flex:1;min-width:0">
                 <div class="eu-source-title">${escapeHtml(s.title)}</div>
@@ -116,7 +119,7 @@ title: Cargando artículo...
             </a>
           `).join('')}
           ${linkSources.map(s => `
-            <a href="${escapeHtml(s.url)}" target="_blank" rel="noopener noreferrer" class="eu-source-item eu-source-link">
+            <a ${buildSourceAttr(s)} href="${escapeHtml(s.url)}" target="_blank" rel="noopener noreferrer" class="eu-source-item eu-source-link">
               ${s.favicon_url
                 ? `<img src="${escapeHtml(s.favicon_url)}" alt="" class="eu-source-favicon" onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22><path fill=%22%23666%22 d=%22M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71%22/><path fill=%22%23666%22 d=%22M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71%22/></svg>'">`
                 : `<i class="bi bi-link-45deg" style="font-size:1rem;flex-shrink:0"></i>`}
@@ -186,6 +189,7 @@ title: Cargando artículo...
       </div>`;
 
     // Inicializar componentes tras renderizar
+    linkSourceRefs();
     window.dispatchEvent(new Event('eu:content-loaded'));
 
     // MathJax para fórmulas
@@ -195,29 +199,7 @@ title: Cargando artículo...
       document.head.appendChild(script);
     }
 
-    // Inicializar Family Trees (Mapa Conceptual)
-    if (document.querySelector('[data-family-tree]')) {
-      document.querySelectorAll('.eu-tree-node').forEach(node => {
-        node.addEventListener('click', function(e) {
-          e.stopPropagation();
-
-          document.querySelectorAll('.eu-tree-node').forEach(n => {
-            n.style.transform = '';
-            n.style.boxShadow = '';
-          });
-
-          this.style.transform = 'scale(1.05)';
-          this.style.boxShadow = '0 0 0 4px rgba(59, 130, 246, 0.3), 0 10px 15px -3px rgba(0, 0, 0, 0.1)';
-
-          setTimeout(() => {
-            this.style.transform = '';
-            this.style.boxShadow = '';
-          }, 2000);
-        });
-      });
-    }
-
-    // DEPRECATED: Old Mermaid initialization removed. The family-tree shortcode replaces mapa-sinoptico with a pure CSS solution.
+    // The mapa-sinoptico.js helper handles rendering and interactions for the new mapa sinoptico shortcode.
 
   } catch (err) {
     document.getElementById('articlePage').innerHTML = `
@@ -258,6 +240,29 @@ title: Cargando artículo...
 
   function escapeHtml(s) {
     return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+
+  function linkSourceRefs() {
+    const refs = Array.from(document.querySelectorAll('.eu-source-ref'));
+    if (!refs.length) return;
+    const sources = Array.from(document.querySelectorAll('.eu-source-item'));
+    refs.forEach(ref => {
+      const title = ref.dataset.sourceTitle;
+      const target = title
+        ? sources.find(el => el.dataset.sourceTitle === title)
+        : sources[0];
+      if (target) {
+        ref.href = `#${target.id}`;
+        ref.addEventListener('click', function(e) {
+          e.preventDefault();
+          target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          target.classList.add('eu-source-highlighted');
+          setTimeout(() => target.classList.remove('eu-source-highlighted'), 1600);
+        });
+      } else {
+        ref.href = '#';
+      }
+    });
   }
 
   function renderSummaryMarkdown(text) {

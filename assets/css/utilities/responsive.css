@@ -1,0 +1,81 @@
+/* ── RESPONSIVE ──────────────────────────────────────────────── */
+@media (max-width: 1024px) {
+  .eu-article-wrapper { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 991px) {
+  .eu-article-wrapper {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .eu-main { padding: 20px 16px; }
+  .eu-articles-grid { grid-template-columns: 1fr; }
+  .eu-article-wrapper { grid-template-columns: 1fr; }
+  .eu-admin-layout { grid-template-columns: 1fr; }
+  .eu-admin-sidebar { position: static; height: auto; border-right: none; border-bottom: 1px solid var(--eu-border); }
+  .eu-admin-nav { flex-direction: row; flex-wrap: wrap; }
+  .eu-admin-nav a { font-size: .8rem; padding: 8px 12px; }
+  .eu-paywall { padding: 24px 20px; }
+  .eu-navbar-inner { padding: 0 16px; gap: 8px; }
+  .eu-navbar-inner { padding: 0 12px; gap: 8px; }
+  
+  .eu-article-wrapper {
+    flex-direction: column;
+    padding: 16px;
+  }
+  
+  .eu-article-sidebar {
+    width: 100% !important;
+    min-width: unset !important;
+  }
+  
+  .eu-article-title { font-size: 1.6rem !important; }
+  
+  .eu-editor-toolbar { gap: 1px; }
+  .eu-editor-btn { padding: 3px 6px; font-size: 0.75rem; }
+  
+  .eu-card { padding: 16px !important; }
+  
+  .eu-sources-editor-form { flex-direction: column; }
+  .eu-cuadro-sinoptico .ml-96 { margin-left: 0; }
+  .eu-cuadro-sinoptico .absolute { position: relative !important; }
+  .eu-cuadro-sinoptico .w-80 { width: 100%; margin-bottom: 2rem; }
+  .eu-cuadro-sinoptico .etapa { flex-direction: column; gap: 1rem; }
+  .eu-cuadro-sinoptico .etapa:hover { transform: none; }
+  .eu-family-tree-wrapper ul {
+    gap: 1rem;
+  }
+  
+  .eu-tree-node {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.85rem;
+    min-width: 100px;
+  }
+  
+  .eu-tree-node-wrapper {
+    padding-top: 1.5rem;
+  }
+  
+  .eu-tree-node-wrapper::after,
+  .eu-tree-node-wrapper > ul::before {
+    height: 1.5rem;
+  }
+  
+  .eu-tree-node-wrapper > ul {
+    margin-top: 1.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .eu-logo-text { display: none; }
+  .eu-read-counter { display: none !important; }
+  .eu-article-meta { flex-direction: column; gap: 4px !important; }
+  .eu-article-meta span:nth-child(even) { display: none; }
+  
+  .eu-btn-primary, .eu-btn-outline { 
+    padding: 8px 14px;
+    font-size: 0.88rem;
+  }
+}

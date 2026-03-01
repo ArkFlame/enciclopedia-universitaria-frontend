@@ -1,0 +1,94 @@
+/* ── MAPA SINÓPTICO ────────────────────────────────────────── */
+.eu-mapa-sinoptico {
+  margin: 2.5rem 0;
+}
+.eu-mapa-sinoptico .eu-mapa-sinoptico-wrapper {
+  position: relative;
+  padding: 36px 24px;
+  background: var(--eu-bg-secondary);
+  border: 1px solid var(--eu-border);
+  border-radius: var(--eu-radius-lg);
+  overflow: hidden;
+}
+.eu-mapa-sinoptico .eu-mapa-sinoptico-wrapper::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(135deg, rgba(255,255,255,0.08), transparent 60%);
+  opacity: 0.6;
+}
+.eu-mapa-sinoptico .eu-mapa-sinoptico-svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  color: var(--eu-text);
+  z-index: 0;
+}
+.eu-mapa-sinoptico-svg line {
+  stroke: currentColor;
+  stroke-width: 2;
+}
+.eu-mapa-sinoptico .eu-mapa-sinoptico-levels {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 2.5rem;
+  z-index: 1;
+}
+.eu-mapa-sinoptico .eu-mapa-sinoptico-level {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 1.4rem;
+}
+.eu-mapa-sinoptico-node {
+  border-radius: 999px;
+  border: 1px solid var(--node-border, var(--eu-border));
+  padding: 0.85rem 1.7rem;
+  font-weight: 600;
+  font-size: 0.95rem;
+  background: var(--node-bg, var(--eu-bg));
+  color: var(--node-text, var(--eu-text));
+  transition: transform .2s ease, box-shadow .2s ease;
+  cursor: pointer;
+  position: relative;
+  z-index: 1;
+}
+.eu-mapa-sinoptico-node-active {
+  transform: scale(1.05);
+  box-shadow: 0 10px 20px rgba(0,0,0,.25);
+}
+.eu-mapa-sinoptico-caption {
+  margin-top: 1rem;
+  font-size: 0.85rem;
+  color: var(--eu-text-muted);
+  text-align: center;
+}
+.eu-mapa-sinoptico-empty {
+  padding: 1rem 0;
+  text-align: center;
+  font-size: 0.9rem;
+  color: var(--eu-text-muted);
+}
+@media (max-width: 768px) {
+  .eu-mapa-sinoptico .eu-mapa-sinoptico-wrapper {
+    padding: 28px 18px;
+  }
+  .eu-mapa-sinoptico .eu-mapa-sinoptico-levels {
+    gap: 1.6rem;
+  }
+  .eu-mapa-sinoptico-node {
+    max-width: 260px;
+    width: 100%;
+  }
+}
+[data-theme="dark"] .eu-mapa-sinoptico .eu-mapa-sinoptico-wrapper {
+  background: var(--eu-bg-tertiary);
+  border-color: var(--eu-border);
+}
+[data-theme="dark"] .eu-mapa-sinoptico-node {
+  box-shadow: 0 6px 18px rgba(0,0,0,.4);
+}

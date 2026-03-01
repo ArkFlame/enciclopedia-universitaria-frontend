@@ -198,72 +198,37 @@ Péndulo doble, clima y cadenas logísticas.
   </section>
 
   <section id="mapa" class="mb-5">
-    <h2 class="eu-section-title">🗺️ Mapa Conceptual (Family Tree)</h2>
-    <p class="text-muted mb-3">Construí jerarquías padre-hijo con el shortcode <code>[family-tree]</code>. Cada <code>[node]</code> anidado dibuja un nodo conectado con CSS puro.</p>
-    <div class="eu-card p-4">
-      <div class="eu-label mb-1">Código:</div>
+    <h2 class="eu-section-title">🗺️ Mapa Sinóptico</h2>
+    <p class="text-muted mb-3">El shortcode <code>[mapa-sinoptico]</code> dibuja relaciones padre-hijo usando líneas del tipo <code>Padre -> Hijo</code>. Asigna un nombre con <code>name="..."</code> para mostrar un título descriptivo.</p>
+    <div class="eu-card p-4 mb-4">
+      <div class="eu-label mb-1">Ejemplo recomendado:</div>
       <pre style="background:var(--eu-code-bg);padding:12px;border-radius:8px;overflow-x:auto;">
-[family-tree name="Clasificación de células"]
-  [node label="Célula" color="#f59e0b"]
-    [node label="Eucariota" color="#3b82f6"]
-      [node label="Animal" color="#10b981"][/node]
-      [node label="Vegetal" color="#84cc16"][/node]
-    [/node]
-    [node label="Procariota" color="#ec4899"]
-      [node label="Bacteria" color="#06b6d4"][/node]
-      [node label="Archaeas" color="#f43f5e"][/node]
-    [/node]
-  [/node]
-[/family-tree]
-      </pre>
-      <div class="eu-label mt-3 mb-1">Resultado renderizado:</div>
-      <div class="eu-family-tree-container">
-        <div class="eu-family-tree-wrapper">
-          <ul class="eu-tree-level">
-            <li class="eu-tree-node-wrapper">
-              <div class="eu-tree-node" style="--node-color:#f59e0b;background:#f59e0b;color:white">
-                <span class="eu-tree-label">Célula</span>
-              </div>
-              <ul class="eu-tree-level">
-                <li class="eu-tree-node-wrapper">
-                  <div class="eu-tree-node" style="--node-color:#3b82f6;background:#3b82f6;color:white">
-                    <span class="eu-tree-label">Eucariota</span>
-                  </div>
-                  <ul class="eu-tree-level">
-                    <li class="eu-tree-node-wrapper">
-                      <div class="eu-tree-node" style="--node-color:#10b981;background:#10b981;color:white">
-                        <span class="eu-tree-label">Animal</span>
-                      </div>
-                    </li>
-                    <li class="eu-tree-node-wrapper">
-                      <div class="eu-tree-node" style="--node-color:#84cc16;background:#84cc16;color:white">
-                        <span class="eu-tree-label">Vegetal</span>
-                      </div>
-                    </li>
-                  </ul>
-                </li>
-                <li class="eu-tree-node-wrapper">
-                  <div class="eu-tree-node" style="--node-color:#ec4899;background:#ec4899;color:white">
-                    <span class="eu-tree-label">Procariota</span>
-                  </div>
-                  <ul class="eu-tree-level">
-                    <li class="eu-tree-node-wrapper">
-                      <div class="eu-tree-node" style="--node-color:#06b6d4;background:#06b6d4;color:white">
-                        <span class="eu-tree-label">Bacteria</span>
-                      </div>
-                    </li>
-                    <li class="eu-tree-node-wrapper">
-                      <div class="eu-tree-node" style="--node-color:#f43f5e;background:#f43f5e;color:white">
-                        <span class="eu-tree-label">Archaeas</span>
-                      </div>
-                    </li>
-                  </ul>
-                </li>
-              </ul>
-            </li>
-          </ul>
+[mapa-sinoptico name="Clasificación de células"]
+Célula -> Eucariota
+Eucariota -> Animal
+Eucariota -> Vegetal
+Célula -> Procariota
+Procariota -> Bacteria
+Procariota -> Archaea
+[/mapa-sinoptico]</pre>
+      <div class="small text-muted mt-2">Cada línea representa un vínculo. También podés conservar <code>[family-tree]</code> en artículos viejos: el parser los convierte automáticamente.</div>
+    </div>
+    <div class="eu-card p-4">
+      <div class="eu-label mb-1">Resultado renderizado:</div>
+      <div class="eu-mapa-sinoptico" data-caption="Clasificación de células" data-node-colors='{"Célula":"#f59e0b","Eucariota":"#3b82f6","Animal":"#10b981","Vegetal":"#84cc16","Procariota":"#ec4899","Bacteria":"#06b6d4","Archaea":"#f43f5e"}'>
+        <div class="eu-mapa-sinoptico-wrapper">
+          <svg class="eu-mapa-sinoptico-svg" aria-hidden="true" focusable="false"></svg>
+          <div class="eu-mapa-sinoptico-levels" role="presentation"></div>
         </div>
-        <p class="eu-tree-caption">🗺️ Clasificación de células</p>
+        <div class="eu-mapa-sinoptico-caption"></div>
+        <pre class="eu-mapa-sinoptico-data" hidden>
+Célula -> Eucariota
+Eucariota -> Animal
+Eucariota -> Vegetal
+Célula -> Procariota
+Procariota -> Bacteria
+Procariota -> Archaea
+        </pre>
       </div>
     </div>
   </section>
@@ -395,20 +360,16 @@ Péndulo doble, clima y cadenas logísticas.
       '```markdown',
       '[tabs]\n[tab title="Definición"]La teoría del caos estudia sistemas sobre sensibilidad a condiciones iniciales.[/tab]\n[tab title="Ejemplos"]Péndulo doble, clima y logística.[/tab]\n[/tabs]',
       '```',
-      '### Mapa conceptual (Family Tree)',
+      '### Mapa sinóptico',
       '```markdown',
-      '[family-tree name="Clasificación de células"]',
-      '  [node label="Célula" color="#f59e0b"]',
-      '    [node label="Eucariota" color="#3b82f6"]',
-      '      [node label="Animal" color="#10b981"][/node]',
-      '      [node label="Vegetal" color="#84cc16"][/node]',
-      '    [/node]',
-      '    [node label="Procariota" color="#ec4899"]',
-      '      [node label="Bacteria" color="#06b6d4"][/node]',
-      '      [node label="Archaeas" color="#f43f5e"][/node]',
-      '    [/node]',
-      '  [/node]',
-      '[/family-tree]',
+      '[mapa-sinoptico name="Clasificación de células"]',
+      'Célula -> Eucariota',
+      'Eucariota -> Animal',
+      'Eucariota -> Vegetal',
+      'Célula -> Procariota',
+      'Procariota -> Bacteria',
+      'Procariota -> Archaea',
+      '[/mapa-sinoptico]',
       '```',
       '### Ref',
       '```markdown',
@@ -432,7 +393,7 @@ Péndulo doble, clima y cadenas logísticas.
       '4. Si se rechaza, corregir la versión y reenviar.',
       '',
       '## Resultado',
-      'El artículo aprobado muestra exactamente los componentes interactivos de esta guía, incluyendo tooltip, alertas, acordeones, tabs, mapas conceptuales (family trees) y referencias internas.'
+      'El artículo aprobado muestra exactamente los componentes interactivos de esta guía, incluyendo tooltip, alertas, acordeones, tabs, mapas sinópticos y referencias internas.'
     ].join('\n');
   }
 

@@ -1,0 +1,81 @@
+/* ── MEDIA MANAGER ─────────────────────────────────────── */
+.eu-media-manager { background: var(--eu-surface); border: 1px solid var(--eu-border); border-radius: var(--eu-radius-lg); overflow: hidden; height: 100%; display: flex; flex-direction: column; }
+.eu-media-header { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; background: var(--eu-bg-secondary); border-bottom: 1px solid var(--eu-border); }
+.eu-media-header h5 { margin: 0; font-size: 1rem; font-family: var(--eu-font-display); }
+.eu-media-tabs { display: flex; border-bottom: 1px solid var(--eu-border); background: var(--eu-bg-secondary); }
+.eu-media-tabs .nav-link { padding: 10px 12px; font-size: 0.8rem; color: var(--eu-text-secondary); border: none; border-radius: 0; background: transparent; }
+.eu-media-tabs .nav-link.active { color: var(--eu-text); background: var(--eu-surface); font-weight: 600; }
+.eu-media-content { flex: 1; overflow-y: auto; max-height: 400px; }
+.eu-media-upload { padding: 12px; border-bottom: 1px solid var(--eu-border); }
+.eu-media-upload-box { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; border: 2px dashed var(--eu-border); border-radius: var(--eu-radius); cursor: pointer; transition: all .15s; color: var(--eu-text-secondary); }
+.eu-media-upload-box:hover { border-color: var(--eu-text); background: var(--eu-bg-secondary); }
+.eu-media-upload-box i { font-size: 1.5rem; margin-bottom: 8px; }
+.eu-media-upload-box span { font-size: 0.875rem; font-weight: 500; }
+.eu-media-upload-box small { font-size: 0.75rem; color: var(--eu-text-muted); margin-top: 4px; }
+.eu-media-list { padding: 8px; }
+.eu-media-item { display: flex; align-items: center; gap: 10px; padding: 8px; border-radius: var(--eu-radius); cursor: pointer; transition: background-color .15s; position: relative; }
+.eu-media-item:hover { background: var(--eu-bg-secondary); }
+.eu-media-thumb { width: 48px; height: 48px; object-fit: cover; border-radius: 6px; flex-shrink: 0; }
+.eu-media-icon { width: 48px; height: 48px; display: flex; align-items: center; justify-content: center; border-radius: 6px; flex-shrink: 0; }
+.eu-media-icon.pdf-icon { font-size: 2rem; color: #dc2626; }
+.eu-media-icon.favicon { width: 20px; height: 20px; }
+.eu-media-info { flex: 1; min-width: 0; }
+.eu-media-name { font-size: 0.8rem; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.eu-media-action { font-size: 0.7rem; color: var(--eu-text-muted); }
+.eu-media-delete { opacity: 0; background: none; border: none; color: var(--eu-danger); cursor: pointer; padding: 4px; transition: opacity .15s; }
+.eu-media-item:hover .eu-media-delete { opacity: 1; }
+.eu-sources-form { padding: 12px; border-bottom: 1px solid var(--eu-border); }
+.progress-bar { height: 4px; background: var(--eu-border); border-radius: 2px; margin-top: 8px; overflow: hidden; }
+.progress-bar::before { content: ''; display: block; height: 100%; background: var(--eu-success); width: var(--progress, 0%); transition: width .3s; }
+
+/* ── IMAGE UPLOAD GRID ────────────────────────────────── */
+.eu-media-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.eu-media-thumb {
+  position: relative;
+  border-radius: 6px;
+  overflow: hidden;
+  aspect-ratio: 1;
+  background: var(--eu-bg-secondary);
+  border: 1px solid var(--eu-border);
+}
+
+.eu-media-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.eu-media-thumb-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.6);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  opacity: 0;
+  transition: opacity .2s;
+}
+
+.eu-media-thumb:hover .eu-media-thumb-overlay { opacity: 1; }
+
+.eu-media-thumb-overlay button {
+  font-size: 0.65rem;
+  padding: 3px 8px;
+  border-radius: 3px;
+  border: 1px solid rgba(255,255,255,.5);
+  background: rgba(255,255,255,.2);
+  color: white;
+  cursor: pointer;
+  width: 90%;
+  transition: background .15s;
+}
+
+.eu-media-thumb-overlay button:hover { background: rgba(255,255,255,.35); }

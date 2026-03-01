@@ -1,0 +1,27 @@
+/* ── FOOTER ──────────────────────────────────────────────────── */
+.eu-footer {
+  background: var(--eu-bg-secondary);
+  border-top: 1px solid var(--eu-border);
+  padding: 48px 0 0;
+  margin-top: 64px;
+}
+
+.eu-footer-heading {
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--eu-text-muted);
+  margin-bottom: 12px;
+}
+
+.eu-footer-links { list-style: none; display: flex; flex-direction: column; gap: 6px; }
+.eu-footer-links a { font-size: 0.88rem; color: var(--eu-text-secondary); }
+.eu-footer-links a:hover { color: var(--eu-text); }
+
+.eu-footer-bottom {
+  margin-top: 32px;
+  padding: 16px 0;
+  border-top: 1px solid var(--eu-border);
+  text-align: center;
+}

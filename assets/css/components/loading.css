@@ -1,0 +1,30 @@
+/* ── LOADING ─────────────────────────────────────────────────── */
+.eu-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  gap: 16px;
+  color: var(--eu-text-muted);
+  font-size: 0.9rem;
+}
+
+.eu-spinner {
+  width: 32px;
+  height: 32px;
+  border: 2.5px solid var(--eu-border);
+  border-top-color: var(--eu-text);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.eu-empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--eu-text-muted);
+}
+
+.eu-empty-state i { font-size: 3rem; margin-bottom: 16px; display: block; }

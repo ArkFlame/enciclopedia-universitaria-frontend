@@ -1,0 +1,67 @@
+/* Editor Markdown */
+.eu-editor-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  padding: 6px 8px;
+  background: var(--eu-bg-secondary);
+  border: 1px solid var(--eu-border);
+  border-bottom: none;
+  border-radius: var(--eu-radius) var(--eu-radius) 0 0;
+}
+
+.eu-editor-btn {
+  padding: 4px 9px;
+  background: none;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.8rem;
+  color: var(--eu-text);
+  transition: all .15s;
+  font-family: var(--eu-font-body);
+  white-space: nowrap;
+}
+
+.eu-editor-btn:hover { background: var(--eu-border); }
+.eu-editor-btn.active { background: var(--eu-text); color: var(--eu-bg); }
+
+.eu-editor-separator {
+  width: 1px;
+  background: var(--eu-border);
+  margin: 2px 4px;
+  align-self: stretch;
+}
+
+.eu-editor-area {
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 0.88rem;
+  line-height: 1.7;
+  min-height: 450px;
+  resize: vertical;
+}
+
+.eu-preview-area {
+  border: 1.5px solid var(--eu-border);
+  border-radius: var(--eu-radius);
+  padding: 20px;
+  min-height: 200px;
+  background: var(--eu-surface);
+}
+
+/* ── SUMMARY EDITOR TOOLBAR ───────────────────────────── */
+.eu-summary-toolbar {
+  display: flex;
+  gap: 2px;
+  padding: 4px 6px;
+  background: var(--eu-bg-secondary);
+  border: 1px solid var(--eu-border);
+  border-bottom: none;
+  border-radius: var(--eu-radius) var(--eu-radius) 0 0;
+  flex-wrap: wrap;
+}
+
+.eu-summary-textarea {
+  border-radius: 0 0 var(--eu-radius) var(--eu-radius) !important;
+  border-top: none !important;
+}

@@ -1,0 +1,101 @@
+/* ── OVERRIDES BOOTSTRAP ─────────────────────────────────────── */
+[data-theme="dark"] .accordion-button::after { filter: invert(1); }
+[data-theme="dark"] .btn-close { filter: invert(1); }
+[data-theme="dark"] .alert { border-color: var(--eu-border); }
+[data-theme="dark"] .alert-info { background: #1e3a5f; color: #93c5fd; }
+[data-theme="dark"] .alert-warning { background: #451a03; color: #fbbf24; }
+[data-theme="dark"] .alert-danger { background: #450a0a; color: #f87171; }
+[data-theme="dark"] .alert-success { background: #14532d; color: #4ade80; }
+
+/* ================================================================
+   DARK MODE FIXES & NEW FEATURES - 2026 Update
+================================================================ */
+
+/* Fix: Bootstrap text-muted and text classes in dark mode */
+[data-theme="dark"] .text-muted,
+[data-theme="dark"] p.text-muted,
+[data-theme="dark"] span.text-muted,
+[data-theme="dark"] .small.text-muted,
+[data-theme="dark"] small.text-muted {
+  color: var(--eu-text-secondary) !important;
+}
+
+/* Fix: Footer text in dark mode */
+[data-theme="dark"] .eu-footer p,
+[data-theme="dark"] .eu-footer span,
+[data-theme="dark"] .eu-footer .text-muted {
+  color: var(--eu-text-secondary) !important;
+}
+
+[data-theme="dark"] .eu-footer-bottom .text-muted {
+  color: var(--eu-text-secondary) !important;
+}
+
+/* Fix: Profile dropdown (Bootstrap .dropdown-menu) dark mode */
+[data-theme="dark"] .dropdown-menu,
+[data-theme="dark"] .eu-dropdown-menu {
+  background-color: var(--eu-surface) !important;
+  border-color: var(--eu-border) !important;
+  color: var(--eu-text) !important;
+}
+
+[data-theme="dark"] .dropdown-item {
+  color: var(--eu-text) !important;
+}
+
+[data-theme="dark"] .dropdown-item:hover,
+[data-theme="dark"] .dropdown-item:focus {
+  background-color: var(--eu-bg-secondary) !important;
+  color: var(--eu-text) !important;
+}
+
+[data-theme="dark"] .dropdown-divider {
+  border-color: var(--eu-border) !important;
+}
+
+[data-theme="dark"] .dropdown-menu .px-3.py-2 {
+  color: var(--eu-text-secondary) !important;
+}
+
+/* Dark mode: ensure all Bootstrap alerts are themed */
+[data-theme="dark"] .alert-info {
+  background: #1e3a5f;
+  color: #93c5fd;
+  border-color: #1d4ed8;
+}
+[data-theme="dark"] .alert-success {
+  background: #14532d;
+  color: #86efac;
+  border-color: #15803d;
+}
+[data-theme="dark"] .alert-warning {
+  background: #451a03;
+  color: #fbbf24;
+  border-color: #f59e0b;
+}
+[data-theme="dark"] .alert-danger {
+  background: #450a0a;
+  color: #f87171;
+  border-color: #f43f5e;
+}
+[data-theme="dark"] .alert-light {
+  background: var(--eu-bg-secondary);
+  color: var(--eu-text);
+}
+
+/* Dark mode adjustments */
+[data-theme="dark"] .eu-family-tree-container {
+  background: var(--eu-bg-secondary, #1f2937);
+  border-color: var(--eu-border, #374151);
+}
+
+[data-theme="dark"] .eu-tree-node {
+  border-color: #1f2937;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+}
+
+[data-theme="dark"] .eu-tree-node-wrapper::before,
+[data-theme="dark"] .eu-tree-node-wrapper::after,
+[data-theme="dark"] .eu-tree-node-wrapper > ul::before {
+  background: var(--eu-border, #4b5563);
+}

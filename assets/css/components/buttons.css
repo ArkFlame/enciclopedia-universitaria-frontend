@@ -1,0 +1,51 @@
+/* Botones */
+.eu-btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 18px;
+  background: var(--eu-accent);
+  color: var(--eu-text-inverse);
+  border: none;
+  border-radius: var(--eu-radius);
+  font-size: 0.88rem;
+  font-weight: 600;
+  font-family: var(--eu-font-body);
+  cursor: pointer;
+  transition: all var(--eu-transition);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.eu-btn-primary:hover {
+  background: var(--eu-accent-hover);
+  color: var(--eu-text-inverse);
+  text-decoration: none;
+  transform: translateY(-1px);
+  box-shadow: var(--eu-shadow);
+}
+
+.eu-btn-outline {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 18px;
+  background: transparent;
+  color: var(--eu-text);
+  border: 1.5px solid var(--eu-border);
+  border-radius: var(--eu-radius);
+  font-size: 0.88rem;
+  font-weight: 500;
+  font-family: var(--eu-font-body);
+  cursor: pointer;
+  transition: all var(--eu-transition);
+  text-decoration: none;
+}
+
+.eu-btn-outline:hover {
+  background: var(--eu-bg-secondary);
+  color: var(--eu-text);
+  text-decoration: none;
+}
+
+.eu-btn-sm { padding: 5px 12px; font-size: 0.8rem; }

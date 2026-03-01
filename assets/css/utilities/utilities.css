@@ -1,0 +1,21 @@
+/* ── UTILIDADES ──────────────────────────────────────────────── */
+.eu-divider { height: 1px; background: var(--eu-border); margin: 24px 0; }
+.eu-section-title { font-family: var(--eu-font-display); font-size: 1.4rem; font-weight: 700; margin-bottom: 8px; }
+.eu-section-subtitle { color: var(--eu-text-muted); font-size: 0.9rem; margin-bottom: 24px; }
+
+/* Dropdown menu */
+.eu-dropdown-menu {
+  background: var(--eu-surface);
+  color: var(--eu-text);
+  border: 1px solid var(--eu-border);
+  box-shadow: var(--eu-shadow-lg);
+}
+
+.eu-dropdown-menu .dropdown-item {
+  color: var(--eu-text);
+}
+
+.eu-dropdown-menu .dropdown-item:hover {
+  background: var(--eu-bg-secondary);
+  color: var(--eu-text);
+}
