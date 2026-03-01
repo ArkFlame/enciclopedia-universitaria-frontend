@@ -2,9 +2,11 @@
 .eu-article-wrapper {
   display: grid;
   grid-template-columns: 1fr 280px;
-  gap: 40px;
+  gap: clamp(24px, 4vw, 40px);
   max-width: 1200px;
+  width: min(100%, 1200px);
   margin: 0 auto;
+  box-sizing: border-box;
 }
 
 .eu-article-header {

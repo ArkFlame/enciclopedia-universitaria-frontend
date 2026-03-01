@@ -12,7 +12,6 @@
 @media (max-width: 768px) {
   .eu-main { padding: 20px 16px; }
   .eu-articles-grid { grid-template-columns: 1fr; }
-  .eu-article-wrapper { grid-template-columns: 1fr; }
   .eu-admin-layout { grid-template-columns: 1fr; }
   .eu-admin-sidebar { position: static; height: auto; border-right: none; border-bottom: 1px solid var(--eu-border); }
   .eu-admin-nav { flex-direction: row; flex-wrap: wrap; }
@@ -20,24 +19,27 @@
   .eu-paywall { padding: 24px 20px; }
   .eu-navbar-inner { padding: 0 16px; gap: 8px; }
   .eu-navbar-inner { padding: 0 12px; gap: 8px; }
-  
+
   .eu-article-wrapper {
-    flex-direction: column;
-    padding: 16px;
+    grid-template-columns: 1fr;
+    padding: 0 16px 32px;
+    gap: 32px;
   }
-  
+
   .eu-article-sidebar {
     width: 100% !important;
     min-width: unset !important;
+    position: static;
+    top: auto;
   }
-  
+
   .eu-article-title { font-size: 1.6rem !important; }
-  
+
   .eu-editor-toolbar { gap: 1px; }
   .eu-editor-btn { padding: 3px 6px; font-size: 0.75rem; }
-  
+
   .eu-card { padding: 16px !important; }
-  
+
   .eu-sources-editor-form { flex-direction: column; }
 }
 

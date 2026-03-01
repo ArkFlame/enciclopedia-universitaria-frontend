@@ -4,16 +4,24 @@
 }
 .eu-mapa-sinoptico-wrapper {
   position: relative;
+  width: 100%;
+  max-width: 100%;
   overflow-x: auto;
+  overflow-y: hidden;
   padding: 32px 30px;
   background: var(--eu-bg-secondary);
   border: 1px solid var(--eu-border);
   border-radius: var(--eu-radius-lg);
+  box-sizing: border-box;
+  overscroll-behavior-x: contain;
+  -webkit-overflow-scrolling: touch;
 }
 .eu-mapa-sinoptico-tree {
-  min-width: 840px;
+  width: max-content;
+  min-width: 100%;
   display: flex;
   flex-direction: column;
+  box-sizing: border-box;
 }
 .eu-mapa-sinoptico-node {
   position: relative;
