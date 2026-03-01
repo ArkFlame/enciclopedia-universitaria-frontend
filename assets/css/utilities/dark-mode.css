@@ -84,18 +84,3 @@
 }
 
 /* Dark mode adjustments */
-[data-theme="dark"] .eu-family-tree-container {
-  background: var(--eu-bg-secondary, #1f2937);
-  border-color: var(--eu-border, #374151);
-}
-
-[data-theme="dark"] .eu-tree-node {
-  border-color: #1f2937;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
-}
-
-[data-theme="dark"] .eu-tree-node-wrapper::before,
-[data-theme="dark"] .eu-tree-node-wrapper::after,
-[data-theme="dark"] .eu-tree-node-wrapper > ul::before {
-  background: var(--eu-border, #4b5563);
-}

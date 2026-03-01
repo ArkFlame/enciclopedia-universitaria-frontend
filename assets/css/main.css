@@ -22,8 +22,6 @@
 @import url('components/notifications.css');
 @import url('components/sources.css');
 @import url('components/media-manager.css');
-@import url('components/family-tree.css');
-@import url('components/cuadro-sinoptico.css');
 
 /* Utilities */
 @import url('utilities/utilities.css');

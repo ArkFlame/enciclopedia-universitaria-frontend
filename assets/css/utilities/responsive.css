@@ -39,33 +39,6 @@
   .eu-card { padding: 16px !important; }
   
   .eu-sources-editor-form { flex-direction: column; }
-  .eu-cuadro-sinoptico .ml-96 { margin-left: 0; }
-  .eu-cuadro-sinoptico .absolute { position: relative !important; }
-  .eu-cuadro-sinoptico .w-80 { width: 100%; margin-bottom: 2rem; }
-  .eu-cuadro-sinoptico .etapa { flex-direction: column; gap: 1rem; }
-  .eu-cuadro-sinoptico .etapa:hover { transform: none; }
-  .eu-family-tree-wrapper ul {
-    gap: 1rem;
-  }
-  
-  .eu-tree-node {
-    padding: 0.5rem 0.75rem;
-    font-size: 0.85rem;
-    min-width: 100px;
-  }
-  
-  .eu-tree-node-wrapper {
-    padding-top: 1.5rem;
-  }
-  
-  .eu-tree-node-wrapper::after,
-  .eu-tree-node-wrapper > ul::before {
-    height: 1.5rem;
-  }
-  
-  .eu-tree-node-wrapper > ul {
-    margin-top: 1.5rem;
-  }
 }
 
 @media (max-width: 480px) {
