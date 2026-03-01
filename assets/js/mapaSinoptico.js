@@ -1,6 +1,11 @@
 (() => {
   const instances = new Map();
   const RESIZE_DEBOUNCE_MS = 120;
+  const DEFAULT_NODE_PALETTE = [
+    '#f97316', '#10b981', '#3b82f6', '#a855f7', '#f43f5e',
+    '#14b8a6', '#facc15', '#ec4899', '#0ea5e9', '#22c55e',
+    '#6366f1', '#fb923c', '#06b6d4', '#db2777'
+  ];
 
   function initMapas(root = document) {
     root.querySelectorAll('.eu-mapa-sinoptico').forEach(renderMapa);
@@ -36,8 +41,9 @@
       return;
     }
 
-    const colorMap = parseColorMap(container.dataset.nodeColors);
+    const parsedColorMap = parseColorMap(container.dataset.nodeColors);
     const built = buildLevels(edges, nodes);
+    const colorMap = ensureNodeColors(container, parsedColorMap, nodes);
 
     if (!levelsWrapper) return;
     levelsWrapper.innerHTML = '';
@@ -159,6 +165,23 @@
       console.warn('[mapaSinoptico] color map JSON inválido', err);
     }
     return {};
+  }
+
+  function ensureNodeColors(container, baseMap, nodes) {
+    const normalized = { ...(baseMap || {}) };
+    let index = 0;
+    nodes.forEach(name => {
+      if (!normalized[name]) {
+        normalized[name] = DEFAULT_NODE_PALETTE[index % DEFAULT_NODE_PALETTE.length];
+        index++;
+      }
+    });
+    try {
+      container.dataset.nodeColors = JSON.stringify(normalized);
+    } catch (err) {
+      console.warn('[mapaSinoptico] no se pudo guardar color map', err);
+    }
+    return normalized;
   }
 
   function buildLevels(edges, nodes) {

@@ -48,16 +48,20 @@
 .eu-mapa-sinoptico-node {
   border-radius: var(--eu-radius-sm, 0.4rem);
   border: 1px solid var(--node-border, var(--eu-border));
-  padding: 0.65rem 1.4rem;
-  min-width: 150px;
+  padding: 0.55rem 1.2rem;
+  min-width: 120px;
   font-weight: 600;
-  font-size: 0.95rem;
+  font-size: 0.9rem;
   background: var(--node-bg, var(--eu-bg));
   color: var(--node-text, var(--eu-text));
   transition: transform .2s ease, box-shadow .2s ease;
   cursor: pointer;
   position: relative;
   z-index: 1;
+}
+
+.eu-mapa-sinoptico-data {
+  display: none !important;
 }
 .eu-mapa-sinoptico-node:hover {
   box-shadow: 0 8px 18px rgba(0,0,0,.2);
