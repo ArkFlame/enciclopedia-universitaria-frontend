@@ -375,7 +375,7 @@ body {
     icon.appendChild(path);
     button.appendChild(icon);
     const label = document.createElement('span');
-    label.textContent = DOWNLOAD_LABEL;
+    label.textContent = 'Descargar';
     button.appendChild(label);
     return button;
   }

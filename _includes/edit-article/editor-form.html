@@ -8,12 +8,12 @@
 
   <div class="mb-3">
     <label class="eu-label">Resumen <span class="text-muted fw-normal small">— Markdown habilitado</span></label>
-    <div class="eu-summary-toolbar">
-      <button class="eu-editor-btn" type="button" onclick="summaryWrapEdit('**','**')"><b>B</b></button>
-      <button class="eu-editor-btn" type="button" onclick="summaryWrapEdit('*','*')"><i>I</i></button>
-      <button class="eu-editor-btn" type="button" onclick="summaryLineEdit('- ')">• Lista</button>
-      <button class="eu-editor-btn" type="button" onclick="summaryLineEdit('1. ')">1. Lista</button>
-      <button class="eu-editor-btn" type="button" onclick="summaryAnchorEdit()">⚓ Sección</button>
+    <div class="eu-summary-toolbar" id="editSummaryToolbar">
+      <button class="eu-editor-btn" type="button" data-action="edit-sum-wrap" data-before="**" data-after="**"><b>B</b></button>
+      <button class="eu-editor-btn" type="button" data-action="edit-sum-wrap" data-before="*" data-after="*"><i>I</i></button>
+      <button class="eu-editor-btn" type="button" data-action="edit-sum-line" data-prefix="- ">&#x2022; Lista</button>
+      <button class="eu-editor-btn" type="button" data-action="edit-sum-line" data-prefix="1. ">1. Lista</button>
+      <button class="eu-editor-btn" type="button" data-action="edit-sum-anchor">&#x2693; Seccion</button>
     </div>
     <textarea id="editSummary" class="eu-input eu-summary-textarea" rows="4" maxlength="4000"></textarea>
   </div>
@@ -23,9 +23,18 @@
     {% include edit-article/toolbar.html %}
     <textarea id="editContent" class="eu-input eu-editor-textarea" spellcheck="true"></textarea>
     <div class="d-flex justify-content-between mt-1">
-      <span class="text-muted small">Ctrl+B negrita · Ctrl+I cursiva · <a href="#" id="shortcodesLink" target="_blank">Guía shortcodes</a></span>
+      <span class="text-muted small">Ctrl+B negrita · Ctrl+I cursiva · <a href="#" id="shortcodesLink" target="_blank">Guia shortcodes</a></span>
       <span class="text-muted small" id="charCount">0 car.</span>
     </div>
+    <!-- Collapsible preview below editor -->
+    <details class="eu-preview-details mt-3" id="editPreviewDetails">
+      <summary class="eu-preview-summary">
+        <i class="bi bi-eye me-1"></i> Vista previa <span class="eu-preview-hint text-muted small">(clic para expandir)</span>
+      </summary>
+      <div class="eu-preview-body mt-2">
+        <div class="eu-preview-area eu-article-content p-3 border rounded" id="editPreviewArea"></div>
+      </div>
+    </details>
   </div>
 
   <div class="mb-4">
@@ -34,8 +43,8 @@
   </div>
 
   <div class="d-flex gap-3 align-items-center flex-wrap">
-    <button id="submitBtn" type="button" class="eu-btn-primary" onclick="submitEdit()">
-      <i class="bi bi-send me-1"></i> Enviar edición para revisión
+    <button id="submitBtn" type="button" class="eu-btn-primary" id="submitBtn">
+      <i class="bi bi-send me-1"></i> Enviar edicion para revision
     </button>
     <a href="#" id="cancelLink" class="eu-btn-outline">Cancelar</a>
     <div id="submitSpinner" class="d-none"><div class="eu-spinner" style="width:20px;height:20px"></div></div>
@@ -50,3 +59,66 @@
     <pre style="font-size:.78rem;white-space:pre-wrap;word-break:break-word;margin:0;font-family:Courier New,monospace" id="originalContent"></pre>
   </div>
 </details>
+
+<script data-cfasync="false">
+(function() {
+  // Edit form submit via event listener (avoid inline onclick breaking Rocket Loader)
+  var submitBtn = document.getElementById('submitBtn');
+  if (submitBtn && !submitBtn.dataset.submitInit) {
+    submitBtn.dataset.submitInit = '1';
+    submitBtn.addEventListener('click', function() {
+      if (typeof submitEdit === 'function') submitEdit();
+    });
+  }
+
+  // Edit summary toolbar
+  var editSumToolbar = document.getElementById('editSummaryToolbar');
+  if (editSumToolbar && !editSumToolbar.dataset.init) {
+    editSumToolbar.dataset.init = '1';
+    editSumToolbar.addEventListener('click', function(e) {
+      var btn = e.target.closest('[data-action]');
+      if (!btn) return;
+      var ta = document.getElementById('editSummary');
+      if (!ta) return;
+      var action = btn.dataset.action;
+      if (action === 'edit-sum-wrap') {
+        var before = btn.dataset.before || '', after = btn.dataset.after || '';
+        var s = ta.selectionStart, end = ta.selectionEnd;
+        var sel = ta.value.substring(s, end) || 'texto';
+        var st = ta.scrollTop;
+        ta.value = ta.value.substring(0, s) + before + sel + after + ta.value.substring(end);
+        ta.selectionStart = s + before.length; ta.selectionEnd = s + before.length + sel.length;
+        ta.scrollTop = st; ta.focus();
+      } else if (action === 'edit-sum-line') {
+        var prefix = btn.dataset.prefix || '';
+        var s2 = ta.selectionStart;
+        var start = ta.value.lastIndexOf('\n', s2 - 1) + 1;
+        var st2 = ta.scrollTop;
+        ta.value = ta.value.substring(0, start) + prefix + ta.value.substring(start);
+        ta.selectionStart = ta.selectionEnd = start + prefix.length;
+        ta.scrollTop = st2; ta.focus();
+      } else if (action === 'edit-sum-anchor') {
+        var id = prompt('ID del titulo:');
+        if (!id) return;
+        var label = prompt('Texto del enlace:') || id;
+        var pos = ta.selectionStart, st3 = ta.scrollTop;
+        ta.value = ta.value.slice(0, pos) + '[' + label + '](#' + id + ')' + ta.value.slice(pos);
+        ta.scrollTop = st3; ta.focus();
+      }
+    });
+  }
+
+  // Live preview for edit article
+  var editDetails = document.getElementById('editPreviewDetails');
+  var editPreviewArea = document.getElementById('editPreviewArea');
+  if (editDetails && editPreviewArea) {
+    function editPreview() {
+      var c = document.getElementById('editContent');
+      if (c && editDetails.open) editPreviewArea.innerHTML = window.simpleMarkdownPreview ? window.simpleMarkdownPreview(c.value) : c.value;
+    }
+    editDetails.addEventListener('toggle', editPreview);
+    var ec = document.getElementById('editContent');
+    if (ec) ec.addEventListener('input', editPreview);
+  }
+})();
+</script>

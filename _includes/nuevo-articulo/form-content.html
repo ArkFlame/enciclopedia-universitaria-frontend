@@ -3,32 +3,31 @@ Main form content for new article
 {% endcomment %}
 
 <div class="eu-card p-4 mb-4">
-  <h5 class="mb-3">Información del artículo</h5>
+  <h5 class="mb-3">Informacion del articulo</h5>
   
   <div class="eu-form-group">
-    <label class="eu-label" for="artTitle">Título <span class="text-danger">*</span></label>
-    <input type="text" id="artTitle" class="eu-input" placeholder="Ej: La fotosíntesis en plantas C4" maxlength="500">
+    <label class="eu-label" for="artTitle">Titulo <span class="text-danger">*</span></label>
+    <input type="text" id="artTitle" class="eu-input" placeholder="Ej: La fotosintesis en plantas C4" maxlength="500">
   </div>
   
   <div class="eu-form-group">
-    <label class="eu-label">Resumen <span class="text-danger">*</span> <span class="text-muted small fw-normal">— soporta Markdown</span></label>
+    <label class="eu-label">Resumen <span class="text-danger">*</span> <span class="text-muted small fw-normal">&#x2014; soporta Markdown</span></label>
     <div class="eu-summary-toolbar">
-      <button class="eu-editor-btn" type="button" onclick="summaryWrap('**','**')" title="Negrita"><b>B</b></button>
-      <button class="eu-editor-btn" type="button" onclick="summaryWrap('*','*')" title="Cursiva"><i>I</i></button>
-      <button class="eu-editor-btn" type="button" onclick="summaryLine('- ')" title="Lista">• Lista</button>
-      <button class="eu-editor-btn" type="button" onclick="summaryLine('1. ')" title="Lista numerada">1. Lista</button>
-      <button class="eu-editor-btn" type="button" onclick="summaryAnchor()" title="Ancla">⚓ Sección</button>
+      <button class="eu-editor-btn" type="button" data-action="summary-wrap" data-before="**" data-after="**" title="Negrita"><b>B</b></button>
+      <button class="eu-editor-btn" type="button" data-action="summary-wrap" data-before="*" data-after="*" title="Cursiva"><i>I</i></button>
+      <button class="eu-editor-btn" type="button" data-action="summary-line" data-prefix="- " title="Lista">&#x2022; Lista</button>
+      <button class="eu-editor-btn" type="button" data-action="summary-line" data-prefix="1. " title="Lista numerada">1. Lista</button>
+      <button class="eu-editor-btn" type="button" data-action="summary-anchor" title="Ancla">&#x2693; Seccion</button>
     </div>
-    <textarea id="artSummary" class="eu-textarea eu-summary-textarea" placeholder="Breve descripción" maxlength="4000" rows="4"></textarea>
-    <div class="text-muted small mt-1"><span id="summaryCount">0</span>/4000 · Markdown habilitado</div>
+    <textarea id="artSummary" class="eu-textarea eu-summary-textarea" placeholder="Breve descripcion" maxlength="4000" rows="4"></textarea>
+    <div class="text-muted small mt-1"><span id="summaryCount">0</span>/4000 &#xB7; Markdown habilitado</div>
   </div>
   
   <div class="row g-3">
     <div class="col-md-6">
-      <label class="eu-label" for="artCategory">Categoría</label>
+      <label class="eu-label" for="artCategory">Categoria</label>
       <select id="artCategory" class="eu-select">
-        <option value="">Sin categoría</option>
-        <!-- Categories loaded dynamically -->
+        <option value="">Sin categoria</option>
       </select>
     </div>
   </div>
@@ -36,25 +35,110 @@ Main form content for new article
 
 <div class="eu-card p-4 mb-4">
   <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
-    <h5 class="m-0">Contenido del artículo</h5>
-    <button class="eu-btn-outline eu-btn-sm" id="previewBtn" type="button">
-      <i class="bi bi-eye"></i> Vista previa
-    </button>
+    <h5 class="m-0">Contenido del articulo</h5>
   </div>
   
   {% include article-editor/toolbar.html %}
   
-  <textarea id="artContent" class="eu-input eu-editor-area" style="border-radius:0 0 var(--eu-radius) var(--eu-radius);border-top:none" placeholder="# Título principal&#10;&#10;Escribe el contenido en Markdown..."></textarea>
+  <textarea id="artContent" class="eu-input eu-editor-area" style="border-radius:0 0 var(--eu-radius) var(--eu-radius);border-top:none" placeholder="# Titulo principal&#10;&#10;Escribe el contenido en Markdown..."></textarea>
   
-  <div id="previewContainer" class="d-none mt-3">
-    <div class="eu-label mb-2">Vista previa:</div>
-    <div class="eu-preview-area eu-article-content p-3 border rounded" id="previewArea"></div>
-  </div>
+  <!-- Collapsible preview below editor -->
+  <details class="eu-preview-details mt-3" id="previewDetails">
+    <summary class="eu-preview-summary" id="previewSummaryToggle">
+      <i class="bi bi-eye me-1"></i> Vista previa <span class="eu-preview-hint text-muted small">(clic para expandir)</span>
+    </summary>
+    <div class="eu-preview-body mt-2">
+      <div class="eu-preview-area eu-article-content p-3 border rounded" id="previewArea"></div>
+    </div>
+  </details>
 </div>
 
 <div class="d-flex gap-3 justify-content-end flex-wrap">
   <a href="#" id="cancelLink" class="eu-btn-outline">Cancelar</a>
   <button class="eu-btn-primary" type="button" id="publishBtn">
-    <i class="bi bi-send"></i> Enviar para revisión
+    <i class="bi bi-send"></i> Enviar para revision
   </button>
 </div>
+
+<script data-cfasync="false">
+(function() {
+  // Summary toolbar (uses data-action, no inline onclick)
+  var summaryToolbars = document.querySelectorAll('.eu-summary-toolbar');
+  summaryToolbars.forEach(function(tb) {
+    tb.addEventListener('click', function(e) {
+      var btn = e.target.closest('[data-action]');
+      if (!btn) return;
+      var action = btn.dataset.action;
+      var ta = document.getElementById('artSummary') || document.getElementById('editSummary');
+      if (!ta) return;
+      if (action === 'summary-wrap') {
+        var before = btn.dataset.before || '', after = btn.dataset.after || '';
+        var s = ta.selectionStart, end = ta.selectionEnd;
+        var sel = ta.value.substring(s, end) || 'texto';
+        var st = ta.scrollTop;
+        ta.value = ta.value.substring(0, s) + before + sel + after + ta.value.substring(end);
+        ta.selectionStart = s + before.length;
+        ta.selectionEnd = s + before.length + sel.length;
+        ta.scrollTop = st;
+        ta.focus();
+      } else if (action === 'summary-line') {
+        var prefix = btn.dataset.prefix || '';
+        var s2 = ta.selectionStart;
+        var start = ta.value.lastIndexOf('\n', s2 - 1) + 1;
+        var st2 = ta.scrollTop;
+        ta.value = ta.value.substring(0, start) + prefix + ta.value.substring(start);
+        ta.selectionStart = ta.selectionEnd = start + prefix.length;
+        ta.scrollTop = st2;
+        ta.focus();
+      } else if (action === 'summary-anchor') {
+        var id = prompt('ID del titulo (ej: "metabolismo" para "## Metabolismo"):');
+        if (!id) return;
+        var label = prompt('Texto del enlace:') || id;
+        var pos = ta.selectionStart;
+        var st3 = ta.scrollTop;
+        ta.value = ta.value.slice(0, pos) + '[' + label + '](#' + id + ')' + ta.value.slice(pos);
+        ta.scrollTop = st3;
+        ta.focus();
+      }
+    });
+  });
+
+  // Live preview update when details is opened
+  var details = document.getElementById('previewDetails');
+  var previewArea = document.getElementById('previewArea');
+  if (details && previewArea) {
+    details.addEventListener('toggle', function() {
+      if (details.open) {
+        var content = document.getElementById('artContent');
+        if (content) previewArea.innerHTML = simpleMarkdownPreview(content.value);
+      }
+    });
+    // Also update when typing while open
+    var artContent = document.getElementById('artContent');
+    if (artContent) {
+      artContent.addEventListener('input', function() {
+        if (details.open) previewArea.innerHTML = simpleMarkdownPreview(this.value);
+      });
+    }
+  }
+
+  function simpleMarkdownPreview(md) {
+    if (!md) return '<p class="text-muted">Sin contenido</p>';
+    return md
+      .replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>')
+      .replace(/\*(.*?)\*/g,'<em>$1</em>')
+      .replace(/~~(.*?)~~/g,'<s>$1</s>')
+      .replace(/^#### (.*)/gm,'<h4>$1</h4>')
+      .replace(/^### (.*)/gm,'<h3>$1</h3>')
+      .replace(/^## (.*)/gm,'<h2>$1</h2>')
+      .replace(/^# (.*)/gm,'<h1>$1</h1>')
+      .replace(/^- (.*)/gm,'<li>$1</li>')
+      .replace(/\[([^\]]+)\]\(([^)]+)\)/g,'<a href="$2">$1</a>')
+      .replace(/`([^`]+)`/g,'<code>$1</code>')
+      .replace(/\[\/?\w[^\]]*\]/g,'<span style="opacity:.5;font-style:italic;font-size:.85em">[shortcode]</span>')
+      .replace(/\n/g,'<br>');
+  }
+  // Expose for main.js if needed
+  window.simpleMarkdownPreview = simpleMarkdownPreview;
+})();
+</script>

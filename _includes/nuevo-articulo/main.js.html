@@ -48,6 +48,7 @@
     var content = document.getElementById('artContent');
     if (content) content.addEventListener('keydown', Editor.handleEditorKeys);
 
+    // Preview is now handled by collapsible <details> in form-content.html
     var previewBtn = document.getElementById('previewBtn');
     if (previewBtn) previewBtn.addEventListener('click', togglePreview);
 
@@ -142,7 +143,19 @@
       });
       clearInterval(ticker);
       bar.style.width = '100%';
-      var data = await res.json();
+      var data;
+      var contentType = res.headers.get('content-type') || '';
+      if (contentType.includes('application/json')) {
+        data = await res.json();
+      } else {
+        // nginx or proxy returned HTML (e.g. 413 Request Entity Too Large)
+        var text = await res.text();
+        if (res.status === 413) {
+          data = { error: 'Las imágenes son demasiado grandes. El límite por archivo es 5MB. Intenta con imágenes más pequeñas.' };
+        } else {
+          data = { error: 'Error del servidor (código ' + res.status + '). Intenta de nuevo.' };
+        }
+      }
       if (!res.ok) throw new Error(data.error);
 
       lbl.textContent = '✓ ' + data.files.length + ' imagen(es) lista(s)';

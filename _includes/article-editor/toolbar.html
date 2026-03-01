@@ -1,5 +1,6 @@
 {% comment %}
-Enhanced toolbar with all buttons
+Enhanced toolbar — uses data-action attributes to avoid Rocket Loader breaking
+multiline string literals inside onclick attributes (ERR: Invalid or unexpected token).
 Parameters:
 - target: 'artContent' or 'editContent' (default: artContent)
 - prefix: 'insert' or 'insertSC' or 'insertMd' (default: insertMd)
@@ -8,35 +9,137 @@ Parameters:
 {% assign target_id = include.target | default: 'artContent' %}
 {% assign fn_prefix = include.prefix | default: 'insertMd' %}
 
-<div class="eu-editor-toolbar" id="editorToolbar">
-  <button type="button" class="eu-editor-btn" onclick="{{ fn_prefix }}('**','**')" title="Negrita (Ctrl+B)"><b>B</b></button>
-  <button type="button" class="eu-editor-btn" onclick="{{ fn_prefix }}('*','*')" title="Cursiva (Ctrl+I)"><i>I</i></button>
-  <button type="button" class="eu-editor-btn" onclick="{{ fn_prefix }}('~~','~~')" title="Tachado"><s>S</s></button>
-  <button type="button" class="eu-editor-btn" onclick="{{ fn_prefix }}('`','`')" title="Código inline"><code style="font-size:.75rem">{ }</code></button>
+<div class="eu-editor-toolbar" id="editorToolbar" data-target="{{ target_id }}" data-prefix="{{ fn_prefix }}">
+  <button type="button" class="eu-editor-btn" data-action="wrap" data-before="**" data-after="**" title="Negrita (Ctrl+B)"><b>B</b></button>
+  <button type="button" class="eu-editor-btn" data-action="wrap" data-before="*" data-after="*" title="Cursiva (Ctrl+I)"><i>I</i></button>
+  <button type="button" class="eu-editor-btn" data-action="wrap" data-before="~~" data-after="~~" title="Tachado"><s>S</s></button>
+  <button type="button" class="eu-editor-btn" data-action="wrap" data-before="`" data-after="`" title="Codigo inline"><code style="font-size:.75rem">{ }</code></button>
   <div class="eu-editor-separator"></div>
-  <button type="button" class="eu-editor-btn" onclick="insertLine('# ')" title="Título H1">H1</button>
-  <button type="button" class="eu-editor-btn" onclick="insertLine('## ')" title="Título H2">H2</button>
-  <button type="button" class="eu-editor-btn" onclick="insertLine('### ')" title="Subtítulo H3">H3</button>
-  <button type="button" class="eu-editor-btn" onclick="insertLine('#### ')" title="H4">H4</button>
+  <button type="button" class="eu-editor-btn" data-action="line" data-prefix="# " title="Titulo H1">H1</button>
+  <button type="button" class="eu-editor-btn" data-action="line" data-prefix="## " title="Titulo H2">H2</button>
+  <button type="button" class="eu-editor-btn" data-action="line" data-prefix="### " title="Subtitulo H3">H3</button>
+  <button type="button" class="eu-editor-btn" data-action="line" data-prefix="#### " title="H4">H4</button>
   <div class="eu-editor-separator"></div>
-  <button type="button" class="eu-editor-btn" onclick="insertLine('- ')" title="Lista">• Lista</button>
-  <button type="button" class="eu-editor-btn" onclick="insertLine('1. ')" title="Lista numerada">1. Lista</button>
-  <button type="button" class="eu-editor-btn" onclick="insertLine('> ')" title="Cita">❝ Cita</button>
-  <button type="button" class="eu-editor-btn" onclick="insertLine('---')" title="Línea horizontal">─ HR</button>
+  <button type="button" class="eu-editor-btn" data-action="line" data-prefix="- " title="Lista">&#x2022; Lista</button>
+  <button type="button" class="eu-editor-btn" data-action="line" data-prefix="1. " title="Lista numerada">1. Lista</button>
+  <button type="button" class="eu-editor-btn" data-action="line" data-prefix="> " title="Cita">&#x275D; Cita</button>
+  <button type="button" class="eu-editor-btn" data-action="line" data-prefix="---" title="Linea horizontal">&#x2500; HR</button>
   <div class="eu-editor-separator"></div>
-  <button type="button" class="eu-editor-btn" onclick="insertLink()" title="Enlace (Ctrl+K)">🔗 Link</button>
-  <button type="button" class="eu-editor-btn" onclick="insertSC('| Col1 | Col2 |\n|---|---|\n| valor | valor |')" title="Tabla">⊞ Tabla</button>
+  <button type="button" class="eu-editor-btn" data-action="link" title="Enlace (Ctrl+K)">&#x1F517; Link</button>
+  <button type="button" class="eu-editor-btn" data-action="sc" data-sc="table" title="Tabla">&#x229E; Tabla</button>
   <div class="eu-editor-separator"></div>
-  <button type="button" class="eu-editor-btn" onclick="insertSC('[tooltip text=\"Definición\"]término[/tooltip]')" title="Tooltip">💬 Tooltip</button>
-  <button type="button" class="eu-editor-btn" onclick="insertSC('[alert type=\"info\"]Mensaje[/alert]')" title="Alerta">⚠️ Alert</button>
-  <button type="button" class="eu-editor-btn" onclick="insertSC('[callout icon=\"💡\"]Nota[/callout]')" title="Callout">📌 Callout</button>
-  <button type="button" class="eu-editor-btn" onclick="insertSC('[accordion title=\"¿Pregunta?\"]\nRespuesta\n[/accordion]')" title="Acordeón">▶ Acordeón</button>
-  <button type="button" class="eu-editor-btn" onclick="insertSC('[tabs]\n[tab title=\"Tab 1\"]Contenido 1[/tab]\n[tab title=\"Tab 2\"]Contenido 2[/tab]\n[/tabs]')" title="Pestañas">⊟ Tabs</button>
-  <button type="button" class="eu-editor-btn" onclick="insertSC('[highlight]texto[/highlight]')" title="Resaltar">🖊 Resaltar</button>
-  <button type="button" class="eu-editor-btn" onclick="insertSC('[formula]E = mc^2[/formula]')" title="Fórmula">∑ Fórmula</button>
-  <button type="button" class="eu-editor-btn" onclick="insertSC('[youtube id=\"ID_VIDEO\"]')" title="YouTube">▶ YouTube</button>
-  <button type="button" class="eu-editor-btn" onclick="insertSC('[ref article=\"slug\"]texto[/ref]')" title="Referencia artículo">↗ Ref Art.</button>
-  <button type="button" class="eu-editor-btn" onclick="insertSC('[mapa-sinoptico name=\"Mapa Conceptual\"]\nCélula -> Eucariota\nEucariota -> Animal\nEucariota -> Vegetal\nCélula -> Procariota\nProcariota -> Bacteria\nProcariota -> Archaea\n[/mapa-sinoptico]')" title="Mapa Conceptual">🗺️ Árbol</button>
-  <button type="button" class="eu-editor-btn" onclick="insertSC('[card title=\"Título\"]Contenido[/card]')" title="Tarjeta">🃏 Card</button>
-  <button type="button" class="eu-editor-btn" onclick="insertSC('[modal id=\"m1\" title=\"Modal\"]Contenido[/modal]\n[modal-trigger modal=\"m1\"]Abrir[/modal-trigger]')" title="Modal">⬜ Modal</button>
+  <button type="button" class="eu-editor-btn" data-action="sc" data-sc="tooltip" title="Tooltip">&#x1F4AC; Tooltip</button>
+  <button type="button" class="eu-editor-btn" data-action="sc" data-sc="alert" title="Alerta">&#x26A0;&#xFE0F; Alert</button>
+  <button type="button" class="eu-editor-btn" data-action="sc" data-sc="callout" title="Callout">&#x1F4CC; Callout</button>
+  <button type="button" class="eu-editor-btn" data-action="sc" data-sc="accordion" title="Acordeon">&#x25B6; Acordeon</button>
+  <button type="button" class="eu-editor-btn" data-action="sc" data-sc="tabs" title="Pestanas">&#x22DF; Tabs</button>
+  <button type="button" class="eu-editor-btn" data-action="sc" data-sc="highlight" title="Resaltar">&#x1F58A; Resaltar</button>
+  <button type="button" class="eu-editor-btn" data-action="sc" data-sc="formula" title="Formula">&#x2211; Formula</button>
+  <button type="button" class="eu-editor-btn" data-action="sc" data-sc="youtube" title="YouTube">&#x25B6; YouTube</button>
+  <button type="button" class="eu-editor-btn" data-action="sc" data-sc="ref" title="Referencia articulo">&#x2197; Ref Art.</button>
+  <button type="button" class="eu-editor-btn eu-editor-btn-map" data-action="sc" data-sc="mapa-sinoptico" title="Insertar Mapa Sinoptico" style="display:inline-flex;align-items:center;gap:4px">
+    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex-shrink:0"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg>
+    Mapa
+  </button>
+  <button type="button" class="eu-editor-btn" data-action="sc" data-sc="card" title="Tarjeta">&#x1F0CF; Card</button>
+  <button type="button" class="eu-editor-btn" data-action="sc" data-sc="modal" title="Modal">&#x2B1C; Modal</button>
 </div>
+
+<script data-cfasync="false">
+(function() {
+  var SC_TEMPLATES = {
+    'table':         '| Col1 | Col2 |\n|---|---|\n| valor | valor |',
+    'tooltip':       '[tooltip text="Definicion"]termino[/tooltip]',
+    'alert':         '[alert type="info"]Mensaje[/alert]',
+    'callout':       '[callout icon="\ud83d\udca1"]Nota[/callout]',
+    'accordion':     '[accordion title="\u00bfPregunta?"]\nRespuesta\n[/accordion]',
+    'tabs':          '[tabs]\n[tab title="Tab 1"]Contenido 1[/tab]\n[tab title="Tab 2"]Contenido 2[/tab]\n[/tabs]',
+    'highlight':     '[highlight]texto[/highlight]',
+    'formula':       '[formula]E = mc^2[/formula]',
+    'youtube':       '[youtube id="ID_VIDEO"]',
+    'ref':           '[ref article="slug"]texto[/ref]',
+    'mapa-sinoptico':'[mapa-sinoptico name="Mapa Conceptual" summary="C\u00e9lula:Unidad b\u00e1sica de la vida;Eucariota:Tiene n\u00facleo definido;Procariota:Sin n\u00facleo definido"]\nC\u00e9lula -> Eucariota\nEucariota -> Animal\nEucariota -> Vegetal\nC\u00e9lula -> Procariota\nProcariota -> Bacteria\nProcariota -> Archaea\n[/mapa-sinoptico]',
+    'card':          '[card title="T\u00edtulo"]Contenido[/card]',
+    'modal':         '[modal id="m1" title="Modal"]Contenido[/modal]\n[modal-trigger modal="m1"]Abrir[/modal-trigger]'
+  };
+
+  function getTextarea(toolbar) {
+    var targetId = (toolbar && toolbar.dataset.target) || 'artContent';
+    return document.getElementById(targetId);
+  }
+
+  function noScrollInsert(ta, text, from, to) {
+    var pageY = window.scrollY, taTop = ta.scrollTop;
+    ta.value = ta.value.slice(0, from) + text + ta.value.slice(to);
+    ta.scrollTop = taTop;
+    window.scrollTo({ top: pageY });
+  }
+
+  function doWrap(ta, before, after) {
+    var s = ta.selectionStart, e = ta.selectionEnd;
+    var sel = ta.value.slice(s, e) || 'texto';
+    noScrollInsert(ta, before + sel + after, s, e);
+    ta.focus();
+    ta.setSelectionRange(s + before.length, s + before.length + sel.length);
+  }
+
+  function doLine(ta, prefix) {
+    var s = ta.selectionStart;
+    var start = ta.value.lastIndexOf('\n', s - 1) + 1;
+    noScrollInsert(ta, prefix, start, start);
+    ta.focus();
+    ta.setSelectionRange(start + prefix.length, start + prefix.length);
+  }
+
+  function doSC(ta, sc) {
+    var pos = ta.selectionStart;
+    noScrollInsert(ta, '\n' + sc + '\n', pos, pos);
+    ta.focus();
+    ta.setSelectionRange(pos + 1, pos + 1 + sc.length);
+  }
+
+  function doLink(ta) {
+    var url = prompt('URL del enlace:');
+    if (!url) return;
+    var label = prompt('Texto del enlace:') || url;
+    var pos = ta.selectionStart;
+    noScrollInsert(ta, '[' + label + '](' + url + ')', pos, pos);
+    ta.focus();
+  }
+
+  function initToolbar(toolbar) {
+    toolbar.addEventListener('click', function(e) {
+      var btn = e.target.closest('[data-action]');
+      if (!btn) return;
+      var ta = getTextarea(toolbar);
+      if (!ta) return;
+      var action = btn.dataset.action;
+      if (action === 'wrap') {
+        doWrap(ta, btn.dataset.before || '', btn.dataset.after || '');
+      } else if (action === 'line') {
+        doLine(ta, btn.dataset.prefix || '');
+      } else if (action === 'sc') {
+        var key = btn.dataset.sc;
+        var tpl = SC_TEMPLATES[key];
+        if (tpl) doSC(ta, tpl);
+      } else if (action === 'link') {
+        doLink(ta);
+      }
+    });
+  }
+
+  function initAllToolbars() {
+    document.querySelectorAll('.eu-editor-toolbar[data-target]:not([data-tb-init])').forEach(function(tb) {
+      tb.dataset.tbInit = '1';
+      initToolbar(tb);
+    });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initAllToolbars);
+  } else {
+    initAllToolbars();
+  }
+  window.initEditorToolbars = initAllToolbars;
+})();
+</script>

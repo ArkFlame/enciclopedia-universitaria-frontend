@@ -267,7 +267,15 @@
       });
       clearInterval(ticker);
       bar.style.width = '100%';
-      var data = await res.json();
+      var data;
+      var ct = res.headers.get('content-type') || '';
+      if (ct.includes('application/json')) {
+        data = await res.json();
+      } else {
+        data = res.status === 413
+          ? { error: 'Las imágenes son demasiado grandes. Límite por archivo: 5MB.' }
+          : { error: 'Error del servidor (código ' + res.status + '). Intenta de nuevo.' };
+      }
       if (!res.ok) throw new Error(data.error);
       lbl.textContent = '✓ ' + data.files.length + ' imagen(es) subida(s)';
       setTimeout(function(){ prog.classList.add('d-none'); }, 2500);

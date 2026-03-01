@@ -81,3 +81,66 @@
     font-size: 0.88rem;
   }
 }
+
+/* ── MOBILE ARTICLE OVERFLOW FIXES ──────────────────────────── */
+@media (max-width: 768px) {
+  /* Prevent any element from breaking out of viewport */
+  #articlePage,
+  .eu-article-wrapper,
+  .eu-article-wrapper article,
+  .eu-article-content {
+    max-width: 100vw;
+    overflow-x: hidden;
+    word-break: break-word;
+    overflow-wrap: break-word;
+  }
+
+  /* Tables: horizontal scroll within container, don't overflow page */
+  .eu-article-content table {
+    display: block;
+    overflow-x: auto;
+    max-width: 100%;
+    -webkit-overflow-scrolling: touch;
+    white-space: normal;
+  }
+  .eu-article-content th,
+  .eu-article-content td {
+    white-space: normal;
+    min-width: 80px;
+  }
+
+  /* Pre/code blocks */
+  .eu-article-content pre {
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    font-size: 0.78rem;
+  }
+
+  /* Mapa sinoptico on mobile */
+  .eu-mapa-sinoptico-wrapper {
+    padding: 16px 12px;
+    margin-left: -4px;
+    margin-right: -4px;
+  }
+
+  /* Iframe / embed */
+  .eu-article-content iframe {
+    max-width: 100%;
+  }
+
+  /* Images */
+  .eu-article-content img {
+    max-width: 100%;
+    height: auto;
+  }
+}
+
+@media (max-width: 480px) {
+  .eu-article-wrapper {
+    padding: 0 10px 24px;
+  }
+  .eu-article-content {
+    font-size: 0.95rem;
+  }
+}

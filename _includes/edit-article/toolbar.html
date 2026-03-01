@@ -1,29 +1,122 @@
-<div class="eu-editor-toolbar" id="editorToolbar">
-  <button type="button" class="eu-editor-btn" onclick="wrap('**','**')" title="Negrita (Ctrl+B)"><b>B</b></button>
-  <button type="button" class="eu-editor-btn" onclick="wrap('*','*')" title="Cursiva (Ctrl+I)"><i>I</i></button>
-  <button type="button" class="eu-editor-btn" onclick="wrap('~~','~~')" title="Tachado"><s>S</s></button>
-  <button type="button" class="eu-editor-btn" onclick="wrap('`','`')" title="Código"><code style="font-size:.75rem">{ }</code></button>
+<!-- edit-article toolbar: uses data-action to avoid Rocket Loader onclick errors -->
+<div class="eu-editor-toolbar" id="editorToolbar" data-target="editContent" data-tb-edit="1">
+  <button type="button" class="eu-editor-btn" data-action="wrap" data-before="**" data-after="**" title="Negrita (Ctrl+B)"><b>B</b></button>
+  <button type="button" class="eu-editor-btn" data-action="wrap" data-before="*" data-after="*" title="Cursiva (Ctrl+I)"><i>I</i></button>
+  <button type="button" class="eu-editor-btn" data-action="wrap" data-before="~~" data-after="~~" title="Tachado"><s>S</s></button>
+  <button type="button" class="eu-editor-btn" data-action="wrap" data-before="`" data-after="`" title="Codigo"><code style="font-size:.75rem">{ }</code></button>
   <div class="eu-editor-separator"></div>
-  <button type="button" class="eu-editor-btn" onclick="insertLine('# ')" title="H1">H1</button>
-  <button type="button" class="eu-editor-btn" onclick="insertLine('## ')" title="H2">H2</button>
-  <button type="button" class="eu-editor-btn" onclick="insertLine('### ')" title="H3">H3</button>
+  <button type="button" class="eu-editor-btn" data-action="line" data-prefix="# " title="H1">H1</button>
+  <button type="button" class="eu-editor-btn" data-action="line" data-prefix="## " title="H2">H2</button>
+  <button type="button" class="eu-editor-btn" data-action="line" data-prefix="### " title="H3">H3</button>
   <div class="eu-editor-separator"></div>
-  <button type="button" class="eu-editor-btn" onclick="insertLine('- ')" title="Lista">• Lista</button>
-  <button type="button" class="eu-editor-btn" onclick="insertLine('1. ')" title="Numerada">1. Lista</button>
-  <button type="button" class="eu-editor-btn" onclick="insertLine('> ')" title="Cita">❝ Cita</button>
-  <button type="button" class="eu-editor-btn" onclick="insertLine('---')" title="HR">─ HR</button>
+  <button type="button" class="eu-editor-btn" data-action="line" data-prefix="- " title="Lista">&#x2022; Lista</button>
+  <button type="button" class="eu-editor-btn" data-action="line" data-prefix="1. " title="Numerada">1. Lista</button>
+  <button type="button" class="eu-editor-btn" data-action="line" data-prefix="> " title="Cita">&#x275D; Cita</button>
+  <button type="button" class="eu-editor-btn" data-action="line" data-prefix="---" title="HR">&#x2500; HR</button>
   <div class="eu-editor-separator"></div>
-  <button type="button" class="eu-editor-btn" onclick="insertLinkEdit()" title="Enlace (Ctrl+K)">🔗 Link</button>
-  <button type="button" class="eu-editor-btn" onclick="insertSCEdit('| Col1 | Col2 |\n|---|---|\n| valor | valor |')" title="Tabla">⊞ Tabla</button>
+  <button type="button" class="eu-editor-btn" data-action="link" title="Enlace (Ctrl+K)">&#x1F517; Link</button>
+  <button type="button" class="eu-editor-btn" data-action="sc" data-sc="table" title="Tabla">&#x229E; Tabla</button>
   <div class="eu-editor-separator"></div>
-  <button type="button" class="eu-editor-btn" onclick="insertSCEdit('[tooltip text=\"Def\"]término[/tooltip]')" title="Tooltip">💬 Tooltip</button>
-  <button type="button" class="eu-editor-btn" onclick="insertSCEdit('[alert type=\"info\"]Mensaje[/alert]')" title="Alert">⚠️ Alert</button>
-  <button type="button" class="eu-editor-btn" onclick="insertSCEdit('[callout icon=\"💡\"]Nota[/callout]')" title="Callout">📌 Callout</button>
-  <button type="button" class="eu-editor-btn" onclick="insertSCEdit('[accordion title=\"Título\"]\nContenido\n[/accordion]')" title="Acordeón">▶ Acordeón</button>
-  <button type="button" class="eu-editor-btn" onclick="insertSCEdit('[tabs]\n[tab title=\"Tab 1\"]Contenido 1[/tab]\n[tab title=\"Tab 2\"]Contenido 2[/tab]\n[/tabs]')" title="Tabs">⊟ Tabs</button>
-  <button type="button" class="eu-editor-btn" onclick="insertSCEdit('[highlight]texto[/highlight]')" title="Resaltar">🖊 Resaltar</button>
-  <button type="button" class="eu-editor-btn" onclick="insertSCEdit('[formula]E = mc^2[/formula]')" title="Fórmula">∑ Fórmula</button>
-  <button type="button" class="eu-editor-btn" onclick="insertSCEdit('[youtube id=\"ID_VIDEO\"]')" title="YouTube">▶ YouTube</button>
-  <button type="button" class="eu-editor-btn" onclick="insertSCEdit('[ref article=\"slug\"]texto[/ref]')" title="Referencia">↗ Ref</button>
-  <button type="button" class="eu-editor-btn" onclick="insertSCEdit('[mapa-sinoptico name=\"Mapa Conceptual\"]\nCélula -> Eucariota\nEucariota -> Animal\nEucariota -> Vegetal\nCélula -> Procariota\nProcariota -> Bacteria\nProcariota -> Archaea\n[/mapa-sinoptico]')" title="Mapa Conceptual">🗺️ Árbol</button>
+  <button type="button" class="eu-editor-btn" data-action="sc" data-sc="tooltip" title="Tooltip">&#x1F4AC; Tooltip</button>
+  <button type="button" class="eu-editor-btn" data-action="sc" data-sc="alert" title="Alert">&#x26A0;&#xFE0F; Alert</button>
+  <button type="button" class="eu-editor-btn" data-action="sc" data-sc="callout" title="Callout">&#x1F4CC; Callout</button>
+  <button type="button" class="eu-editor-btn" data-action="sc" data-sc="accordion" title="Acordeon">&#x25B6; Acordeon</button>
+  <button type="button" class="eu-editor-btn" data-action="sc" data-sc="tabs" title="Tabs">&#x22DF; Tabs</button>
+  <button type="button" class="eu-editor-btn" data-action="sc" data-sc="highlight" title="Resaltar">&#x1F58A; Resaltar</button>
+  <button type="button" class="eu-editor-btn" data-action="sc" data-sc="formula" title="Formula">&#x2211; Formula</button>
+  <button type="button" class="eu-editor-btn" data-action="sc" data-sc="youtube" title="YouTube">&#x25B6; YouTube</button>
+  <button type="button" class="eu-editor-btn" data-action="sc" data-sc="ref" title="Referencia">&#x2197; Ref</button>
+  <button type="button" class="eu-editor-btn eu-editor-btn-map" data-action="sc" data-sc="mapa-sinoptico" title="Insertar Mapa Sinoptico" style="display:inline-flex;align-items:center;gap:4px">
+    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex-shrink:0"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg>
+    Mapa
+  </button>
 </div>
+
+<script data-cfasync="false">
+(function() {
+  var SC_TEMPLATES_EDIT = {
+    'table':         '| Col1 | Col2 |\n|---|---|\n| valor | valor |',
+    'tooltip':       '[tooltip text="Def"]termino[/tooltip]',
+    'alert':         '[alert type="info"]Mensaje[/alert]',
+    'callout':       '[callout icon="\ud83d\udca1"]Nota[/callout]',
+    'accordion':     '[accordion title="T\u00edtulo"]\nContenido\n[/accordion]',
+    'tabs':          '[tabs]\n[tab title="Tab 1"]Contenido 1[/tab]\n[tab title="Tab 2"]Contenido 2[/tab]\n[/tabs]',
+    'highlight':     '[highlight]texto[/highlight]',
+    'formula':       '[formula]E = mc^2[/formula]',
+    'youtube':       '[youtube id="ID_VIDEO"]',
+    'ref':           '[ref article="slug"]texto[/ref]',
+    'mapa-sinoptico':'[mapa-sinoptico name="Mapa Conceptual" summary="C\u00e9lula:Unidad b\u00e1sica de la vida;Eucariota:Tiene n\u00facleo definido;Procariota:Sin n\u00facleo definido"]\nC\u00e9lula -> Eucariota\nEucariota -> Animal\nEucariota -> Vegetal\nC\u00e9lula -> Procariota\nProcariota -> Bacteria\nProcariota -> Archaea\n[/mapa-sinoptico]'
+  };
+
+  var _editHelpersNoScrollInsert = window.EditArticleUtils && window.EditArticleUtils.noScrollInsert
+    ? function(ta, text, from, to) { EditArticleUtils.noScrollInsert(ta, text, from, to); }
+    : function(ta, text, from, to) {
+        var pageY = window.scrollY, taTop = ta.scrollTop;
+        ta.value = ta.value.slice(0, from) + text + ta.value.slice(to);
+        ta.scrollTop = taTop;
+        window.scrollTo({ top: pageY });
+      };
+
+  function editDoWrap(ta, before, after) {
+    var s = ta.selectionStart, e = ta.selectionEnd;
+    var sel = ta.value.substring(s, e) || 'texto';
+    _editHelpersNoScrollInsert(ta, before + sel + after, s, e);
+    ta.focus();
+    ta.setSelectionRange(s + before.length, s + before.length + sel.length);
+  }
+  function editDoLine(ta, prefix) {
+    var s = ta.selectionStart;
+    var start = ta.value.lastIndexOf('\n', s - 1) + 1;
+    _editHelpersNoScrollInsert(ta, prefix, start, start);
+    ta.focus();
+    ta.setSelectionRange(start + prefix.length, start + prefix.length);
+  }
+  function editDoSC(ta, sc) {
+    var pos = ta.selectionStart;
+    _editHelpersNoScrollInsert(ta, '\n' + sc + '\n', pos, pos);
+    ta.focus();
+  }
+  function editDoLink(ta) {
+    var url = prompt('URL del enlace:');
+    if (!url) return;
+    var label = prompt('Texto:') || url;
+    var pos = ta.selectionStart;
+    _editHelpersNoScrollInsert(ta, '[' + label + '](' + url + ')', pos, pos);
+    ta.focus();
+  }
+
+  function initEditToolbar(toolbar) {
+    toolbar.addEventListener('click', function(e) {
+      var btn = e.target.closest('[data-action]');
+      if (!btn) return;
+      var ta = document.getElementById('editContent');
+      if (!ta) return;
+      var action = btn.dataset.action;
+      if (action === 'wrap') {
+        editDoWrap(ta, btn.dataset.before || '', btn.dataset.after || '');
+      } else if (action === 'line') {
+        editDoLine(ta, btn.dataset.prefix || '');
+      } else if (action === 'sc') {
+        var key = btn.dataset.sc;
+        var tpl = SC_TEMPLATES_EDIT[key];
+        if (tpl) editDoSC(ta, tpl);
+      } else if (action === 'link') {
+        editDoLink(ta);
+      }
+    });
+  }
+
+  function initEditToolbars() {
+    document.querySelectorAll('.eu-editor-toolbar[data-tb-edit]:not([data-tb-edit-init])').forEach(function(tb) {
+      tb.dataset.tbEditInit = '1';
+      initEditToolbar(tb);
+    });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initEditToolbars);
+  } else {
+    initEditToolbars();
+  }
+})();
+</script>
