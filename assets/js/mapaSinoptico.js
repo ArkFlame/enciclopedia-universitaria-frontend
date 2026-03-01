@@ -339,8 +339,8 @@ body {
     button.type = 'button';
     button.className = 'eu-mapa-sinoptico-download';
     button.innerHTML = `
-      <svg class="eu-mapa-sinoptico-download-icon" viewBox="0 0 24 24" role="presentation" aria-hidden="true">
-        <path d="M12 6v10m0 0l-4-4m4 4l4-4M6 18h12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+      <svg class="eu-mapa-sinoptico-download-icon" width="18" height="18" viewBox="0 0 24 24" role="presentation" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 6v10m0 0l-4-4m4 4l4-4M6 18h12"/>
       </svg>
       <span>Descargar Mapa Sinoptico</span>`;
     return button;
@@ -376,11 +376,17 @@ body {
   }
 
   function initMapaDownload(container, downloadEl) {
-    const button = downloadEl || container.querySelector('.eu-mapa-sinoptico-download');
+    let button = downloadEl || container.querySelector('.eu-mapa-sinoptico-download');
     if (!button) return;
+
     if (button.dataset.euMapaDownloadInit === 'true') {
-      return;
+      const replacement = button.cloneNode(true);
+      if (button.parentNode) {
+        button.parentNode.replaceChild(replacement, button);
+      }
+      button = replacement;
     }
+
     button.addEventListener('click', () => {
       const tree = container.querySelector('.eu-mapa-sinoptico-tree');
       if (!tree) return;

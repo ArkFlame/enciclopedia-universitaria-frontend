@@ -89,7 +89,9 @@
 .eu-mapa-sinoptico-download-icon {
   width: 18px;
   height: 18px;
-  display: inline-flex;
+  display: inline-block;
+  flex-shrink: 0;
+  vertical-align: middle;
 }
 .eu-mapa-sinoptico-wrapper {
   position: relative;
