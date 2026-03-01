@@ -2,6 +2,93 @@
 .eu-mapa-sinoptico {
   margin: 2.5rem 0;
 }
+.eu-mapa-sinoptico-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+.eu-mapa-sinoptico-toggle {
+  width: 100%;
+  text-align: left;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  border-radius: var(--eu-radius-lg);
+  border: 1px solid var(--eu-border);
+  background: var(--eu-bg-surface, #fff);
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--eu-text);
+  cursor: pointer;
+  transition: background var(--eu-transition), border-color var(--eu-transition);
+}
+.eu-mapa-sinoptico-toggle:hover {
+  background: var(--eu-bg-secondary);
+  border-color: var(--eu-border);
+}
+.eu-mapa-sinoptico-toggle-icon {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 1px solid var(--eu-border);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transform-origin: center;
+  transition: transform 0.3s ease;
+  position: relative;
+}
+.eu-mapa-sinoptico-toggle-icon::after {
+  content: '';
+  width: 8px;
+  height: 8px;
+  border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  transform: rotate(45deg);
+  display: inline-block;
+}
+.eu-mapa-sinoptico-body {
+  overflow: hidden;
+  max-height: 0;
+  opacity: 0;
+  transition: max-height 0.3s ease, opacity 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.eu-mapa-sinoptico.eu-mapa-sinoptico-open .eu-mapa-sinoptico-body {
+  max-height: 2000px;
+  opacity: 1;
+}
+.eu-mapa-sinoptico-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+.eu-mapa-sinoptico-download {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  background: var(--eu-btn-bg, #0f172a);
+  color: var(--eu-btn-text, #fff);
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.eu-mapa-sinoptico-download:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.2);
+}
+.eu-mapa-sinoptico-download-icon {
+  width: 18px;
+  height: 18px;
+  display: inline-flex;
+}
 .eu-mapa-sinoptico-wrapper {
   position: relative;
   width: 100%;
@@ -80,10 +167,10 @@
   background: #c0392b;
 }
 .eu-mapa-sinoptico-caption {
-  margin-top: 1rem;
+  margin: 0;
   font-size: 0.85rem;
   color: var(--eu-text-muted);
-  text-align: center;
+  text-align: left;
 }
 .eu-mapa-sinoptico-empty {
   padding: 1rem 0;

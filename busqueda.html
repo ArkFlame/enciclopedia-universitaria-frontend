@@ -200,7 +200,8 @@ title: Resultados de búsqueda
 
     grid.innerHTML = data.articles.map(a => {
       const title   = highlight(escHtml(a.title),   q);
-      const summary = highlight(escHtml(a.summary), q);
+      const highlightedSummary = highlight(escHtml(a.summary), q);
+      const summary = renderSummaryMarkdown(highlightedSummary);
       return `<a href="${BASE}/articulo.html?slug=${encodeURIComponent(a.slug)}" class="eu-result-card">
         <div>
           <div class="eu-result-title">${title}</div>
@@ -264,6 +265,32 @@ title: Resultados de búsqueda
   }
   function fmtDate(d) { return new Date(d).toLocaleDateString('es-AR', { day:'2-digit', month:'short', year:'numeric' }); }
   function escHtml(s) { return String(s||'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+  function renderSummaryMarkdown(text) {
+    if (!text) return '';
+    const placeholders = [];
+    const placeholderTemplate = '__EU_MARK_PLACEHOLDER_';
+    const withPlaceholders = String(text || '').replace(/<mark\b[^>]*>.*?<\/mark>/gi, match => {
+      const placeholder = `${placeholderTemplate}${placeholders.length}__`;
+      placeholders.push({ placeholder, value: match });
+      return placeholder;
+    });
+
+    let safe = withPlaceholders
+      .replace(/&/g,'&amp;')
+      .replace(/</g,'&lt;')
+      .replace(/>/g,'&gt;');
+
+    placeholders.forEach(({ placeholder, value }) => {
+      safe = safe.replace(placeholder, value);
+    });
+
+    return safe
+      .replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>')
+      .replace(/\*(.*?)\*/g,'<em>$1</em>')
+      .replace(/\[([^\]]+)\]\(([^)]+)\)/g,'<a href="$2" style="color:var(--eu-link)">$1</a>')
+      .replace(/^- (.+)/gm,'<li>$1</li>')
+      .replace(/\n/g,'<br>');
+  }
   function updateURL() {
     const p = new URLSearchParams();
     if (currentQuery) p.set('q', currentQuery);

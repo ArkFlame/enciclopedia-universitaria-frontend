@@ -4,6 +4,81 @@
     '#d35400', '#c0392b', '#0ea5e9', '#10b981',
     '#fb923c', '#a855f7', '#22c55e', '#f43f5e'
   ];
+  const TOGGLE_LABELS = {
+    open: 'Ocultar mapa sinóptico',
+    closed: 'Mostrar mapa sinóptico'
+  };
+  const MAP_EXPORT_CSS = `
+:root {
+  font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+  color: #0f172a;
+  background: #f9fafb;
+}
+body {
+  margin: 0;
+  padding: 32px;
+  background: #f9fafb;
+}
+.eu-mapa-sinoptico-export {
+  max-width: 960px;
+  margin: 0 auto;
+}
+.eu-mapa-sinoptico-export h1 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  text-align: center;
+  color: #0f172a;
+  margin-bottom: 16px;
+}
+.eu-mapa-sinoptico-wrapper {
+  background: #fff;
+  border-radius: 20px;
+  border: 1px solid #e2e8f0;
+  padding: 32px 26px;
+  box-shadow: 0 20px 40px rgba(15, 23, 42, 0.08);
+  overflow-x: auto;
+}
+.eu-mapa-sinoptico-tree {
+  width: max-content;
+}
+.eu-mapa-sinoptico-node {
+  position: relative;
+  padding-left: 45px;
+  margin-bottom: 24px;
+}
+.eu-mapa-sinoptico-node::before {
+  content: '';
+  position: absolute;
+  top: 20px;
+  left: 0;
+  width: 45px;
+  height: 2px;
+  background: #cbd5f5;
+}
+.eu-mapa-sinoptico-node.root::before {
+  display: none;
+}
+.eu-mapa-sinoptico-children {
+  margin-top: 12px;
+  border-left: 2px solid #cbd5f5;
+  padding-left: 30px;
+}
+.eu-mapa-sinoptico-content {
+  display: inline-block;
+  padding: 10px 20px;
+  border-radius: 7px;
+  font-weight: 600;
+  min-width: 150px;
+  color: #fff;
+  box-shadow: 0 6px 14px rgba(15, 23, 42, 0.1);
+  border: 2px solid transparent;
+  background: var(--eu-border, #334155);
+}
+.eu-mapa-sinoptico-content:hover {
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 12px 24px rgba(15, 23, 42, 0.15);
+}
+`;
 
   function initMapas(root = document) {
     root.querySelectorAll('.eu-mapa-sinoptico').forEach(renderMapa);
@@ -59,6 +134,7 @@
         treeWrapper.appendChild(fallbackWrapper);
       }
     }
+    initMapaInteractions(container);
   }
 
   function createNode(name, depth, childrenMap, colorMap, rendered, ancestry = new Set()) {
@@ -182,6 +258,105 @@
     const b = parseInt(cleaned.substring(4, 6), 16);
     const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
     return luminance > 0.5 ? '#111' : '#fff';
+  }
+
+  function initMapaInteractions(container) {
+    initMapaToggle(container);
+    initMapaDownload(container);
+  }
+
+  function initMapaToggle(container) {
+    const toggle = container.querySelector('.eu-mapa-sinoptico-toggle');
+    if (!toggle) return;
+    const label = toggle.querySelector('.eu-mapa-sinoptico-toggle-label');
+    const icon = toggle.querySelector('.eu-mapa-sinoptico-toggle-icon');
+    const setOpen = open => {
+      container.classList.toggle('eu-mapa-sinoptico-open', open);
+      toggle.setAttribute('aria-expanded', open);
+      if (label) {
+        label.textContent = open ? TOGGLE_LABELS.open : TOGGLE_LABELS.closed;
+      }
+      if (icon) {
+        icon.style.transform = open ? 'rotate(90deg)' : 'rotate(0deg)';
+      }
+    };
+    setOpen(false);
+    if (toggle.dataset.euMapaToggleInit === 'true') {
+      return;
+    }
+    toggle.addEventListener('click', () => {
+      setOpen(!container.classList.contains('eu-mapa-sinoptico-open'));
+    });
+    toggle.dataset.euMapaToggleInit = 'true';
+  }
+
+  function initMapaDownload(container) {
+    const button = container.querySelector('.eu-mapa-sinoptico-download');
+    if (!button) return;
+    if (button.dataset.euMapaDownloadInit === 'true') {
+      return;
+    }
+    button.addEventListener('click', () => {
+      const tree = container.querySelector('.eu-mapa-sinoptico-tree');
+      if (!tree) return;
+      const caption = container.dataset.caption || 'Mapa Sinoptico';
+      const treeHtml = tree.cloneNode(true).outerHTML;
+      const html = buildMapExportHtml(caption, treeHtml);
+      downloadMapFile(html, caption);
+    });
+    button.dataset.euMapaDownloadInit = 'true';
+  }
+
+  function buildMapExportHtml(caption, treeHtml) {
+    const safeCaption = escapeHtmlForExport(caption);
+    return `<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>${safeCaption}</title>
+  <style>${MAP_EXPORT_CSS}</style>
+</head>
+<body>
+  <div class="eu-mapa-sinoptico-export">
+    <h1>${safeCaption}</h1>
+    <div class="eu-mapa-sinoptico-wrapper">
+      ${treeHtml}
+    </div>
+  </div>
+</body>
+</html>`;
+  }
+
+  function downloadMapFile(html, caption) {
+    const fileName = `mapa-sinoptico-${slugify(caption)}.html`;
+    const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = fileName;
+    anchor.style.display = 'none';
+    document.body.appendChild(anchor);
+    anchor.click();
+    document.body.removeChild(anchor);
+    URL.revokeObjectURL(url);
+  }
+
+  function slugify(value) {
+    return String(value || 'mapa sinoptico')
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-z0-9]+/gi, '-')
+      .replace(/^-+|-+$/g, '')
+      .toLowerCase() || 'mapa-sinoptico';
+  }
+
+  function escapeHtmlForExport(value) {
+    return String(value || '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
   }
 
   document.addEventListener('DOMContentLoaded', () => initMapas());

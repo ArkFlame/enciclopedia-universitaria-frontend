@@ -139,7 +139,7 @@ description: Enciclopedia colaborativa universitaria en español
         ${statusBadge}${catBadge}
       </div>
       <h3 class="eu-card-title">${escapeHtml(a.title)}</h3>
-      <p class="eu-card-summary">${escapeHtml(a.summary)}</p>
+      <p class="eu-card-summary">${renderSummaryMarkdown(a.summary)}</p>
       <div class="eu-card-footer">
         <span><i class="bi bi-person-fill"></i> ${escapeHtml(a.author_username)}</span>
         <span><i class="bi bi-eye"></i> ${a.views.toLocaleString('es-AR')}</span>
@@ -186,6 +186,33 @@ description: Enciclopedia colaborativa universitaria en español
 
   function escapeHtml(s) {
     return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+
+  function renderSummaryMarkdown(text) {
+    if (!text) return '';
+    const placeholders = [];
+    const placeholderTemplate = '__EU_MARK_PLACEHOLDER_';
+    const withPlaceholders = String(text || '').replace(/<mark\b[^>]*>.*?<\/mark>/gi, match => {
+      const placeholder = `${placeholderTemplate}${placeholders.length}__`;
+      placeholders.push({ placeholder, value: match });
+      return placeholder;
+    });
+
+    let safe = withPlaceholders
+      .replace(/&/g,'&amp;')
+      .replace(/</g,'&lt;')
+      .replace(/>/g,'&gt;');
+
+    placeholders.forEach(({ placeholder, value }) => {
+      safe = safe.replace(placeholder, value);
+    });
+
+    return safe
+      .replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>')
+      .replace(/\*(.*?)\*/g,'<em>$1</em>')
+      .replace(/\[([^\]]+)\]\(([^)]+)\)/g,'<a href="$2" style="color:var(--eu-link)">$1</a>')
+      .replace(/^- (.+)/gm,'<li>$1</li>')
+      .replace(/\n/g,'<br>');
   }
 
   await loadCategories();
