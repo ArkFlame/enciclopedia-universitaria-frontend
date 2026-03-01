@@ -1,4 +1,3 @@
-// mapaSinoptico.js
 (() => {
   const DOWNLOAD_LABEL = 'Descargar Mapa Sinóptico';
   const DEFAULT_NODE_PALETTE = [
@@ -112,8 +111,9 @@ body {
     }
     const rendered = new Set();
     const normalizedDefinitions = definitions || {};
+    const summaryMap = parseNodeSummaries(container.dataset.nodeSummaries);
     roots.forEach(rootName => {
-      const nodeElement = createNode(rootName, 1, childrenMap, colorMap, normalizedDefinitions, rendered);
+      const nodeElement = createNode(rootName, 1, childrenMap, colorMap, normalizedDefinitions, summaryMap, rendered);
       if (nodeElement) {
         treeWrapper.appendChild(nodeElement);
       }
@@ -123,7 +123,7 @@ body {
       const fallbackWrapper = document.createElement('div');
       fallbackWrapper.className = 'eu-mapa-sinoptico-children';
       remaining.forEach(extra => {
-        const nodeElement = createNode(extra, 1, childrenMap, colorMap, normalizedDefinitions, rendered);
+        const nodeElement = createNode(extra, 1, childrenMap, colorMap, normalizedDefinitions, summaryMap, rendered);
         if (nodeElement) fallbackWrapper.appendChild(nodeElement);
       });
       if (fallbackWrapper.childElementCount) {
@@ -132,7 +132,7 @@ body {
     }
     initMapaInteractions(container);
   }
-  function createNode(name, depth, childrenMap, colorMap, definitions, rendered, ancestry = new Set()) {
+  function createNode(name, depth, childrenMap, colorMap, definitions, summaries, rendered, ancestry = new Set()) {
     if (ancestry.has(name)) {
       return null;
     }
@@ -149,8 +149,13 @@ body {
       content.style.color = getContrastColor(color);
     }
     const definition = definitions && definitions[name];
-    if (definition) {
-      content.dataset.definition = definition;
+    content.dataset.definition = '';
+    const summaryText = (summaries && summaries[name]) || '';
+    const info = definition || summaryText;
+    if (info) {
+      content.dataset.definition = info;
+    } else {
+      content.removeAttribute('data-definition');
     }
     node.appendChild(content);
     rendered.add(name);
@@ -159,7 +164,7 @@ body {
       const childWrapper = document.createElement('div');
       childWrapper.className = 'eu-mapa-sinoptico-children';
       children.forEach(child => {
-        const childNode = createNode(child, depth + 1, childrenMap, colorMap, definitions, rendered, new Set(ancestry));
+        const childNode = createNode(child, depth + 1, childrenMap, colorMap, definitions, summaries, rendered, new Set(ancestry));
         if (childNode) {
           childWrapper.appendChild(childNode);
         }
@@ -222,6 +227,18 @@ body {
       }
     }
     return value;
+  }
+  function parseNodeSummaries(payload) {
+    if (!payload) return {};
+    try {
+      const $ = JSON.parse(payload);
+      if ($ && typeof $ === 'object') {
+        return $;
+      }
+    } catch (err) {
+      console.warn('[mapaSinoptico] resumen JSON inválido', err);
+    }
+    return {};
   }
   function parseColorMap(payload) {
     if (!payload) return {};
