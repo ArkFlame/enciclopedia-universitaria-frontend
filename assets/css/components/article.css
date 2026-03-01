@@ -1,38 +1,37 @@
 /* article.css */
-
 /* ── ARTICLE PAGE ────────────────────────────────────────────── */
-
+.eu-main {
+  width: 100%;
+  padding: 0;
+  box-sizing: border-box;
+}
 .eu-article-wrapper {
   display: grid;
   grid-template-columns: 1fr 280px;
   gap: clamp(24px, 4vw, 40px);
   max-width: 1200px;
-  width: 100%; /* Changed from min(100%, 1200px) to ensure proper containment */
+  width: 100%;
   margin: 0 auto;
   box-sizing: border-box;
-  padding: 0 16px; /* Add horizontal padding */
+  padding: 0 16px;
 }
-
 @media (max-width: 991.98px) {
   .eu-article-wrapper {
-    grid-template-columns: 1fr; /* Stack sidebar below on tablets */
+    grid-template-columns: 1fr;
     padding: 0 20px;
   }
 }
-
 @media (max-width: 767.98px) {
   .eu-article-wrapper {
     padding: 0 16px;
     gap: 24px;
   }
 }
-
 @media (max-width: 575.98px) {
   .eu-article-wrapper {
     padding: 0 12px;
   }
 }
-
 .eu-article-header {
   margin-bottom: 32px;
   padding-bottom: 24px;
@@ -40,17 +39,15 @@
   width: 100%;
   box-sizing: border-box;
 }
-
 .eu-article-title {
   font-family: var(--eu-font-display);
   font-size: clamp(1.8rem, 4vw, 2.8rem);
   font-weight: 700;
   line-height: 1.2;
   margin-bottom: 16px;
-  word-wrap: break-word; /* Prevent overflow */
+  word-wrap: break-word;
   overflow-wrap: break-word;
 }
-
 .eu-article-meta {
   display: flex;
   align-items: center;
@@ -60,31 +57,28 @@
   color: var(--eu-text-muted);
   width: 100%;
 }
-
 .eu-article-content {
   font-size: 1rem;
   line-height: 1.8;
   color: var(--eu-text-secondary);
   width: 100%;
   max-width: 100%;
-  overflow-x: hidden; /* Prevent horizontal overflow */
+  overflow-x: hidden;
   box-sizing: border-box;
 }
-
-.eu-article-content h2, .eu-article-content h3 {
+.eu-article-content h2,
+.eu-article-content h3 {
   color: var(--eu-text);
   margin-top: 2em;
   margin-bottom: 0.75em;
   word-wrap: break-word;
   overflow-wrap: break-word;
 }
-
-.eu-article-content p { 
-  margin-bottom: 1.2em; 
+.eu-article-content p {
+  margin-bottom: 1.2em;
   word-wrap: break-word;
   overflow-wrap: break-word;
 }
-
 .eu-article-content code {
   background: var(--eu-code-bg);
   padding: 2px 6px;
@@ -92,18 +86,16 @@
   font-size: 0.88em;
   word-wrap: break-word;
 }
-
 .eu-article-content pre {
   background: var(--eu-code-bg);
   border: 1px solid var(--eu-border);
   border-radius: var(--eu-radius);
   padding: 16px;
-  overflow-x: auto; /* Allow horizontal scroll for code blocks */
+  overflow-x: auto;
   max-width: 100%;
   margin-bottom: 1.2em;
   box-sizing: border-box;
 }
-
 .eu-article-content blockquote {
   border-left: 3px solid var(--eu-text);
   padding: 8px 16px;
@@ -115,50 +107,42 @@
   width: 100%;
   box-sizing: border-box;
 }
-
 .eu-article-content table {
   width: 100%;
   border-collapse: collapse;
   margin-bottom: 1.2em;
   font-size: 0.9em;
   display: block;
-  overflow-x: auto; /* Responsive tables */
+  overflow-x: auto;
   max-width: 100%;
 }
-
-.eu-article-content th, .eu-article-content td {
+.eu-article-content th,
+.eu-article-content td {
   padding: 8px 12px;
   border: 1px solid var(--eu-border);
   text-align: left;
-  white-space: nowrap; /* Prevent cell content wrapping */
+  white-space: nowrap;
 }
-
 .eu-article-content th {
   background: var(--eu-bg-secondary);
   font-weight: 600;
 }
-
-/* Ensure images don't overflow */
 .eu-article-content img {
   max-width: 100%;
   height: auto;
   display: block;
 }
-
 /* ── SUMMARY MARKDOWN ─────────────────────────────────── */
-
 .eu-article-summary {
   width: 100%;
   box-sizing: border-box;
 }
-
 .eu-article-summary .eu-summary-content {
   font-size: 1.05rem;
   color: var(--eu-text-secondary);
   font-style: italic;
   line-height: 1.7;
 }
-
 .eu-article-summary .eu-summary-content h1,
 .eu-article-summary .eu-summary-content h2,
 .eu-article-summary .eu-summary-content h3 {
@@ -167,17 +151,15 @@
   color: var(--eu-text);
   margin: 8px 0 4px;
 }
-
 .eu-article-summary .eu-summary-content ul,
 .eu-article-summary .eu-summary-content ol {
   padding-left: 1.4em;
   margin: 4px 0;
 }
-
-.eu-article-summary .eu-summary-content p { margin: 4px 0; }
-
+.eu-article-summary .eu-summary-content p {
+  margin: 4px 0;
+}
 /* ── SUMMARY INDEX LINKS ──────────────────────────────── */
-
 .eu-summary-index a {
   color: var(--eu-link);
   text-decoration: none;
@@ -185,22 +167,19 @@
   padding-bottom: 1px;
   transition: color var(--eu-transition);
 }
-
-.eu-summary-index a:hover { color: var(--eu-link-hover); }
-
+.eu-summary-index a:hover {
+  color: var(--eu-link-hover);
+}
 /* ── SIDEBAR ───────────────────────────────────────────── */
-
 .eu-article-sidebar {
   width: 100%;
   box-sizing: border-box;
 }
-
 @media (max-width: 991.98px) {
   .eu-article-sidebar {
-    order: 2; /* Move below content on mobile */
+    order: 2;
   }
 }
-
 .eu-sidebar-widget {
   background: var(--eu-bg-secondary);
   border: 1px solid var(--eu-border);
@@ -210,7 +189,6 @@
   width: 100%;
   box-sizing: border-box;
 }
-
 .eu-sidebar-widget h4 {
   font-size: 1rem;
   font-weight: 600;
@@ -218,21 +196,16 @@
   color: var(--eu-text);
   word-wrap: break-word;
 }
-
-/* Related articles in sidebar */
 .eu-related-summary {
   font-size: 0.85rem;
   color: var(--eu-text-muted);
   line-height: 1.4;
 }
-
-/* Sources list */
 .eu-sources-list {
   display: flex;
   flex-direction: column;
   gap: 12px;
 }
-
 .eu-source-item {
   display: flex;
   align-items: center;
@@ -247,25 +220,21 @@
   width: 100%;
   box-sizing: border-box;
 }
-
 .eu-source-item:hover {
   background: var(--eu-bg-secondary);
   border-color: var(--eu-border-hover);
   transform: translateX(4px);
 }
-
 .eu-source-pdf-icon {
   flex-shrink: 0;
   color: #dc2626;
 }
-
 .eu-source-favicon {
   width: 16px;
   height: 16px;
   flex-shrink: 0;
   border-radius: 2px;
 }
-
 .eu-source-title {
   font-weight: 500;
   font-size: 0.9rem;
@@ -275,13 +244,11 @@
   flex: 1;
   min-width: 0;
 }
-
 .eu-source-size {
   font-size: 0.75rem;
   color: var(--eu-text-muted);
   margin-top: 2px;
 }
-
 /* Paywall */
 .eu-paywall {
   background: var(--eu-bg-secondary);
@@ -293,33 +260,28 @@
   width: 100%;
   box-sizing: border-box;
 }
-
 @media (max-width: 767.98px) {
   .eu-paywall {
     padding: 24px 16px;
   }
 }
-
 .eu-paywall-title {
   font-size: 1.25rem;
   font-weight: 600;
   margin-bottom: 12px;
   color: var(--eu-text);
 }
-
 .eu-paywall-price {
   font-size: 2rem;
   font-weight: 700;
   color: var(--eu-text);
   margin: 16px 0;
 }
-
 .eu-paywall-price small {
   font-size: 1rem;
   color: var(--eu-text-muted);
   font-weight: 400;
 }
-
 .eu-paywall-features {
   list-style: none;
   padding: 0;
@@ -327,14 +289,12 @@
   text-align: left;
   display: inline-block;
 }
-
 .eu-paywall-features li {
   padding: 6px 0;
   padding-left: 24px;
   position: relative;
   color: var(--eu-text-secondary);
 }
-
 .eu-paywall-features li::before {
   content: '✓';
   position: absolute;

@@ -1,17 +1,15 @@
 // mapaSinoptico.js
-
 (() => {
+  const DOWNLOAD_LABEL = 'Descargar Mapa Sinóptico';
   const DEFAULT_NODE_PALETTE = [
     '#1f2d3d', '#0066cc', '#00a65a', '#8e44ad',
     '#d35400', '#c0392b', '#0ea5e9', '#10b981',
     '#fb923c', '#a855f7', '#22c55e', '#f43f5e'
   ];
-
   const TOGGLE_LABELS = {
     open: 'Ocultar mapa sinóptico',
     closed: 'Mostrar mapa sinóptico'
   };
-
   const MAP_EXPORT_CSS = `
 :root {
   font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
@@ -83,97 +81,85 @@ body {
   box-shadow: 0 12px 24px rgba(15, 23, 42, 0.15);
 }
 `;
-
   function initMapas(root = document) {
     root.querySelectorAll('.eu-mapa-sinoptico').forEach(renderMapa);
   }
-
   function renderMapa(container) {
     const dataEl = container.querySelector('.eu-mapa-sinoptico-data');
     const treeWrapper = container.querySelector('.eu-mapa-sinoptico-tree');
     const captionEl = container.querySelector('.eu-mapa-sinoptico-caption');
-
     if (!dataEl || !treeWrapper) return;
-
     const caption = container.dataset.caption || 'Mapa Sinóptico';
     if (captionEl) {
       captionEl.textContent = `🗺️ ${caption}`;
     }
-
     const rawText = dataEl.textContent || '';
     const parsed = parseLines(rawText);
-    const { edges, nodes } = parsed;
-
+    const { edges, nodes, definitions } = parsed;
     if (!edges.length) {
       treeWrapper.innerHTML = '<div class="eu-mapa-sinoptico-empty">Define relaciones usando <code>-></code> para que aparezca el mapa.</div>';
       initMapaInteractions(container);
       return;
     }
-
     const parsedColorMap = parseColorMap(container.dataset.nodeColors);
     const colorMap = ensureNodeColors(container, parsedColorMap, nodes);
     const { roots, childrenMap } = buildHierarchy(edges, nodes);
-
     treeWrapper.innerHTML = '';
     if (!roots.length) {
       treeWrapper.innerHTML = '<div class="eu-mapa-sinoptico-empty">No se encontró raíz para este mapa.</div>';
       initMapaInteractions(container);
       return;
     }
-
     const rendered = new Set();
+    const normalizedDefinitions = definitions || {};
     roots.forEach(rootName => {
-      const nodeElement = createNode(rootName, 1, childrenMap, colorMap, rendered);
+      const nodeElement = createNode(rootName, 1, childrenMap, colorMap, normalizedDefinitions, rendered);
       if (nodeElement) {
         treeWrapper.appendChild(nodeElement);
       }
     });
-
     const remaining = nodes.filter(name => !rendered.has(name));
     if (remaining.length) {
       const fallbackWrapper = document.createElement('div');
       fallbackWrapper.className = 'eu-mapa-sinoptico-children';
       remaining.forEach(extra => {
-        const nodeElement = createNode(extra, 1, childrenMap, colorMap, rendered);
+        const nodeElement = createNode(extra, 1, childrenMap, colorMap, normalizedDefinitions, rendered);
         if (nodeElement) fallbackWrapper.appendChild(nodeElement);
       });
       if (fallbackWrapper.childElementCount) {
         treeWrapper.appendChild(fallbackWrapper);
       }
     }
-
     initMapaInteractions(container);
   }
-
-  function createNode(name, depth, childrenMap, colorMap, rendered, ancestry = new Set()) {
+  function createNode(name, depth, childrenMap, colorMap, definitions, rendered, ancestry = new Set()) {
     if (ancestry.has(name)) {
       return null;
     }
     ancestry.add(name);
-
     const node = document.createElement('div');
     node.className = `eu-mapa-sinoptico-node level-${Math.min(depth, 6)}${depth === 1 ? ' root' : ''}`;
-
     const content = document.createElement('div');
     content.className = 'eu-mapa-sinoptico-content';
     content.textContent = name;
-
     const color = colorMap[name];
     if (color) {
       content.style.background = color;
       content.style.borderColor = color;
       content.style.color = getContrastColor(color);
     }
-
+    const definition = definitions && definitions[name];
+    if (definition) {
+      content.dataset.definition = definition;
+    }
     node.appendChild(content);
     rendered.add(name);
-
     const children = childrenMap.get(name) || [];
     if (children.length) {
       const childWrapper = document.createElement('div');
       childWrapper.className = 'eu-mapa-sinoptico-children';
       children.forEach(child => {
-        const childNode = createNode(child, depth + 1, childrenMap, colorMap, rendered, new Set(ancestry));
+        const childNode = createNode(child, depth + 1, childrenMap, colorMap, definitions, rendered, new Set(ancestry));
         if (childNode) {
           childWrapper.appendChild(childNode);
         }
@@ -182,19 +168,15 @@ body {
         node.appendChild(childWrapper);
       }
     }
-
     return node;
   }
-
   function buildHierarchy(edges, nodes) {
     const childrenMap = new Map();
     const indegree = new Map();
-
     nodes.forEach(name => {
       childrenMap.set(name, []);
       indegree.set(name, 0);
     });
-
     edges.forEach(({ parent, child }) => {
       if (!childrenMap.has(parent)) {
         childrenMap.set(parent, []);
@@ -205,30 +187,42 @@ body {
         indegree.set(parent, 0);
       }
     });
-
     const roots = nodes.filter(name => (indegree.get(name) || 0) === 0);
     return { roots, childrenMap };
   }
-
   function parseLines(text) {
     const edges = [];
     const nodes = new Set();
-
+    const definitions = {};
     text.split('\n').forEach(raw => {
       const line = raw.trim();
       if (!line) return;
       const parts = line.split(/-+>/).map(p => p.trim()).filter(Boolean);
       if (parts.length === 2) {
-        const [parent, child] = parts;
+        const parent = extractNodeData(parts[0], definitions);
+        const child = extractNodeData(parts[1], definitions);
         edges.push({ parent, child });
         nodes.add(parent);
         nodes.add(child);
       }
     });
-
-    return { edges, nodes: Array.from(nodes) };
+    return { edges, nodes: Array.from(nodes), definitions };
   }
-
+  function extractNodeData(value, definitions) {
+    if (!value) {
+      return value;
+    }
+    const match = value.match(/^(.*?)\s*\{\s*([^}]+)\s*\}\s*$/);
+    if (match) {
+      const name = match[1].trim();
+      const definition = match[2].trim();
+      if (name) {
+        definitions[name] = definition;
+        return name;
+      }
+    }
+    return value;
+  }
   function parseColorMap(payload) {
     if (!payload) return {};
     try {
@@ -241,14 +235,13 @@ body {
     }
     return {};
   }
-
   function ensureNodeColors(container, baseMap, nodes) {
     const normalized = { ...(baseMap || {}) };
     let index = 0;
     nodes.forEach(name => {
       if (!normalized[name]) {
         normalized[name] = DEFAULT_NODE_PALETTE[index % DEFAULT_NODE_PALETTE.length];
-        index++;
+        index += 1;
       }
     });
     try {
@@ -258,41 +251,37 @@ body {
     }
     return normalized;
   }
-
   function getContrastColor(hex) {
-    const cleaned = String(hex || '').replace('#', '');
+    const cleaned = String(hex || '').replace('#', '').trim();
     if (!cleaned || cleaned.length < 6) {
       return '#fff';
     }
-    const r = parseInt(cleaned.substring(0, 2), 16);
-    const g = parseInt(cleaned.substring(2, 4), 16);
-    const b = parseInt(cleaned.substring(4, 6), 16);
+    const r = parseInt(cleaned.substring(0, 2), 16) || 0;
+    const g = parseInt(cleaned.substring(2, 4), 16) || 0;
+    const b = parseInt(cleaned.substring(4, 6), 16) || 0;
     const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-    return luminance > 0.5 ? '#111' : '#fff';
+    return luminance > 0.5 ? '#111827' : '#ffffff';
   }
-
   function initMapaInteractions(container) {
     const controls = hydrateMapaControls(container);
     initMapaToggle(container, controls.toggle);
     initMapaDownload(container, controls.download);
+    initDefinitionInteractions(container);
   }
-
   function hydrateMapaControls(container) {
     const header = container.querySelector('.eu-mapa-sinoptico-header');
-    if (!header) return { toggle: null, download: null };
-
-    const toggles = Array.from(header.querySelectorAll('.eu-mapa-sinoptico-toggle'));
-    const downloadButtons = Array.from(header.querySelectorAll('.eu-mapa-sinoptico-download'));
-
-    // Remove duplicate controls
-    for (let i = 1; i < toggles.length; i++) {
-      toggles[i].remove();
+    if (!header) {
+      return { toggle: null, download: null };
     }
-    for (let i = 1; i < downloadButtons.length; i++) {
-      downloadButtons[i].remove();
+    const toggleElements = Array.from(header.querySelectorAll('.eu-mapa-sinoptico-toggle'));
+    const downloadElements = Array.from(header.querySelectorAll('.eu-mapa-sinoptico-download'));
+    for (let i = 1; i < toggleElements.length; i += 1) {
+      toggleElements[i].remove();
     }
-
-    let toggle = toggles[0];
+    for (let i = 1; i < downloadElements.length; i += 1) {
+      downloadElements[i].remove();
+    }
+    let toggle = toggleElements[0];
     if (!toggle) {
       toggle = document.createElement('button');
       toggle.type = 'button';
@@ -309,88 +298,77 @@ body {
         toggle.appendChild(createToggleLabel(TOGGLE_LABELS.closed));
       }
     }
-
-    let download = downloadButtons[0];
+    let download = downloadElements[0];
     if (!download) {
+      const actions = container.querySelector('.eu-mapa-sinoptico-actions');
+      if (actions) {
+        const legacyDownload = actions.querySelector('.eu-mapa-sinoptico-download');
+        if (legacyDownload) {
+          download = legacyDownload;
+          header.appendChild(download);
+        }
+        actions.remove();
+      }
+    }
+    if (download) {
+      const replacement = createDownloadButton();
+      const parentElement = download.parentNode;
+      if (parentElement) {
+        parentElement.replaceChild(replacement, download);
+      }
+      download = replacement;
+    } else {
       download = createDownloadButton();
       header.appendChild(download);
-    } else {
-      // Ensure download button has proper SVG icon if missing
-      if (!download.querySelector('.eu-mapa-sinoptico-download-icon')) {
-        const existingContent = download.innerHTML;
-        download.innerHTML = '';
-        download.appendChild(createDownloadIcon());
-        const span = document.createElement('span');
-        span.textContent = 'Descargar Mapa Sinoptico';
-        download.appendChild(span);
-      }
-      // Ensure button is clickable (remove any disabled states)
-      download.disabled = false;
-      download.style.pointerEvents = 'auto';
-      download.style.cursor = 'pointer';
     }
-
     return { toggle, download };
   }
-
   function createToggleIcon() {
     const icon = document.createElement('span');
     icon.className = 'eu-mapa-sinoptico-toggle-icon';
     icon.setAttribute('aria-hidden', 'true');
     return icon;
   }
-
   function createToggleLabel(text) {
     const label = document.createElement('span');
     label.className = 'eu-mapa-sinoptico-toggle-label';
     label.textContent = text;
     return label;
   }
-
-  function createDownloadIcon() {
-    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-    svg.setAttribute('class', 'eu-mapa-sinoptico-download-icon');
-    svg.setAttribute('width', '18');
-    svg.setAttribute('height', '18');
-    svg.setAttribute('viewBox', '0 0 24 24');
-    svg.setAttribute('fill', 'none');
-    svg.setAttribute('stroke', 'currentColor');
-    svg.setAttribute('stroke-width', '2');
-    svg.setAttribute('stroke-linecap', 'round');
-    svg.setAttribute('stroke-linejoin', 'round');
-    svg.setAttribute('aria-hidden', 'true');
-
-    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-    path.setAttribute('d', 'M12 6v10m0 0l-4-4m4 4l4-4M6 18h12');
-    svg.appendChild(path);
-
-    return svg;
-  }
-
   function createDownloadButton() {
     const button = document.createElement('button');
     button.type = 'button';
     button.className = 'eu-mapa-sinoptico-download';
-    button.setAttribute('aria-label', 'Descargar mapa sinóptico como HTML');
-    
-    button.appendChild(createDownloadIcon());
-    
-    const span = document.createElement('span');
-    span.textContent = 'Descargar Mapa Sinoptico';
-    button.appendChild(span);
-
+    button.setAttribute('aria-label', 'Descargar mapa sinóptico');
+    button.title = 'Descargar mapa sinóptico';
+    const icon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    icon.className = 'eu-mapa-sinoptico-download-icon';
+    icon.setAttribute('width', '18');
+    icon.setAttribute('height', '18');
+    icon.setAttribute('viewBox', '0 0 24 24');
+    icon.setAttribute('role', 'presentation');
+    icon.setAttribute('aria-hidden', 'true');
+    icon.setAttribute('fill', 'none');
+    icon.setAttribute('stroke', 'currentColor');
+    icon.setAttribute('stroke-width', '1.8');
+    icon.setAttribute('stroke-linecap', 'round');
+    icon.setAttribute('stroke-linejoin', 'round');
+    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    path.setAttribute('d', 'M12 6v10m0 0l-4-4m4 4l4-4M6 18h12');
+    icon.appendChild(path);
+    button.appendChild(icon);
+    const label = document.createElement('span');
+    label.textContent = DOWNLOAD_LABEL;
+    button.appendChild(label);
     return button;
   }
-
   function initMapaToggle(container, toggleEl) {
     const toggle = toggleEl || container.querySelector('.eu-mapa-sinoptico-toggle');
     if (!toggle) return;
-
     const body = container.querySelector('.eu-mapa-sinoptico-body');
     const label = toggle.querySelector('.eu-mapa-sinoptico-toggle-label');
     const icon = toggle.querySelector('.eu-mapa-sinoptico-toggle-icon');
-
-    const setOpen = (open) => {
+    const setOpen = open => {
       container.classList.toggle('eu-mapa-sinoptico-open', open);
       toggle.setAttribute('aria-expanded', open);
       if (body) {
@@ -403,61 +381,118 @@ body {
         icon.style.transform = open ? 'rotate(180deg)' : 'rotate(0deg)';
       }
     };
-
     setOpen(false);
-
     if (toggle.dataset.euMapaToggleInit === 'true') {
       return;
     }
-
     toggle.addEventListener('click', () => {
-      const isOpen = container.classList.contains('eu-mapa-sinoptico-open');
-      setOpen(!isOpen);
+      setOpen(!container.classList.contains('eu-mapa-sinoptico-open'));
     });
-
     toggle.dataset.euMapaToggleInit = 'true';
   }
-
   function initMapaDownload(container, downloadEl) {
     let button = downloadEl || container.querySelector('.eu-mapa-sinoptico-download');
     if (!button) return;
-
-    // Remove any existing listeners to prevent duplicates
-    const newButton = button.cloneNode(true);
-    if (button.parentNode) {
-      button.parentNode.replaceChild(newButton, button);
+    if (button.dataset.euMapaDownloadInit === 'true') {
+      const replacement = button.cloneNode(true);
+      const parentElement = button.parentNode;
+      if (parentElement) {
+        parentElement.replaceChild(replacement, button);
+      }
+      button = replacement;
     }
-    button = newButton;
-
-    button.addEventListener('click', (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      
+    button.addEventListener('click', () => {
       const tree = container.querySelector('.eu-mapa-sinoptico-tree');
       if (!tree) {
-        console.warn('[mapaSinoptico] No tree found for download');
         return;
       }
-
-      const caption = container.dataset.caption || 'Mapa Sinoptico';
       const treeClone = tree.cloneNode(true);
-      
-      // Clean up dynamic styles for export
-      treeClone.querySelectorAll('.eu-mapa-sinoptico-content').forEach(el => {
-        el.style.transform = '';
-        el.style.boxShadow = '';
-      });
-
       const treeHtml = treeClone.outerHTML;
+      const caption = container.dataset.caption || 'Mapa Sinoptico';
       const html = buildMapExportHtml(caption, treeHtml);
       downloadMapFile(html, caption);
     });
-
-    // Ensure button is enabled and visible
-    button.disabled = false;
-    button.style.display = 'inline-flex';
+    button.dataset.euMapaDownloadInit = 'true';
   }
-
+  function initDefinitionInteractions(container) {
+    const nodes = Array.from(container.querySelectorAll('.eu-mapa-sinoptico-content[data-definition]'));
+    nodes.forEach(node => {
+      if (node.dataset.euDefinitionInit === 'true') {
+        return;
+      }
+      node.dataset.euDefinitionInit = 'true';
+      node.classList.add('has-definition');
+      node.setAttribute('tabindex', '0');
+      node.setAttribute('role', 'button');
+      const definition = node.dataset.definition;
+      const title = node.textContent.trim();
+      const openDefinition = () => {
+        showDefinitionModal(title, definition);
+      };
+      node.addEventListener('click', openDefinition);
+      node.addEventListener('keydown', event => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          openDefinition();
+        }
+      });
+    });
+  }
+  let definitionModalState;
+  function getDefinitionModalState() {
+    if (definitionModalState) {
+      return definitionModalState;
+    }
+    const modal = document.createElement('div');
+    modal.id = 'eu-mapa-sinoptico-definition-modal';
+    modal.className = 'eu-mapa-definition-modal';
+    const panel = document.createElement('div');
+    panel.className = 'eu-mapa-definition-panel';
+    panel.setAttribute('role', 'dialog');
+    panel.setAttribute('aria-modal', 'true');
+    const closeBtn = document.createElement('button');
+    closeBtn.type = 'button';
+    closeBtn.className = 'eu-mapa-definition-close';
+    closeBtn.setAttribute('aria-label', 'Cerrar definición');
+    closeBtn.textContent = '×';
+    const titleEl = document.createElement('h3');
+    titleEl.className = 'eu-mapa-definition-title';
+    const textEl = document.createElement('p');
+    textEl.className = 'eu-mapa-definition-text';
+    panel.appendChild(closeBtn);
+    panel.appendChild(titleEl);
+    panel.appendChild(textEl);
+    modal.appendChild(panel);
+    document.body.appendChild(modal);
+    closeBtn.addEventListener('click', hideDefinitionModal);
+    modal.addEventListener('click', event => {
+      if (event.target === modal) {
+        hideDefinitionModal();
+      }
+    });
+    document.addEventListener('keydown', event => {
+      if (event.key === 'Escape') {
+        hideDefinitionModal();
+      }
+    });
+    definitionModalState = { modal, titleEl, textEl };
+    return definitionModalState;
+  }
+  function showDefinitionModal(title, text) {
+    if (!text) {
+      return;
+    }
+    const state = getDefinitionModalState();
+    state.titleEl.textContent = title || 'Detalle';
+    state.textEl.textContent = text;
+    state.modal.classList.add('eu-visible');
+  }
+  function hideDefinitionModal() {
+    if (!definitionModalState) {
+      return;
+    }
+    definitionModalState.modal.classList.remove('eu-visible');
+  }
   function buildMapExportHtml(caption, treeHtml) {
     const safeCaption = escapeHtmlForExport(caption);
     return `<!doctype html>
@@ -478,27 +513,20 @@ body {
 </body>
 </html>`;
   }
-
   function downloadMapFile(html, caption) {
     const fileName = `mapa-sinoptico-${slugify(caption)}.html`;
     const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
     const url = URL.createObjectURL(blob);
-    
     const anchor = document.createElement('a');
     anchor.href = url;
     anchor.download = fileName;
     anchor.style.display = 'none';
-    
-    document.body.appendChild(anchor);
+    const bodyElement = document.body;
+    bodyElement.appendChild(anchor);
     anchor.click();
-    
-    // Cleanup
-    setTimeout(() => {
-      document.body.removeChild(anchor);
-      URL.revokeObjectURL(url);
-    }, 100);
+    bodyElement.removeChild(anchor);
+    URL.revokeObjectURL(url);
   }
-
   function slugify(value) {
     return String(value || 'mapa sinoptico')
       .normalize('NFD')
@@ -507,7 +535,6 @@ body {
       .replace(/^-+|-+$/g, '')
       .toLowerCase() || 'mapa-sinoptico';
   }
-
   function escapeHtmlForExport(value) {
     return String(value || '')
       .replace(/&/g, '&amp;')
@@ -515,34 +542,22 @@ body {
       .replace(/>/g, '&gt;')
       .replace(/"/g, '&quot;');
   }
-
-  // Initialize on DOM ready
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => initMapas());
-  } else {
-    initMapas();
-  }
-
-  // Listen for dynamic content loaded events
+  document.addEventListener('DOMContentLoaded', () => initMapas());
   window.addEventListener('eu:content-loaded', () => initMapas());
-
-  // MutationObserver for dynamically added mapas
+  initMapas();
   const observer = typeof MutationObserver !== 'undefined'
     ? new MutationObserver(mutations => {
-        mutations.forEach(record => {
-          record.addedNodes.forEach(node => {
-            if (node.nodeType !== 1) return;
-            if (node.matches && node.matches('.eu-mapa-sinoptico')) {
-              renderMapa(node);
-            }
-            if (node.querySelectorAll) {
-              node.querySelectorAll('.eu-mapa-sinoptico').forEach(renderMapa);
-            }
-          });
+      mutations.forEach(record => {
+        record.addedNodes.forEach(node => {
+          if (node.nodeType !== 1) return;
+          if (node.matches && node.matches('.eu-mapa-sinoptico')) {
+            renderMapa(node);
+          }
+          node.querySelectorAll && node.querySelectorAll('.eu-mapa-sinoptico').forEach(renderMapa);
         });
-      })
+      });
+    })
     : null;
-
   if (observer) {
     const rootNode = document.body || document.documentElement;
     if (rootNode) {
