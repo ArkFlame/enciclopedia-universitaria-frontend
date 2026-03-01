@@ -186,4 +186,27 @@
 
   document.addEventListener('DOMContentLoaded', () => initMapas());
   window.addEventListener('eu:content-loaded', () => initMapas());
+
+  initMapas();
+
+  const observer = typeof MutationObserver !== 'undefined'
+    ? new MutationObserver(mutations => {
+      mutations.forEach(record => {
+        record.addedNodes.forEach(node => {
+          if (node.nodeType !== 1) return;
+          if (node.matches && node.matches('.eu-mapa-sinoptico')) {
+            renderMapa(node);
+          }
+          node.querySelectorAll && node.querySelectorAll('.eu-mapa-sinoptico').forEach(renderMapa);
+        });
+      });
+    })
+    : null;
+
+  if (observer) {
+    const rootNode = document.body || document.documentElement;
+    if (rootNode) {
+      observer.observe(rootNode, { childList: true, subtree: true });
+    }
+  }
 })();
