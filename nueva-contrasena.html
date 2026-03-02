@@ -1,0 +1,215 @@
+---
+layout: default
+title: Nueva contraseña
+---
+
+<div style="min-height:70vh;display:flex;align-items:center;justify-content:center;padding:20px">
+  <div style="width:100%;max-width:420px">
+
+    <div class="text-center mb-6" style="margin-bottom:32px">
+      <span class="eu-logo-icon" style="font-size:2.5rem;display:block;margin-bottom:12px">Σ</span>
+      <h1 style="font-family:var(--eu-font-display);font-size:1.6rem;font-weight:700">Nueva contraseña</h1>
+    </div>
+
+    <!-- Validating token state -->
+    <div id="stateLoading" style="text-align:center;padding:40px 0">
+      <div class="eu-spinner" style="width:32px;height:32px;margin:0 auto 12px"></div>
+      <p class="text-muted">Validando enlace...</p>
+    </div>
+
+    <!-- Invalid / expired token -->
+    <div id="stateInvalid" style="display:none;text-align:center;padding:20px 0">
+      <div style="font-size:3rem;margin-bottom:16px">❌</div>
+      <h2 style="font-size:1.2rem;font-weight:700;margin-bottom:8px">Enlace inválido o expirado</h2>
+      <p class="text-muted mb-4" id="invalidMsg">Este enlace ya no es válido. Los enlaces de recuperación expiran en 1 hora.</p>
+      <a href="{{ site.baseurl }}/login.html" class="eu-btn-primary"
+         style="display:inline-flex;gap:8px;align-items:center">
+        <i class="bi bi-arrow-left"></i> Solicitar nuevo enlace
+      </a>
+    </div>
+
+    <!-- Reset form -->
+    <div id="stateForm" style="display:none">
+      <div class="eu-card p-4">
+        <p class="text-muted small mb-4">
+          Elige una nueva contraseña segura. Debe tener al menos 6 caracteres.
+        </p>
+
+        <div id="resetError"   class="alert alert-danger  d-none mb-3"></div>
+
+        <div class="eu-form-group">
+          <label class="eu-label" for="newPassword">Nueva contraseña</label>
+          <div class="position-relative">
+            <input type="password" id="newPassword" class="eu-input pe-5"
+                   placeholder="Mínimo 6 caracteres" autocomplete="new-password">
+            <button type="button" class="eu-icon-btn position-absolute end-0 top-50 translate-middle-y me-1"
+                    onclick="togglePwd('newPassword', this)">
+              <i class="bi bi-eye"></i>
+            </button>
+          </div>
+        </div>
+
+        <div class="eu-form-group">
+          <label class="eu-label" for="confirmPassword">Confirmar contraseña</label>
+          <div class="position-relative">
+            <input type="password" id="confirmPassword" class="eu-input pe-5"
+                   placeholder="Repite tu nueva contraseña" autocomplete="new-password">
+            <button type="button" class="eu-icon-btn position-absolute end-0 top-50 translate-middle-y me-1"
+                    onclick="togglePwd('confirmPassword', this)">
+              <i class="bi bi-eye"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Password strength bar -->
+        <div style="margin-bottom:20px">
+          <div style="height:4px;background:#e5e7eb;border-radius:2px;overflow:hidden">
+            <div id="strengthBar" style="height:100%;width:0%;border-radius:2px;transition:all 0.3s"></div>
+          </div>
+          <div id="strengthLabel" class="small text-muted mt-1"></div>
+        </div>
+
+        <button class="eu-btn-primary w-100 justify-content-center" id="resetBtn" style="height:44px"
+                onclick="submitReset()">
+          <i class="bi bi-lock-fill me-2"></i>Guardar nueva contraseña
+        </button>
+      </div>
+    </div>
+
+    <!-- Success state -->
+    <div id="stateSuccess" style="display:none;text-align:center;padding:20px 0">
+      <div style="font-size:3rem;margin-bottom:16px">✅</div>
+      <h2 style="font-size:1.2rem;font-weight:700;margin-bottom:8px">¡Contraseña actualizada!</h2>
+      <p class="text-muted mb-4">Tu contraseña ha sido cambiada exitosamente. Ya puedes iniciar sesión.</p>
+      <a href="{{ site.baseurl }}/login.html" class="eu-btn-primary"
+         style="display:inline-flex;gap:8px;align-items:center">
+        <i class="bi bi-box-arrow-in-right"></i> Iniciar sesión
+      </a>
+    </div>
+
+  </div>
+</div>
+
+<script>
+const API   = window.EU_CONFIG?.api  || '';
+const BASE  = window.EU_CONFIG?.baseUrl || '';
+const token = new URLSearchParams(window.location.search).get('token');
+
+function show(id) {
+  ['stateLoading','stateInvalid','stateForm','stateSuccess'].forEach(s => {
+    document.getElementById(s).style.display = s === id ? 'block' : 'none';
+  });
+}
+
+function togglePwd(id, btn) {
+  const inp  = document.getElementById(id);
+  const hide = inp.type === 'password';
+  inp.type   = hide ? 'text' : 'password';
+  btn.querySelector('i').className = hide ? 'bi bi-eye-slash' : 'bi bi-eye';
+}
+
+// Password strength
+document.addEventListener('DOMContentLoaded', () => {
+  const inp = document.getElementById('newPassword');
+  if (inp) inp.addEventListener('input', updateStrength);
+});
+
+function updateStrength() {
+  const val = document.getElementById('newPassword').value;
+  const bar = document.getElementById('strengthBar');
+  const lbl = document.getElementById('strengthLabel');
+
+  if (!val) { bar.style.width = '0%'; lbl.textContent = ''; return; }
+
+  let score = 0;
+  if (val.length >= 6)  score++;
+  if (val.length >= 10) score++;
+  if (/[A-Z]/.test(val)) score++;
+  if (/[0-9]/.test(val)) score++;
+  if (/[^A-Za-z0-9]/.test(val)) score++;
+
+  const levels = [
+    { w: '20%', color: '#dc2626', label: 'Muy débil' },
+    { w: '40%', color: '#f97316', label: 'Débil' },
+    { w: '60%', color: '#eab308', label: 'Regular' },
+    { w: '80%', color: '#22c55e', label: 'Buena' },
+    { w: '100%',color: '#16a34a', label: 'Muy segura' },
+  ];
+  const lvl = levels[Math.min(score - 1, 4)] || levels[0];
+  bar.style.width      = lvl.w;
+  bar.style.background = lvl.color;
+  lbl.textContent      = lvl.label;
+  lbl.style.color      = lvl.color;
+}
+
+// Validate the token on page load — just check format client-side
+// The real validation happens on submit; we show the form if token looks valid.
+(function init() {
+  if (!token || token.length !== 64) {
+    document.getElementById('invalidMsg').textContent =
+      'No se encontró un token de recuperación en el enlace. Usa el enlace que recibiste por correo.';
+    show('stateInvalid');
+    return;
+  }
+  show('stateForm');
+})();
+
+async function submitReset() {
+  const password = document.getElementById('newPassword').value;
+  const confirm  = document.getElementById('confirmPassword').value;
+  const btn      = document.getElementById('resetBtn');
+  const errEl    = document.getElementById('resetError');
+
+  errEl.classList.add('d-none');
+
+  if (password.length < 6) {
+    errEl.textContent = 'La contraseña debe tener al menos 6 caracteres.';
+    errEl.classList.remove('d-none');
+    return;
+  }
+  if (password !== confirm) {
+    errEl.textContent = 'Las contraseñas no coinciden.';
+    errEl.classList.remove('d-none');
+    return;
+  }
+
+  btn.disabled  = true;
+  btn.innerHTML = '<span class="eu-spinner" style="width:18px;height:18px;border-width:2px"></span>';
+
+  try {
+    const res  = await fetch(`${API}/api/auth/reset-password`, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ token, password })
+    });
+    const data = await res.json();
+
+    if (res.ok) {
+      show('stateSuccess');
+    } else {
+      if (data.code === 'TOKEN_EXPIRED' || data.code === 'TOKEN_NOT_FOUND') {
+        document.getElementById('invalidMsg').textContent = data.error;
+        show('stateInvalid');
+      } else {
+        errEl.textContent = data.error || 'Error al actualizar la contraseña.';
+        errEl.classList.remove('d-none');
+        btn.disabled  = false;
+        btn.innerHTML = '<i class="bi bi-lock-fill me-2"></i>Guardar nueva contraseña';
+      }
+    }
+  } catch (_) {
+    errEl.textContent = 'Error de conexión. Intenta más tarde.';
+    errEl.classList.remove('d-none');
+    btn.disabled  = false;
+    btn.innerHTML = '<i class="bi bi-lock-fill me-2"></i>Guardar nueva contraseña';
+  }
+}
+
+// Enter key support
+document.addEventListener('DOMContentLoaded', () => {
+  ['newPassword','confirmPassword'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener('keydown', e => { if (e.key === 'Enter') submitReset(); });
+  });
+});
+</script>

@@ -20,6 +20,9 @@ title: Iniciar sesión
         <li class="nav-item" role="presentation">
           <button class="nav-link" data-bs-toggle="tab" data-bs-target="#registerTab" type="button">Crear cuenta</button>
         </li>
+        <li class="nav-item" role="presentation">
+          <button class="nav-link" id="forgotTabBtn" data-bs-toggle="tab" data-bs-target="#forgotTab" type="button">Recuperar contraseña</button>
+        </li>
       </ul>
       <div class="tab-content p-4 border border-top-0 rounded-bottom">
         
@@ -38,6 +41,12 @@ title: Iniciar sesión
                 <i class="bi bi-eye"></i>
               </button>
             </div>
+          </div>
+          <div class="text-end mb-3">
+            <a href="#forgotTab" role="button" class="small text-muted"
+               onclick="document.getElementById('forgotTabBtn').click(); return false;">
+              ¿Olvidaste tu contraseña?
+            </a>
           </div>
           <button class="eu-btn-primary w-100 justify-content-center" id="loginBtn" style="height:44px">
             Iniciar sesión
@@ -73,6 +82,29 @@ title: Iniciar sesión
             Crear cuenta gratis
           </button>
         </div>
+
+        <!-- RECUPERAR CONTRASEÑA -->
+        <div class="tab-pane fade" id="forgotTab" role="tabpanel">
+          <div id="forgotError"   class="alert alert-danger  d-none"></div>
+          <div id="forgotSuccess" class="alert alert-success d-none"></div>
+          <p class="text-muted small mb-4">
+            Ingresa el correo de tu cuenta y te enviaremos un enlace para restablecer tu contraseña.
+          </p>
+          <div class="eu-form-group">
+            <label class="eu-label" for="forgotEmail">Correo electrónico</label>
+            <input type="email" id="forgotEmail" class="eu-input" placeholder="tu@email.com" autocomplete="email">
+          </div>
+          <button class="eu-btn-primary w-100 justify-content-center" id="forgotBtn" style="height:44px">
+            <i class="bi bi-envelope-fill me-2"></i>Enviar enlace de recuperación
+          </button>
+          <div class="text-center mt-3">
+            <a href="#loginTab" role="button" class="small text-muted"
+               onclick="document.querySelector('[data-bs-target=\'#loginTab\']').click(); return false;">
+              ← Volver a iniciar sesión
+            </a>
+          </div>
+        </div>
+
       </div>
     </div>
 
@@ -144,6 +176,51 @@ document.getElementById('registerBtn').addEventListener('click', async () => {
     showError('registerError', err.message);
     setLoading(btn, false);
   }
+});
+
+// FORGOT PASSWORD
+document.getElementById('forgotBtn').addEventListener('click', async () => {
+  const email = document.getElementById('forgotEmail').value.trim();
+  const btn   = document.getElementById('forgotBtn');
+  const err   = document.getElementById('forgotError');
+  const succ  = document.getElementById('forgotSuccess');
+
+  err.classList.add('d-none');
+  succ.classList.add('d-none');
+
+  if (!email) { showError('forgotError', 'Ingresa tu correo electrónico'); return; }
+
+  btn.disabled  = true;
+  btn.innerHTML = '<span class="eu-spinner" style="width:18px;height:18px;border-width:2px"></span>';
+
+  try {
+    const API = window.EU_CONFIG?.api || '';
+    const res  = await fetch(`${API}/api/auth/forgot-password`, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ email })
+    });
+    const data = await res.json();
+
+    if (res.ok) {
+      succ.innerHTML = '<i class="bi bi-envelope-check-fill me-2"></i>' + (data.message || 'Si ese correo está registrado, recibirás un enlace en breve. Revisa también tu carpeta de spam.');
+      succ.classList.remove('d-none');
+      btn.disabled  = true;
+      btn.innerHTML = '<i class="bi bi-check-lg me-2"></i>Correo enviado';
+    } else {
+      showError('forgotError', data.error || 'Error al enviar el correo');
+      btn.disabled  = false;
+      btn.innerHTML = '<i class="bi bi-envelope-fill me-2"></i>Enviar enlace de recuperación';
+    }
+  } catch (_) {
+    showError('forgotError', 'Error de conexión. Intenta más tarde.');
+    btn.disabled  = false;
+    btn.innerHTML = '<i class="bi bi-envelope-fill me-2"></i>Enviar enlace de recuperación';
+  }
+});
+
+document.getElementById('forgotEmail').addEventListener('keydown', e => {
+  if (e.key === 'Enter') document.getElementById('forgotBtn').click();
 });
 
 // Enter para enviar
