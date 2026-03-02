@@ -1,0 +1,158 @@
+---
+layout: default
+title: Verificar correo electrónico
+---
+
+<div style="min-height:70vh;display:flex;align-items:center;justify-content:center;padding:20px">
+  <div style="width:100%;max-width:440px;text-align:center">
+    
+    <!-- Icon + title -->
+    <div id="verifyLoading" style="display:block">
+      <div style="font-size:3rem;margin-bottom:16px">⏳</div>
+      <h1 style="font-family:var(--eu-font-display);font-size:1.4rem;font-weight:700;margin-bottom:8px">
+        Verificando tu cuenta...
+      </h1>
+      <p style="color:var(--eu-text-muted)">Por favor espera un momento.</p>
+    </div>
+
+    <div id="verifySuccess" style="display:none">
+      <div style="font-size:3rem;margin-bottom:16px">✅</div>
+      <h1 style="font-family:var(--eu-font-display);font-size:1.4rem;font-weight:700;margin-bottom:8px">
+        ¡Cuenta verificada!
+      </h1>
+      <p style="color:var(--eu-text-muted);margin-bottom:24px">
+        Tu correo ha sido verificado exitosamente. Ahora puedes publicar y editar artículos.
+      </p>
+      <a href="{{ site.baseurl }}/" class="eu-btn-primary" style="display:inline-flex;gap:8px;align-items:center">
+        <i class="bi bi-house-fill"></i> Ir al inicio
+      </a>
+    </div>
+
+    <div id="verifyAlready" style="display:none">
+      <div style="font-size:3rem;margin-bottom:16px">👍</div>
+      <h1 style="font-family:var(--eu-font-display);font-size:1.4rem;font-weight:700;margin-bottom:8px">
+        Ya verificado
+      </h1>
+      <p style="color:var(--eu-text-muted);margin-bottom:24px">
+        Tu cuenta ya estaba verificada anteriormente.
+      </p>
+      <a href="{{ site.baseurl }}/" class="eu-btn-primary" style="display:inline-flex;gap:8px;align-items:center">
+        <i class="bi bi-house-fill"></i> Ir al inicio
+      </a>
+    </div>
+
+    <div id="verifyError" style="display:none">
+      <div style="font-size:3rem;margin-bottom:16px">❌</div>
+      <h1 style="font-family:var(--eu-font-display);font-size:1.4rem;font-weight:700;margin-bottom:8px">
+        Verificación fallida
+      </h1>
+      <p id="verifyErrorMsg" style="color:var(--eu-text-muted);margin-bottom:24px"></p>
+
+      <!-- Resend button (only shown for expired tokens) -->
+      <div id="resendSection" style="display:none;margin-bottom:24px">
+        <button id="resendBtn" class="eu-btn-secondary" style="gap:8px" onclick="resendVerification()">
+          <i class="bi bi-envelope-fill"></i> Reenviar correo de verificación
+        </button>
+        <div id="resendMsg" style="margin-top:12px;font-size:0.88rem;color:var(--eu-text-muted)"></div>
+      </div>
+
+      <a href="{{ site.baseurl }}/" class="eu-btn-primary" style="display:inline-flex;gap:8px;align-items:center">
+        <i class="bi bi-house-fill"></i> Ir al inicio
+      </a>
+    </div>
+
+  </div>
+</div>
+
+<script>
+(async function() {
+  const API = window.EU_CONFIG?.api || '';
+  const params = new URLSearchParams(window.location.search);
+  const token  = params.get('token');
+
+  function show(id) {
+    ['verifyLoading','verifySuccess','verifyAlready','verifyError'].forEach(s => {
+      document.getElementById(s).style.display = s === id ? 'block' : 'none';
+    });
+  }
+
+  if (!token) {
+    document.getElementById('verifyErrorMsg').textContent = 'No se proporcionó un token de verificación. Asegúrate de usar el enlace del correo.';
+    show('verifyError');
+    return;
+  }
+
+  try {
+    const res  = await fetch(`${API}/api/auth/verify-email?token=${encodeURIComponent(token)}`);
+    const data = await res.json();
+
+    if (res.ok) {
+      // Update stored user data if logged in
+      const stored = localStorage.getItem('eu_user');
+      if (stored) {
+        try {
+          const u = JSON.parse(stored);
+          u.emailVerified = true;
+          localStorage.setItem('eu_user', JSON.stringify(u));
+        } catch(_) {}
+      }
+
+      if (data.alreadyVerified) {
+        show('verifyAlready');
+      } else {
+        show('verifySuccess');
+      }
+    } else {
+      document.getElementById('verifyErrorMsg').textContent = data.error || 'Ocurrió un error al verificar tu cuenta.';
+      if (data.code === 'TOKEN_EXPIRED') {
+        document.getElementById('resendSection').style.display = 'block';
+      }
+      show('verifyError');
+    }
+  } catch (err) {
+    document.getElementById('verifyErrorMsg').textContent = 'No se pudo conectar con el servidor. Intenta más tarde.';
+    show('verifyError');
+  }
+})();
+
+async function resendVerification() {
+  const API = window.EU_CONFIG?.api || '';
+  const btn = document.getElementById('resendBtn');
+  const msg = document.getElementById('resendMsg');
+  const token = localStorage.getItem('eu_token');
+
+  if (!token) {
+    msg.textContent = 'Debes iniciar sesión para reenviar el correo.';
+    msg.style.color = 'var(--eu-danger, #dc2626)';
+    return;
+  }
+
+  btn.disabled = true;
+  btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Enviando...';
+  msg.textContent = '';
+
+  try {
+    const res  = await fetch(`${API}/api/auth/resend-verification`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }
+    });
+    const data = await res.json();
+
+    if (res.ok) {
+      msg.textContent = '✓ ' + (data.message || 'Correo reenviado. Revisa tu bandeja de entrada.');
+      msg.style.color = 'var(--eu-success, #16a34a)';
+      btn.style.display = 'none';
+    } else {
+      msg.textContent = data.error || 'No se pudo reenviar el correo.';
+      msg.style.color = 'var(--eu-danger, #dc2626)';
+      btn.disabled = false;
+      btn.innerHTML = '<i class="bi bi-envelope-fill"></i> Reintentar';
+    }
+  } catch (_) {
+    msg.textContent = 'Error de conexión. Intenta más tarde.';
+    msg.style.color = 'var(--eu-danger, #dc2626)';
+    btn.disabled = false;
+    btn.innerHTML = '<i class="bi bi-envelope-fill"></i> Reintentar';
+  }
+}
+</script>

@@ -45,6 +45,23 @@
       return;
     }
 
+    // Check email verification
+    var currentUser = Auth.getUser();
+    if (currentUser && currentUser.emailVerified === false) {
+      var msgEl = document.getElementById('submitMsg');
+      if (msgEl) {
+        msgEl.innerHTML = '<div class="alert alert-warning mb-3"><i class="bi bi-envelope-exclamation-fill me-2"></i>' +
+          '<strong>Verifica tu correo electrónico</strong> para poder editar artículos. ' +
+          'Revisa tu bandeja de entrada o <a href="' + BASE + '/verificar-email.html" class="alert-link">solicita un nuevo enlace</a>.' +
+          '</div>';
+      }
+      var submitEditBtn = document.getElementById('submitEditBtn');
+      if (submitEditBtn) {
+        submitEditBtn.disabled = true;
+        submitEditBtn.title = 'Debes verificar tu correo primero';
+      }
+    }
+
     if (!slug) { renderError('No se especificó el artículo a editar.'); return; }
 
     setupEventListeners();

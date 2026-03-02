@@ -14,6 +14,25 @@
       window.location.href = BASE + '/login.html?redirect=' + encodeURIComponent(window.location.href);
       return;
     }
+
+    // Check email verification
+    var currentUser = Auth.getUser();
+    if (currentUser && currentUser.emailVerified === false) {
+      var alertEl = document.getElementById('publishAlert');
+      if (alertEl) {
+        alertEl.className = 'alert alert-warning';
+        alertEl.innerHTML = '<i class="bi bi-envelope-exclamation-fill me-2"></i>' +
+          '<strong>Verifica tu correo electrónico</strong> para poder publicar artículos. ' +
+          'Revisa tu bandeja de entrada o <a href="' + BASE + '/verificar-email.html" class="alert-link">solicita un nuevo enlace</a>.';
+        alertEl.classList.remove('d-none');
+      }
+      var publishBtn = document.getElementById('publishBtn');
+      if (publishBtn) {
+        publishBtn.disabled = true;
+        publishBtn.title = 'Debes verificar tu correo primero';
+      }
+    }
+
     document.getElementById('cancelLink').href = BASE + '/';
     await loadCategories();
     setupEventListeners();

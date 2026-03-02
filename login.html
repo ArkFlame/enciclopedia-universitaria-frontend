@@ -135,9 +135,11 @@ document.getElementById('registerBtn').addEventListener('click', async () => {
   try {
     await Auth.register(username, email, password);
     const succ = document.getElementById('registerSuccess');
-    succ.textContent = '¡Cuenta creada! Redirigiendo...';
+    succ.innerHTML = '<i class="bi bi-envelope-check-fill me-2"></i>' +
+      '<strong>¡Cuenta creada!</strong> Te enviamos un correo de verificación. ' +
+      'Revisa tu bandeja de entrada para verificar tu cuenta y poder publicar artículos.';
     succ.classList.remove('d-none');
-    setTimeout(() => window.location.href = BASE + '/', 1500);
+    setTimeout(() => window.location.href = BASE + '/', 2500);
   } catch (err) {
     showError('registerError', err.message);
     setLoading(btn, false);
