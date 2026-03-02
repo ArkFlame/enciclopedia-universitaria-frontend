@@ -52,42 +52,106 @@ function _appInit() {
 
   // ── NOTIFICATIONS DROPDOWN ───────────────────────────────────
   const notifDropdown = document.getElementById('notifDropdown');
-  const notifBadge = document.getElementById('notifBadge');
-  const notifWrapper = document.getElementById('notifWrapper');
+  const notifBadge    = document.getElementById('notifBadge');
+  const notifWrapper  = document.getElementById('notifWrapper');
 
-  function loadNotifications() {
+  function updateNotifBadge(unreadCount) {
+    if (!notifBadge) return;
+    if (unreadCount > 0) {
+      notifBadge.textContent = unreadCount > 99 ? '99+' : String(unreadCount);
+      notifBadge.classList.remove('d-none');
+    } else {
+      notifBadge.classList.add('d-none');
+    }
+  }
+
+  function renderNotifList(notifications) {
     const list = document.getElementById('notifList');
-    if (!list || list.dataset.loaded) return;
-    
-    list.innerHTML = '<div class="text-center p-3 text-muted"><div class="eu-spinner" style="width:20px;height:20px"></div></div>';
-    
+    if (!list) return;
+    if (!notifications.length) {
+      list.innerHTML = '<div class="eu-notif-empty">No tienes notificaciones</div>';
+      return;
+    }
+    list.innerHTML = notifications.slice(0, 15).map(n => {
+      const link  = Auth.getNotificationLink ? Auth.getNotificationLink(n) : null;
+      const icon  = Auth.getNotificationIcon ? Auth.getNotificationIcon(n.type) : '🔔';
+      const unread = !n.read_at;
+      const inner = `
+        <div class="eu-notif-icon">${icon}</div>
+        <div style="flex:1;min-width:0">
+          <div class="eu-notif-msg">${window.escapeHtml(n.message)}</div>
+          <div class="eu-notif-time">${window.timeAgo(n.created_at)}</div>
+        </div>
+        ${unread ? '<span class="eu-notif-dot"></span>' : ''}`;
+      const itemClass = `eu-notif-item${unread ? ' unread' : ''}`;
+      const dataId = `data-notif-id="${n.id}"`;
+      return link
+        ? `<a href="${link}" class="${itemClass}" ${dataId}>${inner}</a>`
+        : `<div class="${itemClass}" ${dataId} style="cursor:default">${inner}</div>`;
+    }).join('');
+  }
+
+  function loadNotifications(forceReload = false) {
+    const list = document.getElementById('notifList');
+    if (!list) return;
+    if (list.dataset.loaded && !forceReload) return;
+
+    list.innerHTML = '<div class="text-center p-3"><div class="eu-spinner" style="width:20px;height:20px;margin:auto"></div></div>';
+
     Auth.authFetch(`${window.EU_CONFIG.backendUrl}/api/auth/notifications`)
-      .then(response => response.ok ? response.json() : [])
+      .then(r => r.ok ? r.json() : [])
       .then(notifications => {
         list.dataset.loaded = 'true';
-        if (!notifications.length) {
-          list.innerHTML = '<div class="eu-notif-empty">No tienes notificaciones</div>';
-          return;
-        }
-        const recent = notifications.slice(0, 5);
-        list.innerHTML = recent.map(n => {
-          const link = Auth.getNotificationLink ? Auth.getNotificationLink(n) : null;
-          const inner = `
-            <div class="eu-notif-icon">${Auth.getNotificationIcon ? Auth.getNotificationIcon(n.type) : (n.type.includes('approved') ? '✓' : n.type.includes('rejected') ? '✕' : '•')}</div>
-            <div style="flex:1">
-              <div class="eu-notif-msg">${window.escapeHtml(n.message)}</div>
-              <div class="eu-notif-time">${window.timeAgo(n.created_at)}</div>
-            </div>
-            ${!n.read_at ? '<span class="eu-notif-dot"></span>' : ''}`;
-          const itemClass = `eu-notif-item ${!n.read_at ? 'unread' : ''}`;
-          return link
-            ? `<a href="${link}" class="${itemClass}">${inner}</a>`
-            : `<div class="${itemClass}">${inner}</div>`;
-        }).join('');
+        renderNotifList(notifications);
+        const unreadCount = notifications.filter(n => !n.read_at).length;
+        updateNotifBadge(unreadCount);
       })
       .catch(() => {
         list.innerHTML = '<div class="eu-notif-empty text-danger">Error al cargar</div>';
       });
+  }
+
+  async function markOneRead(id) {
+    if (!id) return;
+    try {
+      const res = await Auth.authFetch(
+        `${window.EU_CONFIG.backendUrl}/api/auth/notifications/${id}/read`,
+        { method: 'PUT' }
+      );
+      if (res?.ok) {
+        const data = await res.json().catch(() => null);
+        if (data?.unread !== undefined) updateNotifBadge(data.unread);
+      }
+    } catch (_) {}
+  }
+
+  async function markAllRead() {
+    try {
+      await Auth.authFetch(
+        `${window.EU_CONFIG.backendUrl}/api/auth/notifications/read`,
+        { method: 'PUT' }
+      );
+      document.querySelectorAll('.eu-notif-item.unread').forEach(el => {
+        el.classList.remove('unread');
+        el.querySelector('.eu-notif-dot')?.remove();
+      });
+      updateNotifBadge(0);
+    } catch (_) {}
+  }
+
+  async function clearAllNotifications() {
+    try {
+      await Auth.authFetch(
+        `${window.EU_CONFIG.backendUrl}/api/auth/notifications`,
+        { method: 'DELETE' }
+      );
+      const list = document.getElementById('notifList');
+      if (list) {
+        list.dataset.loaded = '';
+        list.innerHTML = '<div class="eu-notif-empty">No tienes notificaciones</div>';
+      }
+      updateNotifBadge(0);
+    } catch (_) {}
   }
 
   // Initialize notifications
@@ -110,9 +174,19 @@ function _appInit() {
         notifDropdown.classList.remove('active');
       } else {
         notifDropdown.classList.add('active');
-        if (notifBadge) notifBadge.classList.add('d-none');
         loadNotifications();
       }
+    });
+
+    notifDropdown.addEventListener('click', (e) => {
+      const item = e.target.closest('.eu-notif-item');
+      if (!item || !item.classList.contains('unread')) return;
+      const id = item.dataset.notifId;
+      item.classList.remove('unread');
+      item.querySelector('.eu-notif-dot')?.remove();
+      markOneRead(id);
+      const remaining = document.querySelectorAll('.eu-notif-item.unread').length;
+      updateNotifBadge(remaining);
     });
   }
 
@@ -120,14 +194,13 @@ function _appInit() {
   const markAllReadBtn = document.getElementById('markAllRead');
   markAllReadBtn?.addEventListener('click', async (e) => {
     e.stopPropagation();
-    try {
-      await Auth.authFetch(
-        `${window.EU_CONFIG.backendUrl}/api/auth/notifications/read`,
-        { method: 'PUT' }
-      );
-      document.querySelectorAll('.eu-notif-item.unread').forEach(el => el.classList.remove('unread'));
-      if (notifBadge) notifBadge.classList.add('d-none');
-    } catch (_) {}
+    await markAllRead();
+  });
+
+  const clearAllNotifBtn = document.getElementById('clearAllNotif');
+  clearAllNotifBtn?.addEventListener('click', async (e) => {
+    e.stopPropagation();
+    await clearAllNotifications();
   });
 
   // Close dropdown when clicking outside

@@ -34,6 +34,7 @@
   let abortCtrl     = null;
   let streamingDiv  = null;   // live message div being built
   let streamingText = '';     // accumulated text during streaming
+  let thinkingDiv   = null;   // "Pensando..." placeholder
 
   // ─── DOM refs ──────────────────────────────────────────────────
   let $win, $msgs, $textarea, $sendBtn, $attachBtn, $fileInput,
@@ -300,6 +301,19 @@
     $msgs.appendChild(div);
     scrollToBottom();
     if (save) { const h = loadHistory(); h.push({ role: 'tool', tool: toolName, icon, message, state }); saveHistory(h); }
+    return div;
+  }
+
+  function showThinkingMessage() {
+    if (thinkingDiv) return;
+    thinkingDiv = appendToolMsg('thinking', '💭', 'Pensando…', 'running', false);
+  }
+
+  function clearThinkingMessage() {
+    if (thinkingDiv) {
+      thinkingDiv.remove();
+      thinkingDiv = null;
+    }
   }
 
   /**
@@ -373,6 +387,7 @@
 
     appendUserMessage(text);
     isThinking = true;
+    showThinkingMessage();
     setFabProcessing(true);
     setInputDisabled(true);
 
@@ -389,6 +404,7 @@
         streamingDiv = null;
         streamingText = '';
       }
+      clearThinkingMessage();
       appendAIMessage(`Lo siento, ocurrió un error. Inténtalo de nuevo. *(${escHtml(err.message)})*`);
     } finally {
       isThinking = false;
@@ -396,6 +412,7 @@
       setInputDisabled(false);
       streamingDiv  = null;
       streamingText = '';
+      clearThinkingMessage();
     }
   }
 
@@ -467,6 +484,7 @@
 
   // ─── SSE event handler ──────────────────────────────────────────
   function handleSSEEvent(event) {
+    if (event.type !== 'done') clearThinkingMessage();
     switch (event.type) {
 
       case 'tool_start':

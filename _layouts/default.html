@@ -94,7 +94,10 @@
           <div class="eu-notif-dropdown" id="notifDropdown">
             <div class="eu-notif-header">
               <span>Notificaciones</span>
-              <button class="btn btn-sm" id="markAllRead" style="color:var(--eu-text-secondary);border:1px solid var(--eu-border);background:var(--eu-bg-secondary);border-radius:var(--eu-radius);padding:2px 10px;font-size:.78rem">Marcar leídas</button>
+              <div style="display:flex;gap:6px">
+                <button class="btn btn-sm" id="markAllRead" style="color:var(--eu-text-secondary);border:1px solid var(--eu-border);background:var(--eu-bg-secondary);border-radius:var(--eu-radius);padding:2px 10px;font-size:.78rem">Marcar leídas</button>
+                <button class="btn btn-sm" id="clearAllNotif" style="color:var(--eu-text-secondary);border:1px solid var(--eu-border);background:var(--eu-bg-secondary);border-radius:var(--eu-radius);padding:2px 10px;font-size:.78rem">Eliminar todo</button>
+              </div>
             </div>
             <div class="eu-notif-list" id="notifList">
               <div class="eu-notif-empty">No hay notificaciones</div>
