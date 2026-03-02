@@ -6,7 +6,7 @@
  * Changes:
  *   1. Real streaming from backend (chunk events from OpenRouter).
  *   2. Blinking cursor only appears while tokens are arriving, removed on finish.
- *   3. FAB button shows nanami.mp4 (looping, no controls) while processing.
+ *   3. FAB button shows nanami.webm (looping, no controls) while processing.
  */
 
 (function () {
@@ -66,7 +66,7 @@
         <video class="nanami-fab-video" id="nanamiiFabVideo"
                autoplay loop muted playsinline preload="auto"
                poster="${BASE_PATH}/assets/img/nanami-profile.jpg">
-          <source src="${BASE_PATH}/assets/img/nanami.mp4" type="video/mp4">
+          <source src="${BASE_PATH}/assets/img/nanami.webm" type="video/mp4">
         </video>
       </button>`;
     document.body.appendChild(fab);
@@ -130,7 +130,7 @@
           <video class="nanami-header-avatar nanami-header-avatar-video"
                  autoplay loop muted playsinline preload="auto"
                  poster="${BASE_PATH}/assets/img/nanami-profile.jpg">
-            <source src="${BASE_PATH}/assets/img/nanami.mp4" type="video/mp4">
+            <source src="${BASE_PATH}/assets/img/nanami.webm" type="video/mp4">
           </video>
         </div>
         <div class="nanami-header-info">
