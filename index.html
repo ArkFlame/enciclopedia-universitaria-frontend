@@ -24,13 +24,14 @@ description: Enciclopedia colaborativa universitaria en español
     <div class="nanami-landing-img d-none d-md-flex"
         onclick="window.NanamiChat && NanamiChat.open()"
         title="¡Habla con Nanami AI!">
-      <video id="nanamiLandingVideo"
-            autoplay
-            muted
-            playsinline
-            preload="auto">
-        <source src="{{ '/assets/img/nanami-landing.webm' | relative_url }}" type="video/webm">
-      </video>
+      <div class="nanami-video-wrap">
+        <video id="nanamiVideoA" class="nanami-video" autoplay muted playsinline preload="auto">
+          <source src="{{ '/assets/img/nanami-landing.webm' | relative_url }}" type="video/webm">
+        </video>
+        <video id="nanamiVideoB" class="nanami-video" muted playsinline preload="auto" style="opacity:0">
+          <source src="{{ '/assets/img/nanami-landing-dark.webm' | relative_url }}" type="video/webm">
+        </video>
+      </div>
     </div>
   </div>
 </div>
@@ -95,68 +96,88 @@ description: Enciclopedia colaborativa universitaria en español
 .nanami-landing-img {
   flex-shrink: 0;
 }
+.nanami-video-wrap {
+  position: relative;
+  display: inline-flex;
+}
+.nanami-video {
+  display: block;
+  transition: opacity 0.4s ease;
+}
+.nanami-video:not(:first-child) {
+  position: absolute;
+  inset: 0;
+}
 </style>
 
 <script>
   (function () {
-    const video = document.getElementById("nanamiLandingVideo");
-    if (!video) return;
-
     const LIGHT_SRC = "{{ '/assets/img/nanami-landing.webm' | relative_url }}";
     const DARK_SRC  = "{{ '/assets/img/nanami-landing-dark.webm' | relative_url }}";
 
-    function getPreferredSrc() {
-      return window.matchMedia("(prefers-color-scheme: dark)").matches ? DARK_SRC : LIGHT_SRC;
-    }
+    const videoA = document.getElementById("nanamiVideoA"); // light
+    const videoB = document.getElementById("nanamiVideoB"); // dark
+    if (!videoA || !videoB) return;
 
-    function applyVideoSrc(src) {
-      const source = video.querySelector("source");
-      if (source && !source.src.endsWith(src)) {
-        source.src = src;
-        video.load();
-        video.play().catch(() => {});
-      }
-    }
-
-    // Apply correct source on load, then listen for changes
-    applyVideoSrc(getPreferredSrc());
-    window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => {
-      applyVideoSrc(getPreferredSrc());
-    });
-
-    let reversing = false;
+    const SPEED = 2.5;
     let rafId = null;
-    const SPEED = 2.5; // adjust reverse speed (higher = faster reverse)
 
-    function reverseStep(lastTimestamp) {
-      return function step(timestamp) {
-        const delta = (timestamp - lastTimestamp) / 1000; // seconds elapsed
-        video.currentTime = Math.max(0, video.currentTime - delta * SPEED);
+    // Set up ping-pong reverse loop on a video element
+    function attachPingPong(vid) {
+      let reversing = false;
+      let localRaf = null;
 
-        if (video.currentTime <= 0) {
-          // Done reversing — play forward again
-          reversing = false;
-          video.playbackRate = 1;
-          video.play();
-          return;
+      function reverseStep(lastTimestamp) {
+        return function step(timestamp) {
+          const delta = (timestamp - lastTimestamp) / 1000;
+          vid.currentTime = Math.max(0, vid.currentTime - delta * SPEED);
+          if (vid.currentTime <= 0) {
+            reversing = false;
+            vid.playbackRate = 1;
+            vid.play().catch(() => {});
+            return;
+          }
+          localRaf = requestAnimationFrame(step);
+        };
+      }
+
+      vid.addEventListener("timeupdate", function () {
+        if (reversing || !vid.duration) return;
+        if (vid.currentTime >= vid.duration - 0.05) {
+          reversing = true;
+          vid.pause();
+          cancelAnimationFrame(localRaf);
+          localRaf = requestAnimationFrame(reverseStep(performance.now()));
         }
-
-        rafId = requestAnimationFrame(step);
-      };
+      });
     }
 
-    video.addEventListener("timeupdate", function () {
-      if (reversing) return;
-      const duration = video.duration;
-      if (!duration) return;
+    attachPingPong(videoA);
+    attachPingPong(videoB);
 
-      if (video.currentTime >= duration - 0.05) {
-        reversing = true;
-        video.pause();
-        cancelAnimationFrame(rafId);
-        rafId = requestAnimationFrame(reverseStep(performance.now()));
+    // Crossfade: show `next`, hide `prev`
+    function crossfade(show, hide) {
+      show.style.opacity = "1";
+      hide.style.opacity = "0";
+      // Sync playback position so the swap feels seamless
+      show.currentTime = hide.currentTime;
+      show.play().catch(() => {});
+    }
+
+    const mq = window.matchMedia("(prefers-color-scheme: dark)");
+
+    function applyTheme(dark) {
+      if (dark) {
+        crossfade(videoB, videoA);
+      } else {
+        crossfade(videoA, videoB);
       }
-    });
+    }
+
+    // Initial state
+    applyTheme(mq.matches);
+
+    mq.addEventListener("change", e => applyTheme(e.matches));
 
     window.addEventListener("beforeunload", () => cancelAnimationFrame(rafId));
   })();
