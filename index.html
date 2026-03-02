@@ -174,10 +174,16 @@ description: Enciclopedia colaborativa universitaria en español
       }
     }
 
-    // Initial state
-    applyTheme(mq.matches);
+    // Initial state based on site theme (data-theme attribute)
+    function isDark() {
+      return document.documentElement.getAttribute("data-theme") === "dark";
+    }
 
-    mq.addEventListener("change", e => applyTheme(e.matches));
+    applyTheme(isDark());
+
+    // Watch for theme changes via MutationObserver (triggered by the site's themeToggle button)
+    new MutationObserver(() => applyTheme(isDark()))
+      .observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
 
     window.addEventListener("beforeunload", () => cancelAnimationFrame(rafId));
   })();
