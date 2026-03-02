@@ -103,33 +103,57 @@ description: Enciclopedia colaborativa universitaria en español
     var video = document.getElementById("nanamiLandingVideo");
     if (!video) return;
 
-    var reversing = false;
+    var isReversing = false;
+    var reverseInterval = null;
 
-    video.addEventListener("ended", function () {
-      reversing = !reversing;
+    // Clear any existing interval helper
+    function clearReverseInterval() {
+      if (reverseInterval) {
+        clearInterval(reverseInterval);
+        reverseInterval = null;
+      }
+    }
 
-      if (reversing) {
+    // Handle video end - toggle direction
+    function onVideoEnded() {
+      clearReverseInterval();
+      isReversing = !isReversing;
+
+      if (isReversing) {
+        // Start reversing from end
         video.currentTime = video.duration;
-        reversePlayback();
+        startReversePlayback();
       } else {
+        // Start playing forward from beginning
+        video.currentTime = 0;
         video.playbackRate = 1;
         video.play();
       }
-    });
+    }
 
-    function reversePlayback() {
-      video.playbackRate = 1;
+    // Simulate reverse playback by stepping back frame by frame
+    function startReversePlayback() {
       video.pause();
+      // Small step for smooth reverse (adjust 0.033 ~ 30fps, increase for faster reverse)
+      var step = 0.033; 
 
-      var interval = setInterval(function () {
-        if (video.currentTime <= 0) {
-          clearInterval(interval);
-          video.dispatchEvent(new Event("ended"));
+      reverseInterval = setInterval(function () {
+        if (video.currentTime <= step) {
+          // Reached start, trigger ended event to switch back to forward
+          video.currentTime = 0;
+          clearReverseInterval();
+          onVideoEnded();
           return;
         }
-        video.currentTime -= 0.03;
-      }, 30);
+        video.currentTime -= step;
+      }, 33); // ~30fps
     }
+
+    // Listen for ended event
+    video.addEventListener("ended", onVideoEnded);
+
+    // Cleanup on page unload
+    window.addEventListener("beforeunload", clearReverseInterval);
   })();
 </script>
 
