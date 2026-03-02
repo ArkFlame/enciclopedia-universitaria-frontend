@@ -1,21 +1,23 @@
 /**
  * nanami.js
  * Nanami AI Chat Component — floating, persistent, modular.
- * Depends on: nanami-prompts.js (loaded before this file)
+ * Depends on: nanami-prompts.js
  *
- * Usage: include this script + nanami.css. Auto-initializes.
+ * Changes:
+ *   1. Real streaming from backend (chunk events from OpenRouter).
+ *   2. Blinking cursor only appears while tokens are arriving, removed on finish.
+ *   3. FAB button shows nanami.mp4 (looping, no controls) while processing.
  */
 
 (function () {
   'use strict';
 
-  const BASE_URL    = () => window.EU_CONFIG?.backendUrl || window.location.origin;
-  const P           = () => window.NanamiPrompts;
+  const BASE_URL     = () => window.EU_CONFIG?.backendUrl || window.location.origin;
+  const P            = () => window.NanamiPrompts;
   const STORAGE_KEY  = 'nanami_history';
   const MAX_HISTORY  = 60;
   const SEND_HISTORY = 10;
 
-  // Resolve asset path from script src
   const BASE_PATH = (() => {
     for (const s of document.querySelectorAll('script[src*="nanami"]')) {
       const m = s.src.match(/(.*?)\/assets\/js\/nanami/);
@@ -25,17 +27,18 @@
   })();
 
   // ─── State ─────────────────────────────────────────────────────
-  let isOpen       = false;
-  let isThinking   = false;
-  let attachments  = [];
-  let articleCtx   = null;   // { title, content }
-  let abortCtrl    = null;
-  let streamingDiv = null;   // current streaming AI message div
-  let streamingText = '';    // accumulated streamed text
+  let isOpen        = false;
+  let isThinking    = false;
+  let attachments   = [];
+  let articleCtx    = null;
+  let abortCtrl     = null;
+  let streamingDiv  = null;   // live message div being built
+  let streamingText = '';     // accumulated text during streaming
 
   // ─── DOM refs ──────────────────────────────────────────────────
   let $win, $msgs, $textarea, $sendBtn, $attachBtn, $fileInput,
-      $contextBanner, $contextBannerText, $attachmentsRow, $fab;
+      $contextBanner, $contextBannerText, $attachmentsRow,
+      $fabBtn;  // the clickable FAB button element
 
   // ─── History ───────────────────────────────────────────────────
   function loadHistory() {
@@ -50,17 +53,19 @@
 
   // ─── Mount ─────────────────────────────────────────────────────
   function mount() {
-    // FAB
+    // FAB — contains both the static image and the processing video
     const fab = document.createElement('div');
     fab.className = 'nanami-fab';
     fab.id = 'nanamiiFab';
     fab.innerHTML = `
       <div class="nanami-fab-tooltip" id="nanamiTooltip">${P().FAB_TOOLTIP}</div>
       <button class="nanami-fab-btn" id="nanamiiFabBtn" aria-label="Abrir Nanami AI">
-        <img src="${BASE_PATH}/assets/img/nanami.jpg" alt="Nanami AI" loading="lazy">
+        <img  class="nanami-fab-img"   src="${BASE_PATH}/assets/img/nanami.png" alt="Nanami AI" loading="lazy">
+        <video class="nanami-fab-video" src="${BASE_PATH}/assets/img/nanami.mp4"
+               autoplay loop muted playsinline preload="auto"></video>
       </button>`;
     document.body.appendChild(fab);
-    $fab = fab;
+    $fabBtn = fab.querySelector('#nanamiiFabBtn');
 
     // Chat window
     const win = document.createElement('div');
@@ -70,7 +75,7 @@
     win.setAttribute('aria-label', 'Chat Nanami AI');
     win.innerHTML = `
       <div class="nanami-header">
-        <img src="${BASE_PATH}/assets/img/nanami.jpg" class="nanami-header-avatar" alt="Nanami">
+        <img src="${BASE_PATH}/assets/img/nanami.png" class="nanami-header-avatar" alt="Nanami">
         <div class="nanami-header-info">
           <div class="nanami-header-name">Nanami AI</div>
           <div class="nanami-header-status">En línea</div>
@@ -127,9 +132,15 @@
     renderHistory();
   }
 
+  // ─── FAB processing state ──────────────────────────────────────
+  // Swaps between static image and looping video while AI is working.
+  function setFabProcessing(active) {
+    $fabBtn.classList.toggle('nanami-fab-btn--processing', active);
+  }
+
   // ─── Events ────────────────────────────────────────────────────
   function bindEvents() {
-    document.getElementById('nanamiiFabBtn').addEventListener('click', toggleChat);
+    $fabBtn.addEventListener('click', toggleChat);
 
     $win.querySelector('#nanamiCloseBtn').addEventListener('click', () => setOpen(false));
 
@@ -146,18 +157,14 @@
       $sendBtn.disabled = !$textarea.value.trim() && !attachments.length;
     });
 
-    $textarea.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' && !e.shiftKey) {
-        e.preventDefault();
-        if (!$sendBtn.disabled) sendMessage();
-      }
+    $textarea.addEventListener('keydown', e => {
+      if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); if (!$sendBtn.disabled) sendMessage(); }
     });
 
     $sendBtn.addEventListener('click', sendMessage);
     $attachBtn.addEventListener('click', () => $fileInput.click());
     $fileInput.addEventListener('change', handleFiles);
 
-    // Show tooltip on first load
     const tooltip = document.getElementById('nanamiTooltip');
     setTimeout(() => {
       tooltip?.classList.add('show');
@@ -167,34 +174,27 @@
 
   // ─── Open / Close ───────────────────────────────────────────────
   function toggleChat() { setOpen(!isOpen); }
-
   function setOpen(open) {
     isOpen = open;
     $win.classList.toggle('open', open);
-    if (open) {
-      $textarea.focus();
-      scrollToBottom();
-    }
+    if (open) { $textarea.focus(); scrollToBottom(); }
   }
-
   window.NanamiChat = { open: () => setOpen(true), close: () => setOpen(false), toggle: toggleChat };
 
-  // ─── Article context detection ─────────────────────────────────
+  // ─── Article context ────────────────────────────────────────────
   function detectArticleContext() {
     if (!document.getElementById('articlePage') && !document.getElementById('articleContent')) return;
-
     const tryGet = () => {
       const titleEl   = document.querySelector('.eu-article-title, h1.eu-article-title, #articleTitle');
       const contentEl = document.getElementById('articleContent');
       if (!titleEl || !contentEl) return false;
-      const title   = titleEl.textContent.trim();
+      const title = titleEl.textContent.trim();
       if (!title) return false;
       articleCtx = { title, content: contentEl.textContent.trim().slice(0, 3000) };
       $contextBanner.style.display = 'flex';
       $contextBannerText.textContent = `Leyendo artículo: ${title}`;
       return true;
     };
-
     if (!tryGet()) {
       const iv = setInterval(() => { if (tryGet()) clearInterval(iv); }, 500);
       setTimeout(() => clearInterval(iv), 10000);
@@ -226,45 +226,38 @@
       </div>`).join('');
     $sendBtn.disabled = !$textarea.value.trim() && !attachments.length;
   }
-
-  window._nanamiRemoveAttachment = (i) => { attachments.splice(i, 1); renderAttachments(); };
+  window._nanamiRemoveAttachment = i => { attachments.splice(i, 1); renderAttachments(); };
 
   // ─── Render history ─────────────────────────────────────────────
   function renderHistory() {
     $msgs.innerHTML = '';
     const history = loadHistory();
-
-    if (!history.length) {
-      appendEmptyState();
-      return;
-    }
-
+    if (!history.length) { appendEmptyState(); return; }
     history.forEach(m => {
       if      (m.role === 'user')      appendUserMessage(m.content, false);
       else if (m.role === 'assistant') appendAIMessage(m.content, m.articleLinks || [], false);
       else if (m.role === 'tool')      appendToolMsg(m.tool, m.icon, m.message, m.state, false);
     });
-
     scrollToBottom();
   }
 
   // ─── Empty state ────────────────────────────────────────────────
   function appendEmptyState() {
-    const suggestions = P().getSuggestions(!!articleCtx);
     const div = document.createElement('div');
     div.className = 'nanami-empty';
     div.id = 'nanamiEmpty';
     div.innerHTML = `
-      <img src="${BASE_PATH}/assets/img/nanami.jpg" alt="Nanami">
+      <img src="${BASE_PATH}/assets/img/nanami.png" alt="Nanami">
       <div class="nanami-empty-title">¡Hola! Soy Nanami AI 🐱</div>
       <div class="nanami-empty-sub">Tu asistente de la Enciclopedia Universitaria. ¡Pregúntame lo que quieras!</div>
       <div class="nanami-suggestions">
-        ${suggestions.map(s => `<button class="nanami-suggestion" onclick="window._nanamiSuggest(${JSON.stringify(s)})">${escHtml(s)}</button>`).join('')}
+        ${P().getSuggestions(!!articleCtx).map(s =>
+          `<button class="nanami-suggestion" onclick="window._nanamiSuggest(${JSON.stringify(s)})">${escHtml(s)}</button>`
+        ).join('')}
       </div>`;
     $msgs.appendChild(div);
   }
-
-  window._nanamiSuggest = (text) => {
+  window._nanamiSuggest = text => {
     $textarea.value = text;
     $textarea.dispatchEvent(new Event('input'));
     sendMessage();
@@ -282,86 +275,79 @@
     if (save) { const h = loadHistory(); h.push({ role: 'user', content: text }); saveHistory(h); }
   }
 
-  /**
-   * Append a finished AI message with optional article links.
-   * @param {string}  text         - Markdown text
-   * @param {Array}   articleLinks - [{ slug, title }]
-   * @param {boolean} save
-   */
   function appendAIMessage(text, articleLinks = [], save = true) {
     const div = document.createElement('div');
     div.className = 'nanami-msg nanami-msg--ai nanami-fade-in';
-
-    const linksHtml = buildArticleLinksHtml(articleLinks);
-
     div.innerHTML = `
-      <img src="${BASE_PATH}/assets/img/nanami.jpg" class="nanami-msg-avatar" alt="Nanami">
+      <img src="${BASE_PATH}/assets/img/nanami.png" class="nanami-msg-avatar" alt="Nanami">
       <div class="nanami-msg-body">
         <div class="nanami-msg-name">Nanami AI</div>
         <div class="nanami-msg-text">${P().markdownToHtml(text)}</div>
-        ${linksHtml}
+        ${buildArticleLinksHtml(articleLinks)}
       </div>`;
     $msgs.appendChild(div);
     scrollToBottom();
-    if (save) {
-      const h = loadHistory();
-      h.push({ role: 'assistant', content: text, articleLinks });
-      saveHistory(h);
-    }
+    if (save) { const h = loadHistory(); h.push({ role: 'assistant', content: text, articleLinks }); saveHistory(h); }
   }
 
-  /**
-   * Append a tool progress message (start, done, skip, error).
-   * state: 'running' | 'done' | 'skip' | 'error'
-   */
   function appendToolMsg(toolName, icon, message, state = 'running', save = true) {
     const div = document.createElement('div');
     div.className = `nanami-msg nanami-msg--tool nanami-fade-in nanami-tool-${state}`;
-    const spinnerHtml = state === 'running'
-      ? `<span class="nanami-tool-spinner"></span>`
-      : '';
     div.innerHTML = `
       <span class="nanami-tool-icon">${icon || '⚙️'}</span>
-      ${spinnerHtml}
+      ${state === 'running' ? '<span class="nanami-tool-spinner"></span>' : ''}
       <span class="nanami-tool-text">${escHtml(message)}</span>`;
     $msgs.appendChild(div);
     scrollToBottom();
-    if (save) {
-      const h = loadHistory();
-      h.push({ role: 'tool', tool: toolName, icon, message, state });
-      saveHistory(h);
-    }
-    return div;
+    if (save) { const h = loadHistory(); h.push({ role: 'tool', tool: toolName, icon, message, state }); saveHistory(h); }
   }
 
-  /** Build a streaming AI message shell — returns { div, textEl } */
+  /**
+   * Create the streaming message shell.
+   * The cursor blink is added via `.nanami-streaming-active` and removed when done.
+   */
   function createStreamingMessage() {
     document.getElementById('nanamiEmpty')?.remove();
     const div = document.createElement('div');
     div.className = 'nanami-msg nanami-msg--ai nanami-fade-in';
     div.innerHTML = `
-      <img src="${BASE_PATH}/assets/img/nanami.jpg" class="nanami-msg-avatar" alt="Nanami">
+      <img src="${BASE_PATH}/assets/img/nanami.png" class="nanami-msg-avatar" alt="Nanami">
       <div class="nanami-msg-body">
         <div class="nanami-msg-name">Nanami AI</div>
-        <div class="nanami-msg-text nanami-streaming-text"></div>
+        <div class="nanami-msg-text nanami-streaming-active"></div>
       </div>`;
     $msgs.appendChild(div);
     scrollToBottom();
-    return { div, textEl: div.querySelector('.nanami-streaming-text') };
+    return { div, textEl: div.querySelector('.nanami-streaming-active') };
   }
 
-  /** Build the gray article-links footer HTML */
+  /** Remove the blinking cursor from a finished streaming message. */
+  function finalizeStreamingMessage(div, articleLinks = []) {
+    const textEl = div.querySelector('.nanami-streaming-active');
+    if (textEl) textEl.classList.remove('nanami-streaming-active');
+
+    const body = div.querySelector('.nanami-msg-body');
+    if (body && articleLinks.length && !body.querySelector('.nanami-article-links')) {
+      const linkDiv = document.createElement('div');
+      linkDiv.className = 'nanami-article-links nanami-fade-in';
+      linkDiv.innerHTML = buildArticleLinksInner(articleLinks);
+      body.appendChild(linkDiv);
+    }
+  }
+
   function buildArticleLinksHtml(links) {
     if (!links || !links.length) return '';
-    const FRONTEND_BASE = (window.EU_CONFIG?.baseUrl || window.location.origin);
-    const items = links.map(l => {
-      const url = `${FRONTEND_BASE}/articulo.html?slug=${encodeURIComponent(l.slug)}`;
-      return `<a href="${url}" class="nanami-article-link" target="_blank" rel="noopener"
-                 title="${escHtml(l.title)}">
+    return `<div class="nanami-article-links">${buildArticleLinksInner(links)}</div>`;
+  }
+
+  function buildArticleLinksInner(links) {
+    const base = window.EU_CONFIG?.baseUrl || window.location.origin;
+    return links.map(l => {
+      const url = `${base}/articulo.html?slug=${encodeURIComponent(l.slug)}`;
+      return `<a href="${url}" class="nanami-article-link" target="_blank" rel="noopener" title="${escHtml(l.title)}">
                 <i class="bi bi-box-arrow-up-right"></i> ${escHtml(l.title)}
               </a>`;
     }).join('');
-    return `<div class="nanami-article-links">${items}</div>`;
   }
 
   // ─── Send message ───────────────────────────────────────────────
@@ -387,6 +373,7 @@
 
     appendUserMessage(text);
     isThinking = true;
+    setFabProcessing(true);
     setInputDisabled(true);
 
     const history = loadHistory()
@@ -396,9 +383,16 @@
     try {
       await streamFromBackend(fullMessage, history);
     } catch (err) {
+      // Clean up streaming state if error mid-stream
+      if (streamingDiv) {
+        finalizeStreamingMessage(streamingDiv, []);
+        streamingDiv = null;
+        streamingText = '';
+      }
       appendAIMessage(`Lo siento, ocurrió un error. Inténtalo de nuevo. *(${escHtml(err.message)})*`);
     } finally {
       isThinking = false;
+      setFabProcessing(false);
       setInputDisabled(false);
       streamingDiv  = null;
       streamingText = '';
@@ -406,8 +400,8 @@
   }
 
   function setInputDisabled(disabled) {
-    $textarea.disabled = disabled;
-    $sendBtn.disabled  = disabled;
+    $textarea.disabled  = disabled;
+    $sendBtn.disabled   = disabled;
     $attachBtn.disabled = disabled;
   }
 
@@ -423,7 +417,7 @@
           ? { Authorization: `Bearer ${localStorage.getItem('eu_token')}` }
           : {})
       },
-      body:   JSON.stringify({
+      body: JSON.stringify({
         message,
         history,
         articleContext: articleCtx?.content || null,
@@ -461,20 +455,9 @@
       }
     }
 
-    // Finalise streaming message — append article links & save
-    if (streamingDiv && streamingText) {
-      const linksHtml = buildArticleLinksHtml(finalArticleLinks);
-      if (linksHtml) {
-        const body = streamingDiv.querySelector('.nanami-msg-body');
-        const existing = body.querySelector('.nanami-article-links');
-        if (!existing) {
-          const linkDiv = document.createElement('div');
-          linkDiv.className = 'nanami-article-links nanami-fade-in';
-          linkDiv.innerHTML = buildArticleLinksHtml(finalArticleLinks).replace('<div class="nanami-article-links">', '').replace('</div>', '');
-          body.appendChild(linkDiv);
-        }
-      }
-      // Persist to history
+    // Stream is finished — remove cursor, append links, save
+    if (streamingDiv) {
+      finalizeStreamingMessage(streamingDiv, finalArticleLinks);
       const h = loadHistory();
       h.push({ role: 'assistant', content: streamingText, articleLinks: finalArticleLinks });
       saveHistory(h);
@@ -491,7 +474,7 @@
         break;
 
       case 'tool_done':
-        appendToolMsg(event.tool, P().getToolIcon(event.tool), `${event.resultSummary}`, 'done');
+        appendToolMsg(event.tool, P().getToolIcon(event.tool), event.resultSummary, 'done');
         break;
 
       case 'tool_skip':
@@ -503,31 +486,28 @@
         break;
 
       case 'chunk':
-        // Append token to streaming message
+        // First chunk: create the streaming message shell with active cursor
         if (!streamingDiv) {
           const { div, textEl } = createStreamingMessage();
           streamingDiv  = div;
           streamingText = '';
-          // Store textEl reference on the div
-          div._textEl = textEl;
+          div._textEl   = textEl;
         }
         streamingText += event.content;
-        // Render markdown incrementally
         streamingDiv._textEl.innerHTML = P().markdownToHtml(streamingText);
         scrollToBottom();
         break;
 
       case 'answer':
-        // Final answer arrives — if we streamed it via chunks, just finalize
+        // Final event — if no chunks arrived (fallback), render it all at once
         if (!streamingDiv) {
-          // Fallback: no chunks received, render whole answer at once
           appendAIMessage(event.content, event.articleLinks || []);
           streamingText = event.content;
         }
         break;
 
       case 'error':
-        appendAIMessage(`⚠️ Error: ${event.message}`);
+        appendAIMessage(`⚠️ ${event.message}`);
         break;
     }
   }
@@ -539,8 +519,8 @@
 
   // ─── Utils ──────────────────────────────────────────────────────
   function escHtml(s) {
-    return String(s || '').replace(/[&<>"']/g, c =>
-      ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])
+    return String(s || '').replace(/[&<>"']/g,
+      c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])
     );
   }
 

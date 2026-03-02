@@ -3,17 +3,18 @@
    Enciclopedia Universitaria
    ═══════════════════════════════════════════════════════════════ */
 
-/* ── Fade-in animation (used on all messages) ─────────────────── */
+/* ── Fade-in ──────────────────────────────────────────────────── */
 @keyframes nanami-fade-in {
   from { opacity: 0; transform: translateY(6px); }
   to   { opacity: 1; transform: translateY(0);   }
 }
-
 .nanami-fade-in {
   animation: nanami-fade-in 280ms cubic-bezier(.22,1,.36,1) both;
 }
 
-/* ── Floating Trigger Button ──────────────────────────────────── */
+/* ═══════════════════════════════════════════════════════════════
+   FAB — Floating Action Button
+   ═══════════════════════════════════════════════════════════════ */
 .nanami-fab {
   position: fixed;
   bottom: 28px;
@@ -46,13 +47,36 @@
   box-shadow: 0 8px 28px rgba(0,0,0,.28);
 }
 
-.nanami-fab-btn img {
+/* ── Static image (default state) ── */
+.nanami-fab-img {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  transition: opacity 250ms ease;
+  opacity: 1;
 }
 
-/* Pulsing ring */
+/* ── Processing video (hidden by default) ── */
+.nanami-fab-video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  transition: opacity 250ms ease;
+  opacity: 0;
+  /* Always playing in background; CSS controls visibility */
+}
+
+/* When processing: show video, hide image */
+.nanami-fab-btn--processing .nanami-fab-img   { opacity: 0; }
+.nanami-fab-btn--processing .nanami-fab-video { opacity: 1; }
+
+/* Pulsing ring — faster / brighter when processing */
 .nanami-fab-btn::before {
   content: '';
   position: absolute;
@@ -61,6 +85,13 @@
   border: 2px solid var(--eu-accent);
   opacity: 0;
   animation: nanami-pulse 2.8s ease-in-out infinite;
+  pointer-events: none;
+}
+
+.nanami-fab-btn--processing::before {
+  border-color: var(--eu-warning, #b45309);
+  animation-duration: 1.2s;
+  opacity: .6;
 }
 
 @keyframes nanami-pulse {
@@ -84,14 +115,15 @@
   transform: translateY(6px);
   transition: opacity 220ms, transform 220ms;
 }
-
 .nanami-fab:hover .nanami-fab-tooltip,
 .nanami-fab-tooltip.show {
   opacity: 1;
   transform: translateY(0);
 }
 
-/* ── Chat Window ──────────────────────────────────────────────── */
+/* ═══════════════════════════════════════════════════════════════
+   Chat Window
+   ═══════════════════════════════════════════════════════════════ */
 .nanami-window {
   position: fixed;
   bottom: 100px;
@@ -113,7 +145,6 @@
   pointer-events: none;
   transition: transform 260ms cubic-bezier(.34,1.56,.64,1), opacity 220ms ease;
 }
-
 .nanami-window.open {
   transform: scale(1) translateY(0);
   opacity: 1;
@@ -129,7 +160,6 @@
   border-bottom: 1px solid var(--eu-border);
   flex-shrink: 0;
 }
-
 .nanami-header-avatar {
   width: 38px;
   height: 38px;
@@ -137,16 +167,13 @@
   object-fit: cover;
   flex-shrink: 0;
 }
-
 .nanami-header-info { flex: 1; min-width: 0; }
-
 .nanami-header-name {
   font-weight: 700;
   font-size: .92rem;
   color: var(--eu-text);
   line-height: 1.2;
 }
-
 .nanami-header-status {
   font-size: .72rem;
   color: var(--eu-success);
@@ -154,7 +181,6 @@
   align-items: center;
   gap: 5px;
 }
-
 .nanami-header-status::before {
   content: '';
   width: 6px;
@@ -163,14 +189,11 @@
   background: var(--eu-success);
   animation: nanami-blink 2s ease-in-out infinite;
 }
-
 @keyframes nanami-blink {
   0%, 100% { opacity: 1; }
   50%       { opacity: .35; }
 }
-
 .nanami-header-actions { display: flex; gap: 4px; }
-
 .nanami-header-btn {
   width: 30px;
   height: 30px;
@@ -185,10 +208,9 @@
   font-size: .9rem;
   transition: background 160ms, color 160ms;
 }
-
 .nanami-header-btn:hover { background: var(--eu-bg-secondary); color: var(--eu-text); }
 
-/* Article context banner */
+/* Context banner */
 .nanami-context-banner {
   padding: 6px 16px;
   background: var(--eu-accent-light);
@@ -200,10 +222,11 @@
   gap: 6px;
   flex-shrink: 0;
 }
-
 .nanami-context-banner i { color: var(--eu-accent); flex-shrink: 0; }
 
-/* ── Messages area ────────────────────────────────────────────── */
+/* ═══════════════════════════════════════════════════════════════
+   Messages
+   ═══════════════════════════════════════════════════════════════ */
 .nanami-messages {
   flex: 1;
   overflow-y: auto;
@@ -213,23 +236,18 @@
   gap: 12px;
   scroll-behavior: smooth;
 }
-
 .nanami-messages::-webkit-scrollbar { width: 4px; }
 .nanami-messages::-webkit-scrollbar-track { background: transparent; }
 .nanami-messages::-webkit-scrollbar-thumb { background: var(--eu-border); border-radius: 2px; }
 
-/* ── Base message ─────────────────────────────────────────────── */
 .nanami-msg {
   display: flex;
   gap: 10px;
   align-items: flex-start;
 }
 
-/* ── AI messages (no bubble, avatar left) ─────────────────────── */
-.nanami-msg--ai {
-  flex-direction: row;
-}
-
+/* ── AI messages ── */
+.nanami-msg--ai { flex-direction: row; }
 .nanami-msg-avatar {
   width: 30px;
   height: 30px;
@@ -238,9 +256,7 @@
   flex-shrink: 0;
   margin-top: 2px;
 }
-
 .nanami-msg-body { flex: 1; min-width: 0; }
-
 .nanami-msg-name {
   font-size: .7rem;
   font-weight: 600;
@@ -248,13 +264,11 @@
   margin-bottom: 3px;
   letter-spacing: .03em;
 }
-
 .nanami-msg-text {
   font-size: .875rem;
   line-height: 1.68;
   color: var(--eu-text);
 }
-
 .nanami-msg-text p        { margin: 0 0 6px; }
 .nanami-msg-text p:last-child { margin-bottom: 0; }
 .nanami-msg-text strong   { font-weight: 600; }
@@ -263,26 +277,24 @@
 .nanami-msg-text li       { margin: 2px 0; }
 .nanami-msg-text code     { background: var(--eu-bg-secondary); padding: 1px 5px; border-radius: 4px; font-size: .82em; }
 
-/* Streaming cursor */
-.nanami-streaming-text::after {
+/* ── Streaming cursor — ONLY on the active streaming element ── */
+/* Applied while tokens are arriving; removed by JS when stream ends */
+.nanami-streaming-active::after {
   content: '▋';
   display: inline-block;
-  opacity: 1;
-  animation: nanami-cursor 0.7s steps(1) infinite;
-  font-size: .8em;
+  animation: nanami-cursor 0.65s steps(1) infinite;
+  font-size: .78em;
   vertical-align: baseline;
   color: var(--eu-text-muted);
+  margin-left: 1px;
 }
-
 @keyframes nanami-cursor {
   0%, 100% { opacity: 1; }
   50%       { opacity: 0; }
 }
+/* Once .nanami-streaming-active is removed, no pseudo-element = no cursor */
 
-/* Remove cursor once done streaming (class swap) */
-.nanami-streaming-done::after { display: none; }
-
-/* ── Article links (gray, below AI message) ───────────────────── */
+/* ── Article links ── */
 .nanami-article-links {
   display: flex;
   flex-direction: column;
@@ -291,7 +303,6 @@
   padding-top: 8px;
   border-top: 1px solid var(--eu-border-subtle);
 }
-
 .nanami-article-link {
   display: inline-flex;
   align-items: center;
@@ -302,19 +313,11 @@
   transition: color 160ms;
   word-break: break-word;
 }
-
 .nanami-article-link i { font-size: .68rem; flex-shrink: 0; }
+.nanami-article-link:hover { color: var(--eu-text-secondary); text-decoration: underline; }
 
-.nanami-article-link:hover {
-  color: var(--eu-text-secondary);
-  text-decoration: underline;
-}
-
-/* ── User messages (bubble, right) ───────────────────────────── */
-.nanami-msg--user {
-  flex-direction: row-reverse;
-}
-
+/* ── User messages ── */
+.nanami-msg--user { flex-direction: row-reverse; }
 .nanami-msg-bubble {
   background: var(--eu-accent);
   color: var(--eu-text-inverse);
@@ -326,14 +329,13 @@
   word-break: break-word;
 }
 
-/* ── Tool / progress messages ─────────────────────────────────── */
+/* ── Tool / progress messages ── */
 .nanami-msg--tool {
   flex-direction: row;
   align-items: center;
   gap: 7px;
   padding: 2px 0;
 }
-
 .nanami-tool-icon {
   font-size: .88rem;
   flex-shrink: 0;
@@ -341,8 +343,6 @@
   text-align: center;
   line-height: 1;
 }
-
-/* Inline spinner for running state */
 .nanami-tool-spinner {
   width: 12px;
   height: 12px;
@@ -352,24 +352,17 @@
   flex-shrink: 0;
   animation: nanami-spin 0.7s linear infinite;
 }
+@keyframes nanami-spin { to { transform: rotate(360deg); } }
 
-@keyframes nanami-spin {
-  to { transform: rotate(360deg); }
-}
+.nanami-tool-text { font-size: .77rem; line-height: 1.4; flex: 1; }
+.nanami-tool-running .nanami-tool-text { color: var(--eu-text-secondary); font-style: italic; }
+.nanami-tool-done  .nanami-tool-text  { color: var(--eu-success); }
+.nanami-tool-skip  .nanami-tool-text  { color: var(--eu-text-muted); font-style: italic; }
+.nanami-tool-error .nanami-tool-text  { color: var(--eu-danger); }
 
-.nanami-tool-text {
-  font-size: .77rem;
-  line-height: 1.4;
-  flex: 1;
-}
-
-/* State colors */
-.nanami-tool-running .nanami-tool-text  { color: var(--eu-text-secondary); font-style: italic; }
-.nanami-tool-done .nanami-tool-text     { color: var(--eu-success); }
-.nanami-tool-skip .nanami-tool-text     { color: var(--eu-text-muted); font-style: italic; }
-.nanami-tool-error .nanami-tool-text    { color: var(--eu-danger); }
-
-/* ── Empty state ──────────────────────────────────────────────── */
+/* ═══════════════════════════════════════════════════════════════
+   Empty state
+   ═══════════════════════════════════════════════════════════════ */
 .nanami-empty {
   display: flex;
   flex-direction: column;
@@ -380,32 +373,10 @@
   padding: 24px 20px;
   text-align: center;
 }
-
-.nanami-empty img {
-  width: 68px;
-  height: 68px;
-  border-radius: 50%;
-  object-fit: cover;
-  opacity: .85;
-}
-
+.nanami-empty img { width: 68px; height: 68px; border-radius: 50%; object-fit: cover; opacity: .85; }
 .nanami-empty-title { font-weight: 700; font-size: .95rem; color: var(--eu-text); }
-
-.nanami-empty-sub {
-  font-size: .8rem;
-  color: var(--eu-text-secondary);
-  line-height: 1.5;
-  max-width: 240px;
-}
-
-.nanami-suggestions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  justify-content: center;
-  margin-top: 4px;
-}
-
+.nanami-empty-sub { font-size: .8rem; color: var(--eu-text-secondary); line-height: 1.5; max-width: 240px; }
+.nanami-suggestions { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin-top: 4px; }
 .nanami-suggestion {
   background: var(--eu-bg-secondary);
   border: 1px solid var(--eu-border);
@@ -416,27 +387,13 @@
   cursor: pointer;
   transition: background 160ms, color 160ms, border-color 160ms;
 }
+.nanami-suggestion:hover { background: var(--eu-accent); color: var(--eu-text-inverse); border-color: var(--eu-accent); }
 
-.nanami-suggestion:hover {
-  background: var(--eu-accent);
-  color: var(--eu-text-inverse);
-  border-color: var(--eu-accent);
-}
-
-/* ── Input area ───────────────────────────────────────────────── */
-.nanami-input-area {
-  padding: 12px 14px;
-  border-top: 1px solid var(--eu-border);
-  flex-shrink: 0;
-}
-
-.nanami-attachments {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin-bottom: 8px;
-}
-
+/* ═══════════════════════════════════════════════════════════════
+   Input area
+   ═══════════════════════════════════════════════════════════════ */
+.nanami-input-area { padding: 12px 14px; border-top: 1px solid var(--eu-border); flex-shrink: 0; }
+.nanami-attachments { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
 .nanami-attachment-chip {
   display: flex;
   align-items: center;
@@ -449,29 +406,13 @@
   color: var(--eu-text-secondary);
   max-width: 160px;
 }
-
-.nanami-attachment-chip span {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  flex: 1;
-}
-
+.nanami-attachment-chip span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; }
 .nanami-attachment-chip button {
-  background: none;
-  border: none;
-  cursor: pointer;
-  color: var(--eu-text-muted);
-  padding: 0;
-  line-height: 1;
-  flex-shrink: 0;
-  font-size: .8rem;
-  transition: color 150ms;
+  background: none; border: none; cursor: pointer;
+  color: var(--eu-text-muted); padding: 0; line-height: 1; flex-shrink: 0; font-size: .8rem; transition: color 150ms;
 }
-
 .nanami-attachment-chip button:hover { color: var(--eu-danger); }
 
-/* Input row — ChatGPT style */
 .nanami-input-row {
   display: flex;
   align-items: flex-end;
@@ -482,69 +423,38 @@
   padding: 6px 6px 6px 10px;
   transition: border-color 200ms;
 }
-
 .nanami-input-row:focus-within { border-color: var(--eu-border); }
 
 .nanami-attach-btn {
-  width: 34px;
-  height: 34px;
-  border-radius: 50%;
-  border: none;
-  background: var(--eu-bg);
-  color: var(--eu-text-secondary);
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1rem;
-  flex-shrink: 0;
+  width: 34px; height: 34px; border-radius: 50%; border: none;
+  background: var(--eu-bg); color: var(--eu-text-secondary); cursor: pointer;
+  display: flex; align-items: center; justify-content: center; font-size: 1rem; flex-shrink: 0;
   transition: background 160ms, color 160ms;
 }
-
 .nanami-attach-btn:hover { background: var(--eu-bg-tertiary); color: var(--eu-text); }
 .nanami-attach-btn:disabled { opacity: .4; cursor: not-allowed; }
 
 .nanami-textarea {
-  flex: 1;
-  border: none;
-  background: transparent;
-  resize: none;
-  outline: none;
-  font-family: var(--eu-font-body);
-  font-size: .875rem;
-  color: var(--eu-text);
-  line-height: 1.5;
-  max-height: 100px;
-  min-height: 22px;
-  padding: 4px 0;
-  overflow-y: auto;
+  flex: 1; border: none; background: transparent; resize: none; outline: none;
+  font-family: var(--eu-font-body); font-size: .875rem; color: var(--eu-text);
+  line-height: 1.5; max-height: 100px; min-height: 22px; padding: 4px 0; overflow-y: auto;
 }
-
 .nanami-textarea::placeholder { color: var(--eu-text-muted); }
 .nanami-textarea:disabled { opacity: .5; }
 
 .nanami-send-btn {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  border: none;
-  background: var(--eu-accent);
-  color: var(--eu-text-inverse);
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: .9rem;
-  flex-shrink: 0;
+  width: 36px; height: 36px; border-radius: 50%; border: none;
+  background: var(--eu-accent); color: var(--eu-text-inverse); cursor: pointer;
+  display: flex; align-items: center; justify-content: center; font-size: .9rem; flex-shrink: 0;
   transition: transform 160ms, opacity 160ms;
 }
-
 .nanami-send-btn:hover:not(:disabled) { transform: scale(1.08); }
 .nanami-send-btn:disabled { opacity: .35; cursor: not-allowed; transform: none; }
-
 .nanami-file-input { display: none; }
 
-/* ── Landing hero Nanami image ────────────────────────────────── */
+/* ═══════════════════════════════════════════════════════════════
+   Landing hero Nanami image
+   ═══════════════════════════════════════════════════════════════ */
 .nanami-landing-img {
   width: 280px;
   flex-shrink: 0;
@@ -554,56 +464,38 @@
   cursor: pointer;
   position: relative;
 }
-
 .nanami-landing-img img {
-  width: 100%;
-  max-width: 280px;
-  height: auto;
-  object-fit: contain;
+  width: 100%; max-width: 280px; height: auto; object-fit: contain;
   filter: drop-shadow(0 8px 24px rgba(0,0,0,.12));
   transition: transform 300ms cubic-bezier(.34,1.56,.64,1), filter 300ms ease;
 }
-
 .nanami-landing-img:hover img {
   transform: scale(1.04) rotate(-1deg);
   filter: drop-shadow(0 12px 32px rgba(0,0,0,.2));
 }
-
 .nanami-landing-img::after {
   content: '💬 ¡Habla conmigo!';
-  position: absolute;
-  bottom: -28px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: var(--eu-surface);
-  border: 1px solid var(--eu-border);
-  border-radius: 20px;
-  padding: 4px 12px;
-  font-size: .74rem;
-  color: var(--eu-text-secondary);
-  white-space: nowrap;
-  opacity: 0;
-  transition: opacity 220ms;
-  pointer-events: none;
+  position: absolute; bottom: -28px; left: 50%; transform: translateX(-50%);
+  background: var(--eu-surface); border: 1px solid var(--eu-border);
+  border-radius: 20px; padding: 4px 12px; font-size: .74rem; color: var(--eu-text-secondary);
+  white-space: nowrap; opacity: 0; transition: opacity 220ms; pointer-events: none;
 }
-
 .nanami-landing-img:hover::after { opacity: 1; }
 
-/* ── Dark mode ────────────────────────────────────────────────── */
+/* ═══════════════════════════════════════════════════════════════
+   Dark mode
+   ═══════════════════════════════════════════════════════════════ */
 [data-theme="dark"] .nanami-window    { box-shadow: 0 12px 48px rgba(0,0,0,.45); }
 [data-theme="dark"] .nanami-input-row { background: var(--eu-bg-secondary); }
 
-/* ── Responsive ───────────────────────────────────────────────── */
+/* ═══════════════════════════════════════════════════════════════
+   Responsive
+   ═══════════════════════════════════════════════════════════════ */
 @media (max-width: 480px) {
   .nanami-window {
-    bottom: 0;
-    right: 0;
-    left: 0;
-    width: 100%;
-    max-width: 100%;
-    height: 88vh;
-    border-radius: 20px 20px 0 0;
-    border-bottom: none;
+    bottom: 0; right: 0; left: 0;
+    width: 100%; max-width: 100%; height: 88vh;
+    border-radius: 20px 20px 0 0; border-bottom: none;
   }
   .nanami-fab { bottom: 16px; right: 16px; }
 }
