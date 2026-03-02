@@ -22,6 +22,7 @@
 @import url('components/notifications.css');
 @import url('components/sources.css');
 @import url('components/media-manager.css');
+@import url('components/nanami.css');
 
 /* Utilities */
 @import url('utilities/utilities.css');
