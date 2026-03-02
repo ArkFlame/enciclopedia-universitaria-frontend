@@ -47,8 +47,9 @@
   <script data-cfasync="false">
     // Config
     window.EU_CONFIG = {
-      backendUrl: window.location.origin,
-      baseUrl:    window.location.origin
+      backendUrl:     window.location.origin,
+      baseUrl:        window.location.origin,
+      googleClientId: "{{ site.google_client_id }}"
     };
 
     // Theme: apply immediately to prevent flash
@@ -57,6 +58,9 @@
       document.documentElement.setAttribute('data-theme', t);
     })();
   </script>
+
+  <!-- Google Identity Services (Sign In With Google) -->
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
 
 </head>
 <body>

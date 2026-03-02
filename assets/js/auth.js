@@ -8,14 +8,54 @@ const Auth = (() => {
   const TOKEN_KEY = 'eu_token';
   const USER_KEY  = 'eu_user';
 
+  // ── Session generation counter ──────────────────────────────────────────────
+  // Incremented on every login, logout, and googleLogin.
+  // refreshToken captures the generation when it starts and silently discards
+  // its response if the generation changed while the request was in-flight.
+  // This prevents a stale refresh from an old session overwriting a freshly
+  // stored token from a new login (the "same JWT after account switch" bug).
+  let _sessionGen = 0;
+
   function getToken()  { return localStorage.getItem(TOKEN_KEY); }
   function getUser()   {
     try { return JSON.parse(localStorage.getItem(USER_KEY)); } catch { return null; }
   }
+
+  // ── Client-side token sanity check ─────────────────────────────────────────
+  const JWT_PATTERN = /^[A-Za-z0-9\-_]+\.[A-Za-z0-9\-_]+\.[A-Za-z0-9\-_]+$/;
+  function isValidTokenFormat(t) {
+    return typeof t === 'string' && t.length >= 20 && t.length <= 2048 && JWT_PATTERN.test(t);
+  }
+  function sanitizeStoredToken() {
+    const t = localStorage.getItem(TOKEN_KEY);
+    if (t && !isValidTokenFormat(t)) {
+      console.warn('[Auth] Clearing invalid token from localStorage');
+      localStorage.removeItem(TOKEN_KEY);
+      localStorage.removeItem(USER_KEY);
+    }
+  }
+  sanitizeStoredToken();
+
   function isLoggedIn() { return !!getToken(); }
   function hasRole(...roles) {
     const u = getUser();
     return u && roles.includes(u.role);
+  }
+
+  // ── clearSession — wipes all auth state and bumps the generation ────────────
+  function clearSession() {
+    _sessionGen++;
+    localStorage.removeItem(TOKEN_KEY);
+    localStorage.removeItem(USER_KEY);
+  }
+
+  // ── storeSession — stores credentials and bumps the generation ──────────────
+  // Any in-flight refreshToken() from the previous session sees the generation
+  // change and silently discards its response instead of overwriting this token.
+  function storeSession(token, user) {
+    _sessionGen++;
+    localStorage.setItem(TOKEN_KEY, token);
+    localStorage.setItem(USER_KEY, JSON.stringify(user));
   }
 
   async function login(email, password) {
@@ -26,8 +66,7 @@ const Auth = (() => {
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Error al iniciar sesión');
-    localStorage.setItem(TOKEN_KEY, data.token);
-    localStorage.setItem(USER_KEY, JSON.stringify(data.user));
+    storeSession(data.token, data.user);
     return data;
   }
 
@@ -39,27 +78,30 @@ const Auth = (() => {
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Error al registrarse');
-    localStorage.setItem(TOKEN_KEY, data.token);
-    localStorage.setItem(USER_KEY, JSON.stringify(data.user));
+    storeSession(data.token, data.user);
+    return data;
+  }
+
+  async function googleLogin(credential) {
+    const res  = await fetch(`${API}/api/auth/google`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ credential })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Error al iniciar sesión con Google');
+    storeSession(data.token, data.user);
     return data;
   }
 
   function logout() {
-    localStorage.removeItem(TOKEN_KEY);
-    localStorage.removeItem(USER_KEY);
+    clearSession();
     window.location.href = window.EU_CONFIG.baseUrl + '/';
   }
 
   /**
    * authFetch — fetch with Authorization header.
-   * 
-   * IMPORTANT: Does NOT auto-logout on 401.
-   * Callers must check res?.ok and handle errors themselves.
-   * Auto-logout was removed because it caused session loss when any background
-   * request (notifications, refresh) returned 401 due to token expiry or
-   * a transient server error — logging the user out unexpectedly.
-   * 
-   * Pages that require auth should redirect to login themselves if needed.
+   * Does NOT auto-logout on 401. Callers handle errors themselves.
    */
   async function authFetch(url, options = {}) {
     const token   = getToken();
@@ -76,27 +118,54 @@ const Auth = (() => {
 
   /**
    * refreshToken — gets a fresh JWT from the server with the current DB role.
-   * Uses raw fetch (never authFetch) so a 401 never triggers logout.
-   * Silently keeps the existing stored user if refresh fails.
+   *
+   * Generation-safe: captures _sessionGen before the fetch and discards the
+   * response if a login/logout happened while the request was in-flight.
    */
   async function refreshToken() {
     if (!isLoggedIn()) return null;
+
+    const stored = getToken();
+    if (!isValidTokenFormat(stored)) {
+      clearSession();
+      return null;
+    }
+
+    // Snapshot both before going async — these are our staleness detectors.
+    const genAtStart   = _sessionGen;
+    const tokenAtStart = stored;
+
     try {
       const res = await fetch(`${API}/api/auth/refresh`, {
         method: 'POST',
         headers: {
           'Content-Type':  'application/json',
-          'Authorization': `Bearer ${getToken()}`
+          'Authorization': `Bearer ${tokenAtStart}`
         }
       });
+
+      // A login/logout/googleLogin happened while we were waiting → bail.
+      // The new session token is already correctly stored; don't touch it.
+      if (_sessionGen !== genAtStart) return getUser();
+
       if (res.ok) {
         const data = await res.json();
+        if (_sessionGen !== genAtStart) return getUser(); // final check
         localStorage.setItem(TOKEN_KEY, data.token);
         localStorage.setItem(USER_KEY, JSON.stringify(data.user));
         return data.user;
       }
-      // 401 = token expired/invalid — keep existing stored user, don't logout.
-      // The user will be prompted to login naturally when they hit a protected action.
+
+      if (res.status === 401) {
+        try {
+          const err = await res.json();
+          if (err.code === 'INVALID_TOKEN' || err.code === 'USER_NOT_FOUND') {
+            if (_sessionGen === genAtStart) clearSession();
+            return null;
+          }
+        } catch (_) {}
+      }
+      // TOKEN_EXPIRED or other 401 — keep existing stored user.
     } catch (e) {
       console.warn('Token refresh failed (network?):', e);
     }
@@ -354,7 +423,7 @@ const Auth = (() => {
 
   return {
     getToken, getUser, isLoggedIn, hasRole,
-    login, register, logout, authFetch,
+    login, register, googleLogin, logout, authFetch,
     refreshToken, refreshUser, updateNavbar,
     getNotificationLink: resolveNotificationLink,
     getNotificationIcon: resolveNotificationIcon
