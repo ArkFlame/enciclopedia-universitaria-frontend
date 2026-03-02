@@ -9,6 +9,33 @@
   var articleData = null;
   var existingSources = [];
   var pendingPdf = null;
+ 
+  async function loadEditCategories(currentCategory) {
+    var select = document.getElementById('editCategorySelect');
+    if (!select) return;
+    select.innerHTML = '<option value="">Selecciona una categoría...</option>';
+    try {
+      var res = await fetch(API + '/api/articles/meta/categories');
+      if (!res.ok) return;
+      var categories = await res.json();
+      categories.forEach(function(cat) {
+        var option = document.createElement('option');
+        option.value = cat.slug;
+        option.textContent = cat.name;
+        if (cat.slug === currentCategory) option.selected = true;
+        select.appendChild(option);
+      });
+    } catch (err) {
+      console.warn('Failed to load edit categories:', err);
+    }
+  }
+
+  function getSelectedEditCategory() {
+    var select = document.getElementById('editCategorySelect');
+    if (!select) return null;
+    var value = select.value || '';
+    return value.trim() ? value.trim() : null;
+  }
 
   document.addEventListener('DOMContentLoaded', async function() {
     await new Promise(function(r){ setTimeout(r, 100); });
@@ -132,6 +159,7 @@
     renderSourcesList(article.id, existingSources);
     loadExistingImages(article.id);
     updateCharCount();
+    loadEditCategories(article.category);
 
     document.getElementById('editorPage').style.display = 'none';
     document.getElementById('editorContent').style.display = '';
@@ -460,6 +488,7 @@
     var summary = document.getElementById('editSummary')?.value.trim();
     var content = document.getElementById('editContent')?.value.trim();
     var note = document.getElementById('editNote')?.value.trim();
+    var category = getSelectedEditCategory() || (articleData && articleData.category) || null;
     var msgEl = document.getElementById('submitMsg');
     var btn = document.getElementById('submitBtn');
     var spinner = document.getElementById('submitSpinner');
@@ -475,7 +504,7 @@
     try {
       var res = await Auth.authFetch(API + '/api/articles/' + articleId + '/edit', {
         method: 'POST',
-        body: JSON.stringify({ title:title, summary:summary, content:content, editNote:note })
+        body: JSON.stringify({ title:title, summary:summary, content:content, editNote:note, category:category })
       });
       var data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Error al enviar edición');
