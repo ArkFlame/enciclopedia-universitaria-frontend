@@ -38,7 +38,7 @@
 }
 
 [data-theme="dark"] {
-  --eu-bg: #0f0e0c;
+  --eu-bg: black;
   --eu-bg-secondary: #1a1814;
   --eu-bg-tertiary: #242018;
   --eu-surface: #1a1814;
