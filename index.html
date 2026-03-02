@@ -105,6 +105,8 @@ description: Enciclopedia colaborativa universitaria en español
 
     var isReversing = false;
     var reverseInterval = null;
+    var duration = 0;
+    var hasEnded = false;
 
     // Clear any existing interval helper
     function clearReverseInterval() {
@@ -114,6 +116,28 @@ description: Enciclopedia colaborativa universitaria en español
       }
     }
 
+    // Get accurate duration when metadata loads
+    video.addEventListener("loadedmetadata", function () {
+      duration = video.duration;
+      console.log("Video duration:", duration);
+    });
+
+    // Use timeupdate to detect end (more reliable than 'ended' event)
+    video.addEventListener("timeupdate", function () {
+      if (!duration) duration = video.duration;
+      
+      // Detect near-end when playing forward (within 0.1 seconds of end)
+      if (!isReversing && video.currentTime >= duration - 0.1 && !hasEnded) {
+        hasEnded = true;
+        onVideoEnded();
+      }
+    });
+
+    // Reset hasEnded when video starts playing
+    video.addEventListener("play", function () {
+      hasEnded = false;
+    });
+
     // Handle video end - toggle direction
     function onVideoEnded() {
       clearReverseInterval();
@@ -121,36 +145,35 @@ description: Enciclopedia colaborativa universitaria en español
 
       if (isReversing) {
         // Start reversing from end
-        video.currentTime = video.duration;
-        startReversePlayback();
+        video.pause();
+        video.currentTime = duration;
+        // Small delay to ensure frame renders at end
+        setTimeout(startReversePlayback, 50);
       } else {
         // Start playing forward from beginning
         video.currentTime = 0;
         video.playbackRate = 1;
+        hasEnded = false;
         video.play();
       }
     }
 
     // Simulate reverse playback by stepping back frame by frame
     function startReversePlayback() {
-      video.pause();
-      // Small step for smooth reverse (adjust 0.033 ~ 30fps, increase for faster reverse)
-      var step = 0.033; 
-
+      // Step size for 6 second video (adjust for speed)
+      var step = 0.04; // ~25fps, smooth reverse
+      
       reverseInterval = setInterval(function () {
         if (video.currentTime <= step) {
-          // Reached start, trigger ended event to switch back to forward
+          // Reached start, trigger switch back to forward
           video.currentTime = 0;
           clearReverseInterval();
           onVideoEnded();
           return;
         }
         video.currentTime -= step;
-      }, 33); // ~30fps
+      }, 40); // 25fps reverse
     }
-
-    // Listen for ended event
-    video.addEventListener("ended", onVideoEnded);
 
     // Cleanup on page unload
     window.addEventListener("beforeunload", clearReverseInterval);
