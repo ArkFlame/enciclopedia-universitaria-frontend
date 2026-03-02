@@ -1,0 +1,679 @@
+/* ═══════════════════════════════════════════════════════════════
+   nanami.css — Nanami AI Chat Component
+   Enciclopedia Universitaria
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ── Floating Trigger Button ──────────────────────────────────── */
+.nanami-fab {
+  position: fixed;
+  bottom: 28px;
+  right: 28px;
+  z-index: 9000;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 10px;
+  pointer-events: none;
+}
+
+.nanami-fab-btn {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+  pointer-events: all;
+  padding: 0;
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(0,0,0,.22);
+  transition: transform 200ms ease, box-shadow 200ms ease;
+  background: var(--eu-bg);
+  position: relative;
+}
+
+.nanami-fab-btn:hover {
+  transform: scale(1.08);
+  box-shadow: 0 8px 28px rgba(0,0,0,.28);
+}
+
+.nanami-fab-btn img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Pulsing ring */
+.nanami-fab-btn::before {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  border-radius: 50%;
+  border: 2px solid var(--eu-accent);
+  opacity: 0;
+  animation: nanami-pulse 2.8s ease-in-out infinite;
+}
+
+@keyframes nanami-pulse {
+  0%   { opacity: 0; transform: scale(.9); }
+  40%  { opacity: .5; }
+  100% { opacity: 0; transform: scale(1.25); }
+}
+
+/* Tooltip popup */
+.nanami-fab-tooltip {
+  background: var(--eu-surface);
+  border: 1px solid var(--eu-border);
+  border-radius: 12px;
+  padding: 8px 14px;
+  font-size: .82rem;
+  color: var(--eu-text);
+  box-shadow: var(--eu-shadow);
+  pointer-events: none;
+  white-space: nowrap;
+  opacity: 0;
+  transform: translateY(6px);
+  transition: opacity 220ms, transform 220ms;
+}
+
+.nanami-fab:hover .nanami-fab-tooltip,
+.nanami-fab-tooltip.show {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ── Chat Window ──────────────────────────────────────────────── */
+.nanami-window {
+  position: fixed;
+  bottom: 100px;
+  right: 28px;
+  width: 400px;
+  max-width: calc(100vw - 32px);
+  height: 580px;
+  max-height: calc(100vh - 120px);
+  background: var(--eu-bg);
+  border: 1px solid var(--eu-border);
+  border-radius: 20px;
+  box-shadow: 0 12px 48px rgba(0,0,0,.18);
+  display: flex;
+  flex-direction: column;
+  z-index: 8999;
+  overflow: hidden;
+  transform: scale(.92) translateY(16px);
+  opacity: 0;
+  pointer-events: none;
+  transition: transform 260ms cubic-bezier(.34,1.56,.64,1), opacity 220ms ease;
+}
+
+.nanami-window.open {
+  transform: scale(1) translateY(0);
+  opacity: 1;
+  pointer-events: all;
+}
+
+/* Header */
+.nanami-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--eu-border);
+  flex-shrink: 0;
+  background: var(--eu-bg);
+}
+
+.nanami-header-avatar {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.nanami-header-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.nanami-header-name {
+  font-weight: 700;
+  font-size: .92rem;
+  color: var(--eu-text);
+  line-height: 1.2;
+}
+
+.nanami-header-status {
+  font-size: .72rem;
+  color: var(--eu-success);
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.nanami-header-status::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--eu-success);
+  animation: nanami-status-blink 2s ease-in-out infinite;
+}
+
+@keyframes nanami-status-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: .4; }
+}
+
+.nanami-header-actions {
+  display: flex;
+  gap: 4px;
+}
+
+.nanami-header-btn {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  color: var(--eu-text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: .9rem;
+  transition: background 160ms, color 160ms;
+}
+
+.nanami-header-btn:hover {
+  background: var(--eu-bg-secondary);
+  color: var(--eu-text);
+}
+
+/* Article context banner */
+.nanami-context-banner {
+  padding: 6px 16px;
+  background: var(--eu-accent-light);
+  border-bottom: 1px solid var(--eu-border);
+  font-size: .72rem;
+  color: var(--eu-text-secondary);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.nanami-context-banner i {
+  color: var(--eu-accent);
+  flex-shrink: 0;
+}
+
+/* Messages area */
+.nanami-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  scroll-behavior: smooth;
+}
+
+.nanami-messages::-webkit-scrollbar { width: 4px; }
+.nanami-messages::-webkit-scrollbar-track { background: transparent; }
+.nanami-messages::-webkit-scrollbar-thumb {
+  background: var(--eu-border);
+  border-radius: 2px;
+}
+
+/* ── Message types ── */
+.nanami-msg {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  animation: nanami-msg-in 240ms ease;
+}
+
+@keyframes nanami-msg-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Nanami messages (left, no bubble) */
+.nanami-msg--ai {
+  flex-direction: row;
+}
+
+.nanami-msg--ai .nanami-msg-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.nanami-msg--ai .nanami-msg-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.nanami-msg--ai .nanami-msg-name {
+  font-size: .7rem;
+  font-weight: 600;
+  color: var(--eu-text-muted);
+  margin-bottom: 4px;
+  letter-spacing: .03em;
+}
+
+.nanami-msg--ai .nanami-msg-text {
+  font-size: .875rem;
+  line-height: 1.65;
+  color: var(--eu-text);
+}
+
+.nanami-msg--ai .nanami-msg-text p { margin: 0 0 6px; }
+.nanami-msg--ai .nanami-msg-text p:last-child { margin-bottom: 0; }
+.nanami-msg--ai .nanami-msg-text strong { font-weight: 600; }
+.nanami-msg--ai .nanami-msg-text em { font-style: italic; }
+.nanami-msg--ai .nanami-msg-text ul {
+  margin: 4px 0 4px 16px;
+  padding: 0;
+}
+.nanami-msg--ai .nanami-msg-text li { margin: 2px 0; }
+.nanami-msg--ai .nanami-msg-text code {
+  background: var(--eu-bg-secondary);
+  padding: 1px 5px;
+  border-radius: 4px;
+  font-size: .82em;
+}
+
+/* User messages (right, with bubble) */
+.nanami-msg--user {
+  flex-direction: row-reverse;
+}
+
+.nanami-msg--user .nanami-msg-bubble {
+  background: var(--eu-accent);
+  color: var(--eu-text-inverse);
+  padding: 10px 14px;
+  border-radius: 18px 18px 4px 18px;
+  font-size: .875rem;
+  line-height: 1.5;
+  max-width: 80%;
+  word-break: break-word;
+}
+
+/* Tool progress message */
+.nanami-msg--tool {
+  flex-direction: row;
+  gap: 8px;
+  align-items: center;
+  animation: nanami-msg-in 200ms ease;
+}
+
+.nanami-msg--tool .nanami-tool-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: var(--eu-bg-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: .85rem;
+  color: var(--eu-text-secondary);
+}
+
+.nanami-msg--tool .nanami-tool-text {
+  font-size: .78rem;
+  color: var(--eu-text-secondary);
+  font-style: italic;
+}
+
+.nanami-msg--tool .nanami-tool-text.done {
+  color: var(--eu-success);
+  font-style: normal;
+}
+
+/* ── Loading / thinking state ── */
+.nanami-thinking-overlay {
+  position: absolute;
+  inset: 0;
+  background: var(--eu-bg);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  z-index: 10;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 200ms;
+}
+
+.nanami-thinking-overlay.active {
+  opacity: 1;
+  pointer-events: all;
+}
+
+.nanami-thinking-video-wrap {
+  width: 110px;
+  height: 110px;
+  border-radius: 50%;
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(0,0,0,.15);
+  flex-shrink: 0;
+}
+
+.nanami-thinking-video-wrap video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Fallback image when video not available */
+.nanami-thinking-video-wrap img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.nanami-thinking-msg {
+  font-size: .88rem;
+  color: var(--eu-text-secondary);
+  text-align: center;
+  animation: nanami-bounce 2s ease-in-out infinite;
+  max-width: 220px;
+  line-height: 1.5;
+}
+
+@keyframes nanami-bounce {
+  0%, 100% { transform: translateY(0); }
+  50%       { transform: translateY(-5px); }
+}
+
+/* Typing dots (fallback) */
+.nanami-typing {
+  display: flex;
+  gap: 5px;
+  padding: 4px 0;
+}
+
+.nanami-typing span {
+  width: 7px;
+  height: 7px;
+  background: var(--eu-text-muted);
+  border-radius: 50%;
+  animation: nanami-dot 1.2s ease-in-out infinite;
+}
+
+.nanami-typing span:nth-child(2) { animation-delay: .2s; }
+.nanami-typing span:nth-child(3) { animation-delay: .4s; }
+
+@keyframes nanami-dot {
+  0%, 100% { transform: translateY(0); opacity: .5; }
+  50%       { transform: translateY(-5px); opacity: 1; }
+}
+
+/* ── Input area ── */
+.nanami-input-area {
+  padding: 12px 14px;
+  border-top: 1px solid var(--eu-border);
+  flex-shrink: 0;
+  background: var(--eu-bg);
+}
+
+/* File attachment preview */
+.nanami-attachments {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.nanami-attachment-chip {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: var(--eu-bg-secondary);
+  border: 1px solid var(--eu-border);
+  border-radius: 20px;
+  padding: 3px 8px 3px 6px;
+  font-size: .72rem;
+  color: var(--eu-text-secondary);
+  max-width: 160px;
+}
+
+.nanami-attachment-chip span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+}
+
+.nanami-attachment-chip button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--eu-text-muted);
+  padding: 0;
+  line-height: 1;
+  flex-shrink: 0;
+  font-size: .8rem;
+  transition: color 150ms;
+}
+
+.nanami-attachment-chip button:hover { color: var(--eu-danger); }
+
+/* Input row */
+.nanami-input-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  background: var(--eu-bg-secondary);
+  border: 1.5px solid var(--eu-border-subtle);
+  border-radius: 24px;
+  padding: 6px 6px 6px 10px;
+  transition: border-color 200ms;
+}
+
+.nanami-input-row:focus-within {
+  border-color: var(--eu-border);
+}
+
+.nanami-attach-btn {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: none;
+  background: var(--eu-bg);
+  color: var(--eu-text-secondary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  flex-shrink: 0;
+  transition: background 160ms, color 160ms;
+}
+
+.nanami-attach-btn:hover {
+  background: var(--eu-bg-tertiary);
+  color: var(--eu-text);
+}
+
+.nanami-textarea {
+  flex: 1;
+  border: none;
+  background: transparent;
+  resize: none;
+  outline: none;
+  font-family: var(--eu-font-body);
+  font-size: .875rem;
+  color: var(--eu-text);
+  line-height: 1.5;
+  max-height: 100px;
+  min-height: 22px;
+  padding: 4px 0;
+  overflow-y: auto;
+}
+
+.nanami-textarea::placeholder { color: var(--eu-text-muted); }
+
+.nanami-send-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: none;
+  background: var(--eu-accent);
+  color: var(--eu-text-inverse);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: .9rem;
+  flex-shrink: 0;
+  transition: transform 160ms, opacity 160ms;
+}
+
+.nanami-send-btn:hover { transform: scale(1.08); }
+.nanami-send-btn:disabled { opacity: .4; cursor: not-allowed; transform: none; }
+
+/* Hidden file input */
+.nanami-file-input { display: none; }
+
+/* ── Landing hero image (Nanami landing) ──────────────────────── */
+.nanami-landing-img {
+  width: 280px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  position: relative;
+}
+
+.nanami-landing-img img {
+  width: 100%;
+  max-width: 280px;
+  height: auto;
+  object-fit: contain;
+  filter: drop-shadow(0 8px 24px rgba(0,0,0,.12));
+  transition: transform 300ms cubic-bezier(.34,1.56,.64,1), filter 300ms ease;
+  border-radius: 12px;
+}
+
+.nanami-landing-img:hover img {
+  transform: scale(1.04) rotate(-1deg);
+  filter: drop-shadow(0 12px 32px rgba(0,0,0,.2));
+}
+
+.nanami-landing-img::after {
+  content: '💬 ¡Habla conmigo!';
+  position: absolute;
+  bottom: -32px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--eu-surface);
+  border: 1px solid var(--eu-border);
+  border-radius: 20px;
+  padding: 4px 12px;
+  font-size: .74rem;
+  color: var(--eu-text-secondary);
+  white-space: nowrap;
+  opacity: 0;
+  transition: opacity 220ms;
+  pointer-events: none;
+}
+
+.nanami-landing-img:hover::after { opacity: 1; }
+
+/* ── Empty state ── */
+.nanami-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  gap: 12px;
+  padding: 24px;
+  text-align: center;
+}
+
+.nanami-empty img {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  object-fit: cover;
+  opacity: .85;
+}
+
+.nanami-empty-title {
+  font-weight: 700;
+  font-size: .95rem;
+  color: var(--eu-text);
+}
+
+.nanami-empty-sub {
+  font-size: .8rem;
+  color: var(--eu-text-secondary);
+  line-height: 1.5;
+  max-width: 240px;
+}
+
+.nanami-suggestions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: center;
+  margin-top: 4px;
+}
+
+.nanami-suggestion {
+  background: var(--eu-bg-secondary);
+  border: 1px solid var(--eu-border);
+  border-radius: 20px;
+  padding: 5px 12px;
+  font-size: .76rem;
+  color: var(--eu-text-secondary);
+  cursor: pointer;
+  transition: background 160ms, color 160ms;
+}
+
+.nanami-suggestion:hover {
+  background: var(--eu-accent);
+  color: var(--eu-text-inverse);
+  border-color: var(--eu-accent);
+}
+
+/* ── Dark mode tweaks ── */
+[data-theme="dark"] .nanami-window {
+  box-shadow: 0 12px 48px rgba(0,0,0,.45);
+}
+
+[data-theme="dark"] .nanami-msg--user .nanami-msg-bubble {
+  background: var(--eu-accent);
+  color: var(--eu-text-inverse);
+}
+
+[data-theme="dark"] .nanami-input-row {
+  background: var(--eu-bg-secondary);
+}
+
+/* ── Responsive ── */
+@media (max-width: 480px) {
+  .nanami-window {
+    bottom: 0;
+    right: 0;
+    left: 0;
+    width: 100%;
+    max-width: 100%;
+    height: 88vh;
+    border-radius: 20px 20px 0 0;
+    border-bottom: none;
+  }
+
+  .nanami-fab {
+    bottom: 16px;
+    right: 16px;
+  }
+}

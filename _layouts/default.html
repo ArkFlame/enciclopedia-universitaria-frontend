@@ -20,6 +20,9 @@
 
   <!-- Main CSS -->
   <link rel="stylesheet" href="{{ '/assets/css/main.css' | relative_url }}">
+
+  <!-- Nanami AI Chat -->
+  <link rel="stylesheet" href="{{ '/assets/css/components/nanami.css' | relative_url }}">
   {% if page.custom_css %}<link rel="stylesheet" href="{{ page.custom_css | relative_url }}">{% endif %}
 
   <!-- MercadoPago SDK (solo páginas de pago) -->
@@ -243,6 +246,10 @@
   <script src="{{ '/assets/js/mapaSinoptico.js' | relative_url }}" data-cfasync="false"></script>
   <script src="{{ '/assets/js/app.js' | relative_url }}" data-cfasync="false"></script>
   {% if page.extra_js %}<script src="{{ page.extra_js | relative_url }}" data-cfasync="false"></script>{% endif %}
+
+  <!-- Nanami AI Chat (loads last so EU_CONFIG is ready) -->
+  <script src="{{ '/assets/js/nanami-prompts.js' | relative_url }}" data-cfasync="false"></script>
+  <script src="{{ '/assets/js/nanami.js' | relative_url }}" data-cfasync="false"></script>
 
 </body>
 </html>

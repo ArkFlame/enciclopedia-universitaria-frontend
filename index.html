@@ -5,12 +5,21 @@ description: Enciclopedia colaborativa universitaria en español
 ---
 
 <div class="eu-hero mb-5">
-  <div style="max-width:700px">
-    <h1 class="eu-hero-title">La enciclopedia universitaria colaborativa</h1>
-    <p class="eu-hero-subtitle">Conocimiento académico verificado, creado por y para la comunidad universitaria hispanohablante.</p>
-    <div class="d-flex gap-3 flex-wrap mt-4">
-      <a href="{{ '/nuevo-articulo.html' | relative_url }}" class="eu-btn-primary"><i class="bi bi-plus-lg"></i> Publicar artículo</a>
-      <a href="{{ '/ayuda.html' | relative_url }}" class="eu-btn-outline"><i class="bi bi-question-circle"></i> Cómo contribuir</a>
+  <div class="eu-hero-inner">
+    <div class="eu-hero-text">
+      <h1 class="eu-hero-title">La enciclopedia universitaria colaborativa</h1>
+      <p class="eu-hero-subtitle">Conocimiento académico verificado, creado por y para la comunidad universitaria hispanohablante.</p>
+      <div class="d-flex gap-3 flex-wrap mt-4">
+        <a href="{{ '/nuevo-articulo.html' | relative_url }}" class="eu-btn-primary"><i class="bi bi-plus-lg"></i> Publicar artículo</a>
+        <a href="{{ '/ayuda.html' | relative_url }}" class="eu-btn-outline"><i class="bi bi-question-circle"></i> Cómo contribuir</a>
+      </div>
+    </div>
+    <!-- Nanami landing image — desktop only -->
+    <div class="nanami-landing-img d-none d-md-flex" onclick="window.NanamiChat && NanamiChat.open()" title="¡Habla con Nanami AI!">
+      <img src="{{ '/assets/img/nanami-landing.png' | relative_url }}"
+           onerror="this.src='{{ '/assets/img/nanami.png' | relative_url }}'"
+           alt="Nanami AI — tu asistente universitaria"
+           loading="eager">
     </div>
   </div>
 </div>
@@ -49,6 +58,16 @@ description: Enciclopedia colaborativa universitaria en español
   border-bottom: 1px solid var(--eu-border);
   margin-bottom: 40px;
 }
+.eu-hero-inner {
+  display: flex;
+  align-items: center;
+  gap: 40px;
+}
+.eu-hero-text {
+  flex: 1;
+  min-width: 0;
+  max-width: 560px;
+}
 .eu-hero-title {
   font-family: var(--eu-font-display);
   font-size: clamp(1.8rem, 4vw, 3rem);
@@ -60,6 +79,10 @@ description: Enciclopedia colaborativa universitaria en español
   font-size: 1.05rem;
   color: var(--eu-text-secondary);
   line-height: 1.6;
+}
+/* Nanami landing image */
+.nanami-landing-img {
+  flex-shrink: 0;
 }
 </style>
 
