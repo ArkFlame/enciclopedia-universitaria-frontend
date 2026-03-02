@@ -53,26 +53,23 @@ title: Iniciar sesión
           </button>
 
           <!-- Google Sign-In divider -->
+          {% if site.google_client_id and site.google_client_id != "YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com" %}
           <div style="display:flex;align-items:center;gap:12px;margin:18px 0 14px">
             <hr style="flex:1;margin:0;border-color:var(--eu-border,#e5e7eb)">
+            <span class="text-muted small">o continúa con</span>
             <hr style="flex:1;margin:0;border-color:var(--eu-border,#e5e7eb)">
           </div>
-
-          <button type="button" id="googleLoginBtn"
-                  onclick="handleGoogleBtnClick()"
+          <button type="button" onclick="handleGoogleSignIn()" id="googleLoginBtn"
                   style="width:100%;height:44px;display:flex;align-items:center;justify-content:center;
-                         gap:10px;border:1px solid var(--eu-border,#e5e7eb);border-radius:8px;
-                         background:var(--eu-surface,#fff);color:var(--eu-text,#111);
-                         font-size:0.95rem;font-weight:500;cursor:pointer;transition:background 0.15s">
-            <svg width="18" height="18" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg">
-              <path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.875 2.684-6.615z" fill="#4285F4"/>
-              <path d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z" fill="#34A853"/>
-              <path d="M3.964 10.71A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.042l3.007-2.332z" fill="#FBBC05"/>
-              <path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.958L3.964 6.29C4.672 4.163 6.656 3.58 9 3.58z" fill="#EA4335"/>
-            </svg>
+                         gap:10px;border:1px solid #dadce0;border-radius:4px;background:#fff;
+                         color:#3c4043;font-family:'Google Sans',Roboto,sans-serif;font-size:14px;
+                         font-weight:500;cursor:pointer;transition:background 0.15s,box-shadow 0.15s;
+                         box-shadow:0 1px 2px rgba(0,0,0,.08)">
+            <svg width="18" height="18" viewBox="0 0 18 18"><path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.875 2.684-6.615z" fill="#4285F4"/><path d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z" fill="#34A853"/><path d="M3.964 10.71A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.042l3.007-2.332z" fill="#FBBC05"/><path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.958L3.964 6.29C4.672 4.163 6.656 3.58 9 3.58z" fill="#EA4335"/></svg>
             Continuar con Google
           </button>
           <div id="googleLoginError" class="alert alert-danger d-none mt-2" style="font-size:0.88rem"></div>
+          {% endif %}
         </div>
         
         <!-- REGISTRO -->
@@ -105,27 +102,23 @@ title: Iniciar sesión
           </button>
 
           <!-- Google Sign-Up divider -->
+          {% if site.google_client_id and site.google_client_id != "YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com" %}
           <div style="display:flex;align-items:center;gap:12px;margin:18px 0 14px">
             <hr style="flex:1;margin:0;border-color:var(--eu-border,#e5e7eb)">
             <span class="text-muted small">o regístrate con</span>
             <hr style="flex:1;margin:0;border-color:var(--eu-border,#e5e7eb)">
           </div>
-
-          <button type="button" id="googleRegisterBtn"
-                  onclick="handleGoogleBtnClick()"
+          <button type="button" onclick="handleGoogleSignIn()" id="googleRegisterBtn"
                   style="width:100%;height:44px;display:flex;align-items:center;justify-content:center;
-                         gap:10px;border:1px solid var(--eu-border,#e5e7eb);border-radius:8px;
-                         background:var(--eu-surface,#fff);color:var(--eu-text,#111);
-                         font-size:0.95rem;font-weight:500;cursor:pointer;transition:background 0.15s">
-            <svg width="18" height="18" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg">
-              <path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.875 2.684-6.615z" fill="#4285F4"/>
-              <path d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z" fill="#34A853"/>
-              <path d="M3.964 10.71A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.042l3.007-2.332z" fill="#FBBC05"/>
-              <path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.958L3.964 6.29C4.672 4.163 6.656 3.58 9 3.58z" fill="#EA4335"/>
-            </svg>
+                         gap:10px;border:1px solid #dadce0;border-radius:4px;background:#fff;
+                         color:#3c4043;font-family:'Google Sans',Roboto,sans-serif;font-size:14px;
+                         font-weight:500;cursor:pointer;transition:background 0.15s,box-shadow 0.15s;
+                         box-shadow:0 1px 2px rgba(0,0,0,.08)">
+            <svg width="18" height="18" viewBox="0 0 18 18"><path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.875 2.684-6.615z" fill="#4285F4"/><path d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z" fill="#34A853"/><path d="M3.964 10.71A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.042l3.007-2.332z" fill="#FBBC05"/><path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.958L3.964 6.29C4.672 4.163 6.656 3.58 9 3.58z" fill="#EA4335"/></svg>
             Continuar con Google
           </button>
           <div id="googleRegisterError" class="alert alert-danger d-none mt-2" style="font-size:0.88rem"></div>
+          {% endif %}
         </div>
 
         <!-- RECUPERAR CONTRASEÑA -->
@@ -161,39 +154,111 @@ const BASE = window.EU_CONFIG.baseUrl;
 const API  = window.EU_CONFIG.backendUrl || BASE;
 
 // ── Google Sign-In ─────────────────────────────────────────────────────────
-// Called by the Google Identity Services library after the user picks an account.
-// Also called by our custom button via google.accounts.id.prompt().
-function handleGoogleBtnClick() {
-  const clientId = window.EU_CONFIG.googleClientId;
+// Strategy: initialize GSI once, then call google.accounts.id.prompt() on
+// button click. This avoids renderButton() which silently fails when the
+// container is inside a hidden Bootstrap tab (offsetWidth = 0).
+
+let _gsiReady = false;
+
+function _initGSI() {
+  const clientId = window.EU_CONFIG && window.EU_CONFIG.googleClientId;
+  if (!clientId || clientId.startsWith('YOUR_')) return;
+  if (!window.google || !window.google.accounts) return;
+  if (_gsiReady) return;
+  _gsiReady = true;
+
+  google.accounts.id.initialize({
+    client_id:             clientId,
+    callback:              onGoogleCredential,
+    auto_select:           false,
+    cancel_on_tap_outside: true,
+    context:               'signin'
+  });
+}
+
+// Called by our custom buttons in both tabs
+function handleGoogleSignIn() {
+  const clientId = window.EU_CONFIG && window.EU_CONFIG.googleClientId;
   if (!clientId || clientId.startsWith('YOUR_')) {
-    alert('Google Sign-In no está configurado. Por favor contacta al administrador.');
+    alert('Google Sign-In no está configurado. Contacta al administrador.');
     return;
   }
-  // Render One-Tap or prompt the account picker
-  if (window.google && window.google.accounts) {
-    google.accounts.id.prompt();
-  } else {
-    // GSI script not loaded yet — wait and retry once
-    setTimeout(() => {
-      if (window.google && window.google.accounts) google.accounts.id.prompt();
-      else alert('No se pudo cargar Google Sign-In. Verifica tu conexión e intenta de nuevo.');
-    }, 1500);
+  if (!window.google || !window.google.accounts) {
+    alert('Google Sign-In no está disponible. Verifica tu conexión e intenta de nuevo.');
+    return;
   }
+  _initGSI();
+  google.accounts.id.prompt((notification) => {
+    // If One Tap was suppressed (e.g. user dismissed it before), open the
+    // full account picker via OAuth redirect as fallback.
+    if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
+      const clientId = window.EU_CONFIG.googleClientId;
+      const redirectUri = encodeURIComponent(window.location.href);
+      // Build the OAuth2 authorization URL and redirect
+      const params = new URLSearchParams({
+        client_id:     clientId,
+        redirect_uri:  window.location.origin + '/auth/google/callback',
+        response_type: 'token id_token',
+        scope:         'openid email profile',
+        nonce:         Math.random().toString(36).slice(2),
+        prompt:        'select_account'
+      });
+      // Actually, just re-prompt with select_account hint via accounts.google.com
+      // The cleanest fallback: open Google's account chooser in a popup
+      openGooglePopup();
+    }
+  });
+}
+
+function openGooglePopup() {
+  const clientId = window.EU_CONFIG.googleClientId;
+  const nonce    = Math.random().toString(36).slice(2);
+  const params   = new URLSearchParams({
+    client_id:     clientId,
+    redirect_uri:  window.location.origin,
+    response_type: 'id_token',
+    scope:         'openid email profile',
+    nonce,
+    prompt:        'select_account'
+  });
+
+  const w = 500, h = 600;
+  const left = Math.max(0, (screen.width  - w) / 2);
+  const top  = Math.max(0, (screen.height - h) / 2);
+  const popup = window.open(
+    'https://accounts.google.com/o/oauth2/v2/auth?' + params,
+    'google_signin',
+    `width=${w},height=${h},left=${left},top=${top},scrollbars=yes`
+  );
+
+  // Listen for the id_token in the popup's URL hash (implicit flow)
+  const poll = setInterval(() => {
+    try {
+      if (!popup || popup.closed) { clearInterval(poll); return; }
+      const hash = popup.location.hash;
+      if (hash && hash.includes('id_token=')) {
+        clearInterval(poll);
+        popup.close();
+        const token = new URLSearchParams(hash.slice(1)).get('id_token');
+        if (token) onGoogleCredential({ credential: token });
+      }
+    } catch (_) { /* cross-origin — still loading */ }
+  }, 300);
 }
 
 async function onGoogleCredential(response) {
-  const btns = ['googleLoginBtn', 'googleRegisterBtn'].map(id => document.getElementById(id)).filter(Boolean);
   const errLogin = document.getElementById('googleLoginError');
   const errReg   = document.getElementById('googleRegisterError');
   [errLogin, errReg].forEach(e => e && e.classList.add('d-none'));
 
-  btns.forEach(b => {
-    b.disabled = true;
-    b.innerHTML = '<span class="eu-spinner" style="width:18px;height:18px;border-width:2px"></span> Iniciando...';
+  // Disable buttons while working
+  ['googleLoginBtn','googleRegisterBtn'].forEach(id => {
+    const b = document.getElementById(id);
+    if (b) { b.disabled = true; b.style.opacity = '0.6'; }
   });
 
   try {
-    const data = await Auth.googleLogin(response.credential);
+    await Auth.googleLogin(response.credential);
     const redirect = new URLSearchParams(window.location.search).get('redirect') || BASE + '/';
     window.location.href = redirect;
   } catch (err) {
@@ -201,42 +266,27 @@ async function onGoogleCredential(response) {
     [errLogin, errReg].forEach(e => {
       if (e) { e.textContent = msg; e.classList.remove('d-none'); }
     });
-    btns.forEach(b => {
-      b.disabled = false;
-      b.innerHTML = `<svg width="18" height="18" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg">
-        <path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.875 2.684-6.615z" fill="#4285F4"/>
-        <path d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z" fill="#34A853"/>
-        <path d="M3.964 10.71A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.042l3.007-2.332z" fill="#FBBC05"/>
-        <path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.958L3.964 6.29C4.672 4.163 6.656 3.58 9 3.58z" fill="#EA4335"/>
-      </svg> Continuar con Google`;
+    ['googleLoginBtn','googleRegisterBtn'].forEach(id => {
+      const b = document.getElementById(id);
+      if (b) { b.disabled = false; b.style.opacity = ''; }
     });
   }
 }
 
-// Initialise Google Identity Services once the GSI script is ready
-function initGoogleSignIn() {
-  const clientId = window.EU_CONFIG.googleClientId;
-  if (!clientId || clientId.startsWith('YOUR_')) return;
-  google.accounts.id.initialize({
-    client_id:  clientId,
-    callback:   onGoogleCredential,
-    auto_select: false,
-    cancel_on_tap_outside: true,
-    context: 'signin'
-  });
-}
-
-// The GSI script loads async — init as soon as it's ready
+// Initialize as soon as GSI script is ready
 if (window.google && window.google.accounts) {
-  initGoogleSignIn();
+  _initGSI();
 } else {
-  window.addEventListener('load', () => {
-    if (window.google && window.google.accounts) initGoogleSignIn();
-  });
+  // GSI loads async — wait for it
+  const _gsiTimer = setInterval(() => {
+    if (window.google && window.google.accounts) {
+      clearInterval(_gsiTimer);
+      _initGSI();
+    }
+  }, 100);
+  // Give up after 15s
+  setTimeout(() => clearInterval(_gsiTimer), 15000);
 }
-
-// Make the callback reachable from GSI (needed if using data-callback attribute)
-window.onGoogleCredential = onGoogleCredential;
 
 function togglePassword(inputId, btn) {
   const input = document.getElementById(inputId);

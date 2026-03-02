@@ -60,7 +60,6 @@
   </script>
 
   <!-- Google Identity Services (Sign In With Google) -->
-  <script src="https://accounts.google.com/gsi/client" async defer></script>
 
 </head>
 <body>
@@ -290,6 +289,11 @@
   <!-- Nanami AI Chat (loads last so EU_CONFIG is ready) -->
   <script src="{{ '/assets/js/nanami-prompts.js' | relative_url }}" data-cfasync="false"></script>
   <script src="{{ '/assets/js/nanami.js' | relative_url }}" data-cfasync="false"></script>
+  <!-- Google Identity Services — only loaded when a real client ID is configured -->
+  {% if site.google_client_id and site.google_client_id != "YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com" %}
+  <script src="https://accounts.google.com/gsi/client" async></script>
+  {% endif %}
+
   <!-- Email verification banner logic -->
   <script data-cfasync="false">
   (function() {

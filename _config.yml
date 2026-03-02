@@ -7,8 +7,13 @@ url: "https://enciclopedia.arkflame.com"
 # Configuración del backend
 backend_url: "https://enciclopedia.arkflame.com/api"
 
-# Google OAuth — replace with your actual Client ID from Google Cloud Console
-# https://console.cloud.google.com → APIs & Services → Credentials → OAuth 2.0 Client IDs
+# Google OAuth — REQUIRED to enable Google Sign-In buttons.
+# Steps:
+#   1. Go to https://console.cloud.google.com
+#   2. APIs & Services → Credentials → Create → OAuth 2.0 Client ID → Web application
+#   3. Add your site URL under "Authorized JavaScript origins" (e.g. https://enciclopedia.arkflame.com)
+#   4. Copy the Client ID (ends in .apps.googleusercontent.com) and paste it below.
+# Leave as-is to disable Google Sign-In (the button will be hidden automatically).
 google_client_id: "172067620211-8dds3pjnt9bqvsbbfbrvqgod7urgdj0l.apps.googleusercontent.com"
 
 # Build
