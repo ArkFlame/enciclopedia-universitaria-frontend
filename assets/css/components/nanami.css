@@ -500,14 +500,12 @@
   max-width: 280px;
   height: auto;
   object-fit: contain;
-  filter: drop-shadow(0 8px 24px rgba(0,0,0,.12));
   transition: transform 300ms cubic-bezier(.34,1.56,.64,1), filter 300ms ease;
   pointer-events: none;
 }
 
 .nanami-landing-img:hover video {
   transform: scale(1.04) rotate(-1deg);
-  filter: drop-shadow(0 12px 32px rgba(0,0,0,.2));
 }
 
 /* Keep img styles for fallback */
@@ -516,13 +514,11 @@
   max-width: 280px;
   height: auto;
   object-fit: contain;
-  filter: drop-shadow(0 8px 24px rgba(0,0,0,.12));
   transition: transform 300ms cubic-bezier(.34,1.56,.64,1), filter 300ms ease;
 }
 
 .nanami-landing-img:hover img {
   transform: scale(1.04) rotate(-1deg);
-  filter: drop-shadow(0 12px 32px rgba(0,0,0,.2));
 }
 
 .nanami-landing-img::after {
