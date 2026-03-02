@@ -490,7 +490,8 @@
   justify-content: center;
   cursor: pointer;
   position: relative;
-  border-radius: 50%;
+  border-radius: 28px;   /* rounded corners on the container */
+  overflow: hidden;       /* this is what actually clips the children */
 }
 
 /* Remove pointer-events from video so clicks pass to parent container */
@@ -501,7 +502,7 @@
   object-fit: contain;
   filter: drop-shadow(0 8px 24px rgba(0,0,0,.12));
   transition: transform 300ms cubic-bezier(.34,1.56,.64,1), filter 300ms ease;
-  pointer-events: none; /* moved from inline style */
+  pointer-events: none;
 }
 
 .nanami-landing-img:hover video {
