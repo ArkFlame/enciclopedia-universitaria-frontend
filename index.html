@@ -29,7 +29,7 @@ description: Enciclopedia colaborativa universitaria en español
             muted
             playsinline
             preload="auto">
-        <source src="{{ '/assets/img/nanami-landing.webm' | relative_url }}" type="video/mp4">
+        <source src="{{ '/assets/img/nanami-landing.webm' | relative_url }}" type="video/webm">
       </video>
     </div>
   </div>
@@ -101,6 +101,28 @@ description: Enciclopedia colaborativa universitaria en español
   (function () {
     const video = document.getElementById("nanamiLandingVideo");
     if (!video) return;
+
+    const LIGHT_SRC = "{{ '/assets/img/nanami-landing.webm' | relative_url }}";
+    const DARK_SRC  = "{{ '/assets/img/nanami-landing-dark.webm' | relative_url }}";
+
+    function getPreferredSrc() {
+      return window.matchMedia("(prefers-color-scheme: dark)").matches ? DARK_SRC : LIGHT_SRC;
+    }
+
+    function applyVideoSrc(src) {
+      const source = video.querySelector("source");
+      if (source && !source.src.endsWith(src)) {
+        source.src = src;
+        video.load();
+        video.play().catch(() => {});
+      }
+    }
+
+    // Apply correct source on load, then listen for changes
+    applyVideoSrc(getPreferredSrc());
+    window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => {
+      applyVideoSrc(getPreferredSrc());
+    });
 
     let reversing = false;
     let rafId = null;
