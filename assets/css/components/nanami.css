@@ -490,6 +490,7 @@
   justify-content: center;
   cursor: pointer;
   position: relative;
+  border-radius: 50%;
 }
 .nanami-landing-img img {
   width: 100%; max-width: 280px; height: auto; object-fit: contain;
