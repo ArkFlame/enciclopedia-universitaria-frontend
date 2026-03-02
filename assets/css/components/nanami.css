@@ -3,6 +3,16 @@
    Enciclopedia Universitaria
    ═══════════════════════════════════════════════════════════════ */
 
+/* ── Fade-in animation (used on all messages) ─────────────────── */
+@keyframes nanami-fade-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0);   }
+}
+
+.nanami-fade-in {
+  animation: nanami-fade-in 280ms cubic-bezier(.22,1,.36,1) both;
+}
+
 /* ── Floating Trigger Button ──────────────────────────────────── */
 .nanami-fab {
   position: fixed;
@@ -59,7 +69,7 @@
   100% { opacity: 0; transform: scale(1.25); }
 }
 
-/* Tooltip popup */
+/* Tooltip */
 .nanami-fab-tooltip {
   background: var(--eu-surface);
   border: 1px solid var(--eu-border);
@@ -118,7 +128,6 @@
   padding: 14px 16px;
   border-bottom: 1px solid var(--eu-border);
   flex-shrink: 0;
-  background: var(--eu-bg);
 }
 
 .nanami-header-avatar {
@@ -129,10 +138,7 @@
   flex-shrink: 0;
 }
 
-.nanami-header-info {
-  flex: 1;
-  min-width: 0;
-}
+.nanami-header-info { flex: 1; min-width: 0; }
 
 .nanami-header-name {
   font-weight: 700;
@@ -155,18 +161,15 @@
   height: 6px;
   border-radius: 50%;
   background: var(--eu-success);
-  animation: nanami-status-blink 2s ease-in-out infinite;
+  animation: nanami-blink 2s ease-in-out infinite;
 }
 
-@keyframes nanami-status-blink {
+@keyframes nanami-blink {
   0%, 100% { opacity: 1; }
-  50% { opacity: .4; }
+  50%       { opacity: .35; }
 }
 
-.nanami-header-actions {
-  display: flex;
-  gap: 4px;
-}
+.nanami-header-actions { display: flex; gap: 4px; }
 
 .nanami-header-btn {
   width: 30px;
@@ -183,10 +186,7 @@
   transition: background 160ms, color 160ms;
 }
 
-.nanami-header-btn:hover {
-  background: var(--eu-bg-secondary);
-  color: var(--eu-text);
-}
+.nanami-header-btn:hover { background: var(--eu-bg-secondary); color: var(--eu-text); }
 
 /* Article context banner */
 .nanami-context-banner {
@@ -201,97 +201,121 @@
   flex-shrink: 0;
 }
 
-.nanami-context-banner i {
-  color: var(--eu-accent);
-  flex-shrink: 0;
-}
+.nanami-context-banner i { color: var(--eu-accent); flex-shrink: 0; }
 
-/* Messages area */
+/* ── Messages area ────────────────────────────────────────────── */
 .nanami-messages {
   flex: 1;
   overflow-y: auto;
   padding: 16px;
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 12px;
   scroll-behavior: smooth;
 }
 
 .nanami-messages::-webkit-scrollbar { width: 4px; }
 .nanami-messages::-webkit-scrollbar-track { background: transparent; }
-.nanami-messages::-webkit-scrollbar-thumb {
-  background: var(--eu-border);
-  border-radius: 2px;
-}
+.nanami-messages::-webkit-scrollbar-thumb { background: var(--eu-border); border-radius: 2px; }
 
-/* ── Message types ── */
+/* ── Base message ─────────────────────────────────────────────── */
 .nanami-msg {
   display: flex;
   gap: 10px;
   align-items: flex-start;
-  animation: nanami-msg-in 240ms ease;
 }
 
-@keyframes nanami-msg-in {
-  from { opacity: 0; transform: translateY(8px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-
-/* Nanami messages (left, no bubble) */
+/* ── AI messages (no bubble, avatar left) ─────────────────────── */
 .nanami-msg--ai {
   flex-direction: row;
 }
 
-.nanami-msg--ai .nanami-msg-avatar {
-  width: 32px;
-  height: 32px;
+.nanami-msg-avatar {
+  width: 30px;
+  height: 30px;
   border-radius: 50%;
   object-fit: cover;
   flex-shrink: 0;
   margin-top: 2px;
 }
 
-.nanami-msg--ai .nanami-msg-body {
-  flex: 1;
-  min-width: 0;
-}
+.nanami-msg-body { flex: 1; min-width: 0; }
 
-.nanami-msg--ai .nanami-msg-name {
+.nanami-msg-name {
   font-size: .7rem;
   font-weight: 600;
   color: var(--eu-text-muted);
-  margin-bottom: 4px;
+  margin-bottom: 3px;
   letter-spacing: .03em;
 }
 
-.nanami-msg--ai .nanami-msg-text {
+.nanami-msg-text {
   font-size: .875rem;
-  line-height: 1.65;
+  line-height: 1.68;
   color: var(--eu-text);
 }
 
-.nanami-msg--ai .nanami-msg-text p { margin: 0 0 6px; }
-.nanami-msg--ai .nanami-msg-text p:last-child { margin-bottom: 0; }
-.nanami-msg--ai .nanami-msg-text strong { font-weight: 600; }
-.nanami-msg--ai .nanami-msg-text em { font-style: italic; }
-.nanami-msg--ai .nanami-msg-text ul {
-  margin: 4px 0 4px 16px;
-  padding: 0;
-}
-.nanami-msg--ai .nanami-msg-text li { margin: 2px 0; }
-.nanami-msg--ai .nanami-msg-text code {
-  background: var(--eu-bg-secondary);
-  padding: 1px 5px;
-  border-radius: 4px;
-  font-size: .82em;
+.nanami-msg-text p        { margin: 0 0 6px; }
+.nanami-msg-text p:last-child { margin-bottom: 0; }
+.nanami-msg-text strong   { font-weight: 600; }
+.nanami-msg-text em       { font-style: italic; }
+.nanami-msg-text ul       { margin: 4px 0 4px 16px; padding: 0; }
+.nanami-msg-text li       { margin: 2px 0; }
+.nanami-msg-text code     { background: var(--eu-bg-secondary); padding: 1px 5px; border-radius: 4px; font-size: .82em; }
+
+/* Streaming cursor */
+.nanami-streaming-text::after {
+  content: '▋';
+  display: inline-block;
+  opacity: 1;
+  animation: nanami-cursor 0.7s steps(1) infinite;
+  font-size: .8em;
+  vertical-align: baseline;
+  color: var(--eu-text-muted);
 }
 
-/* User messages (right, with bubble) */
+@keyframes nanami-cursor {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0; }
+}
+
+/* Remove cursor once done streaming (class swap) */
+.nanami-streaming-done::after { display: none; }
+
+/* ── Article links (gray, below AI message) ───────────────────── */
+.nanami-article-links {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px solid var(--eu-border-subtle);
+}
+
+.nanami-article-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: .74rem;
+  color: var(--eu-text-muted);
+  text-decoration: none;
+  transition: color 160ms;
+  word-break: break-word;
+}
+
+.nanami-article-link i { font-size: .68rem; flex-shrink: 0; }
+
+.nanami-article-link:hover {
+  color: var(--eu-text-secondary);
+  text-decoration: underline;
+}
+
+/* ── User messages (bubble, right) ───────────────────────────── */
 .nanami-msg--user {
   flex-direction: row-reverse;
 }
 
-.nanami-msg--user .nanami-msg-bubble {
+.nanami-msg-bubble {
   background: var(--eu-accent);
   color: var(--eu-text-inverse);
   padding: 10px 14px;
@@ -302,127 +326,110 @@
   word-break: break-word;
 }
 
-/* Tool progress message */
+/* ── Tool / progress messages ─────────────────────────────────── */
 .nanami-msg--tool {
   flex-direction: row;
-  gap: 8px;
   align-items: center;
-  animation: nanami-msg-in 200ms ease;
+  gap: 7px;
+  padding: 2px 0;
 }
 
-.nanami-msg--tool .nanami-tool-icon {
-  width: 28px;
-  height: 28px;
-  border-radius: 8px;
-  background: var(--eu-bg-secondary);
-  display: flex;
-  align-items: center;
-  justify-content: center;
+.nanami-tool-icon {
+  font-size: .88rem;
   flex-shrink: 0;
-  font-size: .85rem;
-  color: var(--eu-text-secondary);
+  width: 20px;
+  text-align: center;
+  line-height: 1;
 }
 
-.nanami-msg--tool .nanami-tool-text {
-  font-size: .78rem;
-  color: var(--eu-text-secondary);
-  font-style: italic;
+/* Inline spinner for running state */
+.nanami-tool-spinner {
+  width: 12px;
+  height: 12px;
+  border: 1.5px solid var(--eu-border);
+  border-top-color: var(--eu-text-secondary);
+  border-radius: 50%;
+  flex-shrink: 0;
+  animation: nanami-spin 0.7s linear infinite;
 }
 
-.nanami-msg--tool .nanami-tool-text.done {
-  color: var(--eu-success);
-  font-style: normal;
+@keyframes nanami-spin {
+  to { transform: rotate(360deg); }
 }
 
-/* ── Loading / thinking state ── */
-.nanami-thinking-overlay {
-  position: absolute;
-  inset: 0;
-  background: var(--eu-bg);
+.nanami-tool-text {
+  font-size: .77rem;
+  line-height: 1.4;
+  flex: 1;
+}
+
+/* State colors */
+.nanami-tool-running .nanami-tool-text  { color: var(--eu-text-secondary); font-style: italic; }
+.nanami-tool-done .nanami-tool-text     { color: var(--eu-success); }
+.nanami-tool-skip .nanami-tool-text     { color: var(--eu-text-muted); font-style: italic; }
+.nanami-tool-error .nanami-tool-text    { color: var(--eu-danger); }
+
+/* ── Empty state ──────────────────────────────────────────────── */
+.nanami-empty {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 20px;
-  z-index: 10;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 200ms;
-}
-
-.nanami-thinking-overlay.active {
-  opacity: 1;
-  pointer-events: all;
-}
-
-.nanami-thinking-video-wrap {
-  width: 110px;
-  height: 110px;
-  border-radius: 50%;
-  overflow: hidden;
-  box-shadow: 0 4px 20px rgba(0,0,0,.15);
-  flex-shrink: 0;
-}
-
-.nanami-thinking-video-wrap video {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-/* Fallback image when video not available */
-.nanami-thinking-video-wrap img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.nanami-thinking-msg {
-  font-size: .88rem;
-  color: var(--eu-text-secondary);
+  flex: 1;
+  gap: 10px;
+  padding: 24px 20px;
   text-align: center;
-  animation: nanami-bounce 2s ease-in-out infinite;
-  max-width: 220px;
-  line-height: 1.5;
 }
 
-@keyframes nanami-bounce {
-  0%, 100% { transform: translateY(0); }
-  50%       { transform: translateY(-5px); }
-}
-
-/* Typing dots (fallback) */
-.nanami-typing {
-  display: flex;
-  gap: 5px;
-  padding: 4px 0;
-}
-
-.nanami-typing span {
-  width: 7px;
-  height: 7px;
-  background: var(--eu-text-muted);
+.nanami-empty img {
+  width: 68px;
+  height: 68px;
   border-radius: 50%;
-  animation: nanami-dot 1.2s ease-in-out infinite;
+  object-fit: cover;
+  opacity: .85;
 }
 
-.nanami-typing span:nth-child(2) { animation-delay: .2s; }
-.nanami-typing span:nth-child(3) { animation-delay: .4s; }
+.nanami-empty-title { font-weight: 700; font-size: .95rem; color: var(--eu-text); }
 
-@keyframes nanami-dot {
-  0%, 100% { transform: translateY(0); opacity: .5; }
-  50%       { transform: translateY(-5px); opacity: 1; }
+.nanami-empty-sub {
+  font-size: .8rem;
+  color: var(--eu-text-secondary);
+  line-height: 1.5;
+  max-width: 240px;
 }
 
-/* ── Input area ── */
+.nanami-suggestions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: center;
+  margin-top: 4px;
+}
+
+.nanami-suggestion {
+  background: var(--eu-bg-secondary);
+  border: 1px solid var(--eu-border);
+  border-radius: 20px;
+  padding: 5px 12px;
+  font-size: .75rem;
+  color: var(--eu-text-secondary);
+  cursor: pointer;
+  transition: background 160ms, color 160ms, border-color 160ms;
+}
+
+.nanami-suggestion:hover {
+  background: var(--eu-accent);
+  color: var(--eu-text-inverse);
+  border-color: var(--eu-accent);
+}
+
+/* ── Input area ───────────────────────────────────────────────── */
 .nanami-input-area {
   padding: 12px 14px;
   border-top: 1px solid var(--eu-border);
   flex-shrink: 0;
-  background: var(--eu-bg);
 }
 
-/* File attachment preview */
 .nanami-attachments {
   display: flex;
   flex-wrap: wrap;
@@ -464,7 +471,7 @@
 
 .nanami-attachment-chip button:hover { color: var(--eu-danger); }
 
-/* Input row */
+/* Input row — ChatGPT style */
 .nanami-input-row {
   display: flex;
   align-items: flex-end;
@@ -476,9 +483,7 @@
   transition: border-color 200ms;
 }
 
-.nanami-input-row:focus-within {
-  border-color: var(--eu-border);
-}
+.nanami-input-row:focus-within { border-color: var(--eu-border); }
 
 .nanami-attach-btn {
   width: 34px;
@@ -496,10 +501,8 @@
   transition: background 160ms, color 160ms;
 }
 
-.nanami-attach-btn:hover {
-  background: var(--eu-bg-tertiary);
-  color: var(--eu-text);
-}
+.nanami-attach-btn:hover { background: var(--eu-bg-tertiary); color: var(--eu-text); }
+.nanami-attach-btn:disabled { opacity: .4; cursor: not-allowed; }
 
 .nanami-textarea {
   flex: 1;
@@ -518,6 +521,7 @@
 }
 
 .nanami-textarea::placeholder { color: var(--eu-text-muted); }
+.nanami-textarea:disabled { opacity: .5; }
 
 .nanami-send-btn {
   width: 36px;
@@ -535,13 +539,12 @@
   transition: transform 160ms, opacity 160ms;
 }
 
-.nanami-send-btn:hover { transform: scale(1.08); }
-.nanami-send-btn:disabled { opacity: .4; cursor: not-allowed; transform: none; }
+.nanami-send-btn:hover:not(:disabled) { transform: scale(1.08); }
+.nanami-send-btn:disabled { opacity: .35; cursor: not-allowed; transform: none; }
 
-/* Hidden file input */
 .nanami-file-input { display: none; }
 
-/* ── Landing hero image (Nanami landing) ──────────────────────── */
+/* ── Landing hero Nanami image ────────────────────────────────── */
 .nanami-landing-img {
   width: 280px;
   flex-shrink: 0;
@@ -559,7 +562,6 @@
   object-fit: contain;
   filter: drop-shadow(0 8px 24px rgba(0,0,0,.12));
   transition: transform 300ms cubic-bezier(.34,1.56,.64,1), filter 300ms ease;
-  border-radius: 12px;
 }
 
 .nanami-landing-img:hover img {
@@ -570,7 +572,7 @@
 .nanami-landing-img::after {
   content: '💬 ¡Habla conmigo!';
   position: absolute;
-  bottom: -32px;
+  bottom: -28px;
   left: 50%;
   transform: translateX(-50%);
   background: var(--eu-surface);
@@ -587,79 +589,11 @@
 
 .nanami-landing-img:hover::after { opacity: 1; }
 
-/* ── Empty state ── */
-.nanami-empty {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  flex: 1;
-  gap: 12px;
-  padding: 24px;
-  text-align: center;
-}
+/* ── Dark mode ────────────────────────────────────────────────── */
+[data-theme="dark"] .nanami-window    { box-shadow: 0 12px 48px rgba(0,0,0,.45); }
+[data-theme="dark"] .nanami-input-row { background: var(--eu-bg-secondary); }
 
-.nanami-empty img {
-  width: 72px;
-  height: 72px;
-  border-radius: 50%;
-  object-fit: cover;
-  opacity: .85;
-}
-
-.nanami-empty-title {
-  font-weight: 700;
-  font-size: .95rem;
-  color: var(--eu-text);
-}
-
-.nanami-empty-sub {
-  font-size: .8rem;
-  color: var(--eu-text-secondary);
-  line-height: 1.5;
-  max-width: 240px;
-}
-
-.nanami-suggestions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  justify-content: center;
-  margin-top: 4px;
-}
-
-.nanami-suggestion {
-  background: var(--eu-bg-secondary);
-  border: 1px solid var(--eu-border);
-  border-radius: 20px;
-  padding: 5px 12px;
-  font-size: .76rem;
-  color: var(--eu-text-secondary);
-  cursor: pointer;
-  transition: background 160ms, color 160ms;
-}
-
-.nanami-suggestion:hover {
-  background: var(--eu-accent);
-  color: var(--eu-text-inverse);
-  border-color: var(--eu-accent);
-}
-
-/* ── Dark mode tweaks ── */
-[data-theme="dark"] .nanami-window {
-  box-shadow: 0 12px 48px rgba(0,0,0,.45);
-}
-
-[data-theme="dark"] .nanami-msg--user .nanami-msg-bubble {
-  background: var(--eu-accent);
-  color: var(--eu-text-inverse);
-}
-
-[data-theme="dark"] .nanami-input-row {
-  background: var(--eu-bg-secondary);
-}
-
-/* ── Responsive ── */
+/* ── Responsive ───────────────────────────────────────────────── */
 @media (max-width: 480px) {
   .nanami-window {
     bottom: 0;
@@ -671,9 +605,5 @@
     border-radius: 20px 20px 0 0;
     border-bottom: none;
   }
-
-  .nanami-fab {
-    bottom: 16px;
-    right: 16px;
-  }
+  .nanami-fab { bottom: 16px; right: 16px; }
 }
