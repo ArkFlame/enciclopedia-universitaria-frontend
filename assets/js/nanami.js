@@ -62,11 +62,59 @@
       <div class="nanami-fab-tooltip" id="nanamiTooltip">${P().FAB_TOOLTIP}</div>
       <button class="nanami-fab-btn" id="nanamiiFabBtn" aria-label="Abrir Nanami AI">
         <img  class="nanami-fab-img"   src="${BASE_PATH}/assets/img/nanami-profile.jpg" alt="Nanami AI" loading="lazy">
-        <video class="nanami-fab-video" src="${BASE_PATH}/assets/img/nanami.mp4"
-               autoplay loop muted playsinline preload="auto"></video>
+        <video class="nanami-fab-video" id="nanamiiFabVideo"
+               autoplay loop muted playsinline preload="auto"
+               poster="${BASE_PATH}/assets/img/nanami-profile.jpg">
+          <source src="${BASE_PATH}/assets/img/nanami.mp4" type="video/mp4">
+        </video>
       </button>`;
     document.body.appendChild(fab);
     $fabBtn = fab.querySelector('#nanamiiFabBtn');
+
+    // ── Video mobile compatibility ──────────────────────────────────────────
+    // Some mobile browsers block autoplay or cannot play mp4 inline.
+    // On any error we hide the video so the static image shows as fallback.
+    const $fabVideo = fab.querySelector('#nanamiiFabVideo');
+    if ($fabVideo) {
+      const hideVideo = () => {
+        $fabVideo.style.display = 'none';
+        $fabVideo.style.opacity = '0';
+        console.warn('[Nanami] FAB video failed to play — falling back to static image');
+      };
+
+      // Check if browser can play mp4 at all
+      if (!$fabVideo.canPlayType || $fabVideo.canPlayType('video/mp4') === '') {
+        console.warn('[Nanami] Browser cannot play video/mp4 — using static image fallback');
+        hideVideo();
+      } else {
+        $fabVideo.addEventListener('error', (e) => {
+          console.error('[Nanami] FAB video error:', e.target && e.target.error ? e.target.error.message : 'unknown error');
+          hideVideo();
+        });
+
+        // On iOS autoplay with muted may not fire 'error' — also catch stall
+        $fabVideo.addEventListener('stalled', () => {
+          console.warn('[Nanami] FAB video stalled');
+        });
+
+        // Try to force-play (needed on some mobile browsers)
+        const playPromise = $fabVideo.play();
+        if (playPromise !== undefined) {
+          playPromise.catch(err => {
+            if (err.name === 'NotAllowedError') {
+              // Autoplay blocked by policy — normal on mobile, video shows when processing
+              console.info('[Nanami] FAB video autoplay blocked by browser policy (normal on mobile)');
+            } else if (err.name === 'NotSupportedError') {
+              console.warn('[Nanami] FAB video not supported — falling back to static image');
+              hideVideo();
+            } else {
+              console.error('[Nanami] FAB video play() error:', err.name, err.message);
+              hideVideo();
+            }
+          });
+        }
+      }
+    }
 
     // Chat window
     const win = document.createElement('div');
@@ -399,6 +447,7 @@
       await streamFromBackend(fullMessage, history);
     } catch (err) {
       // Clean up streaming state if error mid-stream
+      console.error('[Nanami] sendMessage error:', err.message, err);
       if (streamingDiv) {
         finalizeStreamingMessage(streamingDiv, []);
         streamingDiv = null;
@@ -444,8 +493,11 @@
     });
 
     if (!res.ok) {
-      const err = await res.json().catch(() => ({ error: `HTTP ${res.status}` }));
-      throw new Error(err.error || `HTTP ${res.status}`);
+      const errText = await res.text().catch(() => `HTTP ${res.status}`);
+      console.error('[Nanami] Stream request failed:', res.status, errText);
+      let errMsg;
+      try { errMsg = JSON.parse(errText).error; } catch { errMsg = null; }
+      throw new Error(errMsg || errText || `HTTP ${res.status}`);
     }
 
     const reader  = res.body.getReader();
@@ -465,7 +517,10 @@
         if (!line.startsWith('data: ')) continue;
         const raw = line.slice(6).trim();
         let event;
-        try { event = JSON.parse(raw); } catch { continue; }
+        try { event = JSON.parse(raw); } catch (parseErr) {
+          console.warn('[Nanami] Failed to parse SSE event:', raw.slice(0, 100), parseErr.message);
+          continue;
+        }
 
         if (event.type === 'answer') finalArticleLinks = event.articleLinks || [];
         handleSSEEvent(event);
@@ -525,6 +580,7 @@
         break;
 
       case 'error':
+        console.error('[Nanami] AI error event from backend:', event.message);
         appendAIMessage(`⚠️ ${event.message}`);
         break;
     }
