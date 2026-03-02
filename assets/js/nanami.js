@@ -60,7 +60,7 @@
     fab.innerHTML = `
       <div class="nanami-fab-tooltip" id="nanamiTooltip">${P().FAB_TOOLTIP}</div>
       <button class="nanami-fab-btn" id="nanamiiFabBtn" aria-label="Abrir Nanami AI">
-        <img  class="nanami-fab-img"   src="${BASE_PATH}/assets/img/nanami.png" alt="Nanami AI" loading="lazy">
+        <img  class="nanami-fab-img"   src="${BASE_PATH}/assets/img/nanami-profile.jpg" alt="Nanami AI" loading="lazy">
         <video class="nanami-fab-video" src="${BASE_PATH}/assets/img/nanami.mp4"
                autoplay loop muted playsinline preload="auto"></video>
       </button>`;
@@ -75,7 +75,7 @@
     win.setAttribute('aria-label', 'Chat Nanami AI');
     win.innerHTML = `
       <div class="nanami-header">
-        <img src="${BASE_PATH}/assets/img/nanami.png" class="nanami-header-avatar" alt="Nanami">
+        <img src="${BASE_PATH}/assets/img/nanami-profile.jpg" class="nanami-header-avatar" alt="Nanami">
         <div class="nanami-header-info">
           <div class="nanami-header-name">Nanami AI</div>
           <div class="nanami-header-status">En línea</div>
@@ -247,7 +247,7 @@
     div.className = 'nanami-empty';
     div.id = 'nanamiEmpty';
     div.innerHTML = `
-      <img src="${BASE_PATH}/assets/img/nanami.png" alt="Nanami">
+      <img src="${BASE_PATH}/assets/img/nanami-profile.jpg" alt="Nanami">
       <div class="nanami-empty-title">¡Hola! Soy Nanami AI 🐱</div>
       <div class="nanami-empty-sub">Tu asistente de la Enciclopedia Universitaria. ¡Pregúntame lo que quieras!</div>
       <div class="nanami-suggestions">
@@ -279,7 +279,7 @@
     const div = document.createElement('div');
     div.className = 'nanami-msg nanami-msg--ai nanami-fade-in';
     div.innerHTML = `
-      <img src="${BASE_PATH}/assets/img/nanami.png" class="nanami-msg-avatar" alt="Nanami">
+      <img src="${BASE_PATH}/assets/img/nanami-profile.jpg" class="nanami-msg-avatar" alt="Nanami">
       <div class="nanami-msg-body">
         <div class="nanami-msg-name">Nanami AI</div>
         <div class="nanami-msg-text">${P().markdownToHtml(text)}</div>
@@ -311,7 +311,7 @@
     const div = document.createElement('div');
     div.className = 'nanami-msg nanami-msg--ai nanami-fade-in';
     div.innerHTML = `
-      <img src="${BASE_PATH}/assets/img/nanami.png" class="nanami-msg-avatar" alt="Nanami">
+      <img src="${BASE_PATH}/assets/img/nanami-profile.jpg" class="nanami-msg-avatar" alt="Nanami">
       <div class="nanami-msg-body">
         <div class="nanami-msg-name">Nanami AI</div>
         <div class="nanami-msg-text nanami-streaming-active"></div>
