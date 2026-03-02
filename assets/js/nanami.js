@@ -57,7 +57,7 @@
     fab.innerHTML = `
       <div class="nanami-fab-tooltip" id="nanamiTooltip">${P().FAB_TOOLTIP}</div>
       <button class="nanami-fab-btn" id="nanamiiFabBtn" aria-label="Abrir Nanami AI">
-        <img src="${BASE_PATH}/assets/img/nanami.png" alt="Nanami AI" loading="lazy">
+        <img src="${BASE_PATH}/assets/img/nanami.jpg" alt="Nanami AI" loading="lazy">
       </button>`;
     document.body.appendChild(fab);
     $fab = fab;
@@ -70,7 +70,7 @@
     win.setAttribute('aria-label', 'Chat Nanami AI');
     win.innerHTML = `
       <div class="nanami-header">
-        <img src="${BASE_PATH}/assets/img/nanami.png" class="nanami-header-avatar" alt="Nanami">
+        <img src="${BASE_PATH}/assets/img/nanami.jpg" class="nanami-header-avatar" alt="Nanami">
         <div class="nanami-header-info">
           <div class="nanami-header-name">Nanami AI</div>
           <div class="nanami-header-status">En línea</div>
@@ -255,7 +255,7 @@
     div.className = 'nanami-empty';
     div.id = 'nanamiEmpty';
     div.innerHTML = `
-      <img src="${BASE_PATH}/assets/img/nanami.png" alt="Nanami">
+      <img src="${BASE_PATH}/assets/img/nanami.jpg" alt="Nanami">
       <div class="nanami-empty-title">¡Hola! Soy Nanami AI 🐱</div>
       <div class="nanami-empty-sub">Tu asistente de la Enciclopedia Universitaria. ¡Pregúntame lo que quieras!</div>
       <div class="nanami-suggestions">
@@ -295,7 +295,7 @@
     const linksHtml = buildArticleLinksHtml(articleLinks);
 
     div.innerHTML = `
-      <img src="${BASE_PATH}/assets/img/nanami.png" class="nanami-msg-avatar" alt="Nanami">
+      <img src="${BASE_PATH}/assets/img/nanami.jpg" class="nanami-msg-avatar" alt="Nanami">
       <div class="nanami-msg-body">
         <div class="nanami-msg-name">Nanami AI</div>
         <div class="nanami-msg-text">${P().markdownToHtml(text)}</div>
@@ -340,7 +340,7 @@
     const div = document.createElement('div');
     div.className = 'nanami-msg nanami-msg--ai nanami-fade-in';
     div.innerHTML = `
-      <img src="${BASE_PATH}/assets/img/nanami.png" class="nanami-msg-avatar" alt="Nanami">
+      <img src="${BASE_PATH}/assets/img/nanami.jpg" class="nanami-msg-avatar" alt="Nanami">
       <div class="nanami-msg-body">
         <div class="nanami-msg-name">Nanami AI</div>
         <div class="nanami-msg-text nanami-streaming-text"></div>
