@@ -160,6 +160,14 @@
   border-bottom: 1px solid var(--eu-border);
   flex-shrink: 0;
 }
+.nanami-header-avatar-wrap {
+  position: relative;
+  width: 38px;
+  height: 38px;
+  flex-shrink: 0;
+}
+
+/* Shared shape for both img and video inside the wrap */
 .nanami-header-avatar {
   width: 38px;
   height: 38px;
@@ -167,6 +175,25 @@
   object-fit: cover;
   flex-shrink: 0;
 }
+
+/* img and video are stacked, transitions handle the swap */
+.nanami-header-avatar-img,
+.nanami-header-avatar-video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+  transition: opacity 250ms ease;
+}
+
+.nanami-header-avatar-img   { opacity: 1; z-index: 1; }
+.nanami-header-avatar-video { opacity: 0; z-index: 2; }
+
+/* While processing: show video, hide image */
+.nanami-header-avatar-wrap--processing .nanami-header-avatar-img   { opacity: 0; }
+.nanami-header-avatar-wrap--processing .nanami-header-avatar-video { opacity: 1; }
 .nanami-header-info { flex: 1; min-width: 0; }
 .nanami-header-name {
   font-weight: 700;
@@ -498,4 +525,12 @@
     border-radius: 20px 20px 0 0; border-bottom: none;
   }
   .nanami-fab { bottom: 16px; right: 16px; }
+
+  /* Hide FAB entirely while the chat window is open on mobile */
+  .nanami-fab--chat-open {
+    opacity: 0;
+    pointer-events: none;
+    transform: scale(0.7);
+    transition: opacity 220ms ease, transform 220ms ease;
+  }
 }

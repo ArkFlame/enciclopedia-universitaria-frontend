@@ -39,7 +39,8 @@
   // ─── DOM refs ──────────────────────────────────────────────────
   let $win, $msgs, $textarea, $sendBtn, $attachBtn, $fileInput,
       $contextBanner, $contextBannerText, $attachmentsRow,
-      $fabBtn;  // the clickable FAB button element
+      $fabBtn,          // the clickable FAB button element
+      $headerAvatarWrap; // header avatar wrapper (img + video)
 
   // ─── History ───────────────────────────────────────────────────
   function loadHistory() {
@@ -124,7 +125,14 @@
     win.setAttribute('aria-label', 'Chat Nanami AI');
     win.innerHTML = `
       <div class="nanami-header">
-        <img src="${BASE_PATH}/assets/img/nanami-profile.jpg" class="nanami-header-avatar" alt="Nanami">
+        <div class="nanami-header-avatar-wrap" id="nanamiHeaderAvatarWrap">
+          <img src="${BASE_PATH}/assets/img/nanami-profile.jpg" class="nanami-header-avatar nanami-header-avatar-img" alt="Nanami">
+          <video class="nanami-header-avatar nanami-header-avatar-video"
+                 autoplay loop muted playsinline preload="auto"
+                 poster="${BASE_PATH}/assets/img/nanami-profile.jpg">
+            <source src="${BASE_PATH}/assets/img/nanami.mp4" type="video/mp4">
+          </video>
+        </div>
         <div class="nanami-header-info">
           <div class="nanami-header-name">Nanami AI</div>
           <div class="nanami-header-status">En línea</div>
@@ -175,6 +183,7 @@
     $contextBanner     = win.querySelector('#nanamiContextBanner');
     $contextBannerText = win.querySelector('#nanamiContextText');
     $attachmentsRow    = win.querySelector('#nanamiAttachments');
+    $headerAvatarWrap  = win.querySelector('#nanamiHeaderAvatarWrap');
 
     bindEvents();
     detectArticleContext();
@@ -183,8 +192,12 @@
 
   // ─── FAB processing state ──────────────────────────────────────
   // Swaps between static image and looping video while AI is working.
+  // Applies to both the FAB button and the header avatar.
   function setFabProcessing(active) {
     $fabBtn.classList.toggle('nanami-fab-btn--processing', active);
+    if ($headerAvatarWrap) {
+      $headerAvatarWrap.classList.toggle('nanami-header-avatar-wrap--processing', active);
+    }
   }
 
   // ─── Events ────────────────────────────────────────────────────
@@ -226,6 +239,9 @@
   function setOpen(open) {
     isOpen = open;
     $win.classList.toggle('open', open);
+    // On mobile: hide the FAB while chat window is open so it doesn't overlap
+    const fab = document.getElementById('nanamiiFab');
+    if (fab) fab.classList.toggle('nanami-fab--chat-open', open);
     if (open) { $textarea.focus(); scrollToBottom(); }
   }
   window.NanamiChat = { open: () => setOpen(true), close: () => setOpen(false), toggle: toggleChat };
