@@ -99,83 +99,44 @@ description: Enciclopedia colaborativa universitaria en español
 
 <script>
   (function () {
-    var video = document.getElementById("nanamiLandingVideo");
+    const video = document.getElementById("nanamiLandingVideo");
     if (!video) return;
 
-    var isReversing = false;
-    var reverseInterval = null;
-    var duration = 0;
-    var hasEnded = false;
+    let reversing = false;
+    let rafId = null;
+    const SPEED = 2.5; // adjust reverse speed (higher = faster reverse)
 
-    // Clear any existing interval helper
-    function clearReverseInterval() {
-      if (reverseInterval) {
-        clearInterval(reverseInterval);
-        reverseInterval = null;
-      }
-    }
+    function reverseStep(lastTimestamp) {
+      return function step(timestamp) {
+        const delta = (timestamp - lastTimestamp) / 1000; // seconds elapsed
+        video.currentTime = Math.max(0, video.currentTime - delta * SPEED);
 
-    // Get accurate duration when metadata loads
-    video.addEventListener("loadedmetadata", function () {
-      duration = video.duration;
-      console.log("Video duration:", duration);
-    });
-
-    // Use timeupdate to detect end (more reliable than 'ended' event)
-    video.addEventListener("timeupdate", function () {
-      if (!duration) duration = video.duration;
-      
-      // Detect near-end when playing forward (within 0.1 seconds of end)
-      if (!isReversing && video.currentTime >= duration - 0.1 && !hasEnded) {
-        hasEnded = true;
-        onVideoEnded();
-      }
-    });
-
-    // Reset hasEnded when video starts playing
-    video.addEventListener("play", function () {
-      hasEnded = false;
-    });
-
-    // Handle video end - toggle direction
-    function onVideoEnded() {
-      clearReverseInterval();
-      isReversing = !isReversing;
-
-      if (isReversing) {
-        // Start reversing from end
-        video.pause();
-        video.currentTime = duration;
-        // Small delay to ensure frame renders at end
-        setTimeout(startReversePlayback, 50);
-      } else {
-        // Start playing forward from beginning
-        video.currentTime = 0;
-        video.playbackRate = 1;
-        hasEnded = false;
-        video.play();
-      }
-    }
-
-    // Simulate reverse playback by stepping back frame by frame
-    function startReversePlayback() {
-      // Step size for 6 second video (adjust for speed)
-      var step = 0.04; // ~25fps, smooth reverse
-      
-      reverseInterval = setInterval(function () {
-        if (video.currentTime <= step) {
-          // Reached start, trigger switch back to forward
-          video.currentTime = 0;
-          clearReverseInterval();
-          onVideoEnded();
+        if (video.currentTime <= 0) {
+          // Done reversing — play forward again
+          reversing = false;
+          video.playbackRate = 1;
+          video.play();
           return;
         }
-        video.currentTime -= step;
-      }, 40); // 25fps reverse
+
+        rafId = requestAnimationFrame(step);
+      };
     }
 
-    // Cleanup on page unload
-    window.addEventListener("beforeunload", clearReverseInterval);
+    video.addEventListener("timeupdate", function () {
+      if (reversing) return;
+      const duration = video.duration;
+      if (!duration) return;
+
+      if (video.currentTime >= duration - 0.05) {
+        reversing = true;
+        video.pause();
+        cancelAnimationFrame(rafId);
+        rafId = requestAnimationFrame(reverseStep(performance.now()));
+      }
+    });
+
+    window.addEventListener("beforeunload", () => cancelAnimationFrame(rafId));
   })();
 </script>
 
