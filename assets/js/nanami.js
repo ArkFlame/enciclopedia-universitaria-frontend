@@ -311,15 +311,26 @@
     const div = document.createElement('div');
     div.className = 'nanami-empty';
     div.id = 'nanamiEmpty';
+
+    // Build suggestions safely — never inject dynamic text into onclick attributes.
+    // Use data-suggestion + a delegated click handler instead.
+    const suggestionsHtml = P().getSuggestions(!!articleCtx).map(s =>
+      `<button class="nanami-suggestion" data-suggestion="${s.replace(/"/g, '&quot;')}">${escHtml(s)}</button>`
+    ).join('');
+
     div.innerHTML = `
       <img src="${BASE_PATH}/assets/img/nanami-profile.jpg" alt="Nanami">
       <div class="nanami-empty-title">¡Hola! Soy Nanami AI 🐱</div>
       <div class="nanami-empty-sub">Tu asistente de la Enciclopedia Universitaria. ¡Pregúntame lo que quieras!</div>
-      <div class="nanami-suggestions">
-        ${P().getSuggestions(!!articleCtx).map(s =>
-          `<button class="nanami-suggestion" onclick="window._nanamiSuggest(${JSON.stringify(s)})">${escHtml(s)}</button>`
-        ).join('')}
-      </div>`;
+      <div class="nanami-suggestions">${suggestionsHtml}</div>`;
+
+    // Attach click handlers after innerHTML so the buttons exist in the DOM
+    div.querySelectorAll('.nanami-suggestion').forEach(btn => {
+      btn.addEventListener('click', () => {
+        window._nanamiSuggest(btn.dataset.suggestion);
+      });
+    });
+
     $msgs.appendChild(div);
   }
   window._nanamiSuggest = text => {
