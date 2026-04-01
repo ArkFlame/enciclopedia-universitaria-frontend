@@ -315,10 +315,15 @@ description: Enciclopedia colaborativa universitaria en español
   async function loadCategoryTree() {
     try {
       const res = await fetch(`${API}/api/articles/meta/categories/tree`);
-      if (!res.ok) return;
+      if (!res.ok) {
+        console.error('[Home] category tree request failed:', res.status);
+        return;
+      }
       categoryTree = await res.json();
       renderCategoryTree();
-    } catch (e) {}
+    } catch (e) {
+      console.error('[Home] category tree load failed:', e);
+    }
   }
 
   function renderCategoryTree() {
@@ -553,8 +558,19 @@ description: Enciclopedia colaborativa universitaria en español
       .replace(/\n/g,'<br>');
   }
 
-  await loadCategoryTree();
-  await initCategoryFromUrl();
-  await loadArticles(1);
+  async function initHomePage() {
+    await loadCategoryTree();
+    await initCategoryFromUrl();
+    await loadArticles(1);
+  }
+
+  initHomePage().catch((err) => {
+    console.error('[Home] init failed:', err);
+    const articlesContainer = document.getElementById('articlesContainer');
+    if (articlesContainer) {
+      articlesContainer.innerHTML =
+        '<div class="eu-empty-state text-danger"><i class="bi bi-exclamation-triangle"></i><p>Error al cargar artículos.</p></div>';
+    }
+  });
 })();
 </script>
