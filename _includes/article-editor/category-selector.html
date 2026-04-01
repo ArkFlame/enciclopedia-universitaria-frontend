@@ -1,0 +1,194 @@
+{% comment %}
+Hierarchical category selector component
+Provides single selector with expand/collapse for subcategories
+{% endcomment %}
+
+<div class="hierarchical-category-selector" id="categorySelector">
+  <label class="eu-label" for="categorySelect">Categoría</label>
+  <div class="category-selector-wrapper">
+    <select id="categorySelect" class="eu-select w-100">
+      <option value="">Sin categoría</option>
+    </select>
+  </div>
+  <div class="subcategory-dropdown mt-2" id="subcategoryDropdown" style="display: none;">
+    <label class="eu-label" for="subcategorySelect">Subcategoría</label>
+    <select id="subcategorySelect" class="eu-select w-100">
+      <option value="">Sin subcategoría</option>
+    </select>
+  </div>
+</div>
+
+<script data-cfasync="false">
+(function() {
+  var HierarchicalCategorySelector = window.HierarchicalCategorySelector || {};
+  
+  var currentCategoryId = null;
+  var currentSubcategoryId = null;
+  var categoryTree = [];
+  var selectedCategory = null;
+  var selectedSubcategory = null;
+  var initialized = false;
+
+  function getApi() {
+    if (typeof API !== 'undefined') return API;
+    if (window.EU_CONFIG && window.EU_CONFIG.api) return window.EU_CONFIG.api;
+    if (window.EU_CONFIG && window.EU_CONFIG.backendUrl) return window.EU_CONFIG.backendUrl;
+    return '';
+  }
+
+  HierarchicalCategorySelector.init = function() {
+    if (initialized) return;
+    initialized = true;
+    loadCategoryTree();
+    setupEventListeners();
+  };
+
+  async function loadCategoryTree() {
+    var api = getApi();
+    try {
+      var res = await fetch(api + '/api/articles/meta/categories/tree');
+      if (!res.ok) {
+        console.warn('Failed to load category tree:', res.status);
+        return;
+      }
+      categoryTree = await res.json();
+      renderMainSelector();
+    } catch(e) {
+      console.warn('Failed to load category tree:', e);
+    }
+  }
+
+  function renderMainSelector() {
+    var select = document.getElementById('categorySelect');
+    if (!select) return;
+    
+    select.innerHTML = '<option value="">Sin categoría</option>';
+    
+    categoryTree.forEach(function(cat) {
+      var opt = document.createElement('option');
+      opt.value = cat.id;
+      opt.textContent = cat.name;
+      opt.dataset.slug = cat.slug;
+      if (cat.children && cat.children.length > 0) {
+        opt.dataset.hasChildren = 'true';
+      }
+      select.appendChild(opt);
+    });
+  }
+
+  function setupEventListeners() {
+    var catSelect = document.getElementById('categorySelect');
+    var subSelect = document.getElementById('subcategorySelect');
+    var subDropdown = document.getElementById('subcategoryDropdown');
+    
+    if (catSelect) {
+      catSelect.addEventListener('change', function() {
+        var categoryId = this.value ? parseInt(this.value) : null;
+        currentCategoryId = categoryId;
+        currentSubcategoryId = null;
+        
+        var selected = categoryTree.find(function(c) { return c.id === categoryId; });
+        selectedCategory = selected || null;
+        selectedSubcategory = null;
+        
+        if (selected && selected.children && selected.children.length > 0) {
+          renderSubcategorySelector(selected.children);
+          subDropdown.style.display = 'block';
+        } else {
+          subDropdown.style.display = 'none';
+        }
+        
+        triggerChange();
+      });
+    }
+    
+    if (subSelect) {
+      subSelect.addEventListener('change', function() {
+        var subcategoryId = this.value ? parseInt(this.value) : null;
+        currentSubcategoryId = subcategoryId;
+        
+        if (selectedCategory && selectedCategory.children) {
+          var sub = selectedCategory.children.find(function(s) { return s.id === subcategoryId; });
+          selectedSubcategory = sub || null;
+        }
+        
+        triggerChange();
+      });
+    }
+  }
+
+  function renderSubcategorySelector(subcategories) {
+    var subSelect = document.getElementById('subcategorySelect');
+    if (!subSelect) return;
+    
+    subSelect.innerHTML = '<option value="">Sin subcategoría</option>';
+    
+    subcategories.forEach(function(sub) {
+      var opt = document.createElement('option');
+      opt.value = sub.id;
+      opt.textContent = sub.name;
+      opt.dataset.slug = sub.slug;
+      subSelect.appendChild(opt);
+    });
+  }
+
+  function triggerChange() {
+    var event = new CustomEvent('categoryChanged', {
+      detail: {
+        categoryId: currentCategoryId,
+        subcategoryId: currentSubcategoryId,
+        category: selectedCategory,
+        subcategory: selectedSubcategory
+      }
+    });
+    document.dispatchEvent(event);
+  }
+
+  HierarchicalCategorySelector.setSelection = function(categoryId, subcategoryId) {
+    currentCategoryId = categoryId;
+    currentSubcategoryId = subcategoryId;
+    
+    var catSelect = document.getElementById('categorySelect');
+    var subSelect = document.getElementById('subcategorySelect');
+    var subDropdown = document.getElementById('subcategoryDropdown');
+    
+    if (categoryId) {
+      catSelect.value = categoryId;
+      selectedCategory = categoryTree.find(function(c) { return c.id === categoryId; });
+      
+      if (selectedCategory && selectedCategory.children && selectedCategory.children.length > 0) {
+        renderSubcategorySelector(selectedCategory.children);
+        subDropdown.style.display = 'block';
+        
+        if (subcategoryId) {
+          subSelect.value = subcategoryId;
+          selectedSubcategory = selectedCategory.children.find(function(s) { return s.id === subcategoryId; });
+        } else {
+          selectedSubcategory = null;
+          subSelect.value = '';
+        }
+      } else {
+        subDropdown.style.display = 'none';
+        selectedSubcategory = null;
+      }
+    } else {
+      catSelect.value = '';
+      subSelect.value = '';
+      subDropdown.style.display = 'none';
+      selectedCategory = null;
+      selectedSubcategory = null;
+    }
+  };
+
+  HierarchicalCategorySelector.getSelection = function() {
+    return {
+      categoryId: currentCategoryId,
+      subcategoryId: currentSubcategoryId,
+      category: selectedCategory,
+      subcategory: selectedSubcategory
+    };
+  };
+
+  window.HierarchicalCategorySelector = HierarchicalCategorySelector;
+})();
+</script>

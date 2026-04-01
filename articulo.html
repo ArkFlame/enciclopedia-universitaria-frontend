@@ -141,6 +141,17 @@ title: Cargando artículo...
         </div>
       </div>` : '';
 
+    const categoryTag = data.category
+      ? `<span class="eu-category-tag">${escapeHtml(data.subcategory ? `${data.category} / ${data.subcategory}` : data.category)}</span>`
+      : '';
+
+    const coverImageUrl = data.coverImageUrl || (data.coverImage && data.coverImage.public_url);
+    const coverImageHtml = coverImageUrl
+      ? `<div class="eu-article-cover mb-4">
+          <img src="${escapeHtml(coverImageUrl)}" alt="${escapeHtml(data.title)}" class="img-fluid rounded" style="max-height:400px;width:100%;object-fit:cover">
+        </div>`
+      : '';
+
     document.getElementById('articlePage').innerHTML = `
       <div class="eu-article-wrapper">
         <!-- Artículo principal -->
@@ -148,7 +159,7 @@ title: Cargando artículo...
           <header class="eu-article-header">
             <div class="d-flex align-items-center gap-2 mb-3 flex-wrap">
               ${statusBadge}
-              ${data.category ? `<span class="eu-category-tag">${escapeHtml(data.category)}</span>` : ''}
+              ${categoryTag}
             </div>
             <h1 class="eu-article-title">${escapeHtml(data.title)}</h1>
             <div class="eu-article-meta">
@@ -171,6 +182,7 @@ title: Cargando artículo...
             <div class="eu-summary-content" style="font-size:1.05rem;color:var(--eu-text-secondary);font-style:italic">${renderSummaryMarkdown(data.summary)}</div>
           </div>
 
+          ${coverImageHtml}
           ${contentHtml}
 
           <!-- Acciones del artículo -->
@@ -193,7 +205,7 @@ title: Cargando artículo...
             <div class="small" style="color:var(--eu-text-secondary)">
               <div class="mb-1">Autor: <strong>${escapeHtml(data.author_username)}</strong></div>
               <div class="mb-1">Versión: <strong>${data.version}</strong></div>
-              ${data.category ? `<div class="mb-1">Categoría: <strong>${escapeHtml(data.category)}</strong></div>` : ''}
+              ${data.category ? `<div class="mb-1">Categoría: <strong>${escapeHtml(data.subcategory ? `${data.category} / ${data.subcategory}` : data.category)}</strong></div>` : ''}
               <div>Publicado: <strong>${formatDate(data.created_at)}</strong></div>
             </div>
           </div>

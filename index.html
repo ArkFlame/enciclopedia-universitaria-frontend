@@ -43,12 +43,15 @@ description: Enciclopedia colaborativa universitaria en español
     <p class="eu-section-subtitle" id="articlesSubtitle">Cargando artículos...</p>
   </div>
   <div class="d-flex gap-2 align-items-center">
-    <select class="eu-select" id="categoryFilter" style="width:auto;padding:6px 12px">
-      <option value="">Todas las categorías</option>
-    </select>
-    <select class="eu-select" id="subcategoryFilter" style="width:auto;padding:6px 12px" disabled>
-      <option value="">Todas las subcategorías</option>
-    </select>
+    <div class="eu-category-selector" id="categorySelectorContainer">
+      <button type="button" class="eu-category-trigger" id="categoryTrigger">
+        <span id="categoryLabel">Todas las categorías</span>
+        <i class="bi bi-chevron-down"></i>
+      </button>
+      <div class="eu-category-dropdown" id="categoryDropdown">
+        <div class="eu-category-tree" id="categoryTree"></div>
+      </div>
+    </div>
     <select class="eu-select" id="sortFilter" style="width:auto;padding:6px 12px">
       <option value="recent">Más recientes</option>
       <option value="popular">Más vistos</option>
@@ -110,6 +113,92 @@ description: Enciclopedia colaborativa universitaria en español
 .nanami-video:not(:first-child) {
   position: absolute;
   inset: 0;
+}
+/* Hierarchical category selector */
+.eu-category-selector {
+  position: relative;
+}
+.eu-category-trigger {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  background: var(--eu-surface);
+  border: 1px solid var(--eu-border);
+  border-radius: var(--eu-radius-sm);
+  color: var(--eu-text);
+  font-size: 0.9rem;
+  cursor: pointer;
+  min-width: 160px;
+  justify-content: space-between;
+  transition: border-color 0.2s;
+}
+.eu-category-trigger:hover {
+  border-color: var(--eu-text-muted);
+}
+.eu-category-trigger i {
+  font-size: 0.75rem;
+  transition: transform 0.2s;
+}
+.eu-category-selector.open .eu-category-trigger i {
+  transform: rotate(180deg);
+}
+.eu-category-dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  min-width: 220px;
+  background: var(--eu-surface);
+  border: 1px solid var(--eu-border);
+  border-radius: var(--eu-radius);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+  z-index: 1000;
+  display: none;
+  max-height: 320px;
+  overflow-y: auto;
+}
+.eu-category-selector.open .eu-category-dropdown {
+  display: block;
+}
+.eu-category-tree {
+  padding: 8px 0;
+}
+.eu-category-item {
+  padding: 8px 16px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--eu-text);
+  font-size: 0.9rem;
+  transition: background 0.15s;
+}
+.eu-category-item:hover {
+  background: var(--eu-bg-secondary);
+}
+.eu-category-item.selected {
+  background: var(--eu-accent);
+  color: #fff;
+}
+.eu-category-item .cat-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.eu-category-item .cat-expand {
+  margin-left: auto;
+  font-size: 0.75rem;
+  opacity: 0.6;
+}
+.eu-category-children {
+  padding-left: 24px;
+  border-left: 1px solid var(--eu-border);
+  margin-left: 16px;
+}
+.eu-category-children .eu-category-item {
+  padding: 6px 12px;
+  font-size: 0.85rem;
 }
 </style>
 
@@ -193,59 +282,138 @@ description: Enciclopedia colaborativa universitaria en español
 </script>
 
 <script>
-(async function() {
+(function() {
   const API = window.EU_CONFIG.backendUrl;
   const BASE = window.EU_CONFIG.baseUrl;
   let currentPage = 1;
-  let currentCategory = '';
-  let currentSubcategory = '';
-  const subcategoryRules = {
-    'irp': ['Física', 'Matemáticas', 'Programación'],
-    'ieu': ['Lenguaje', 'Comunicación', 'Literatura', 'Prácticas de estudio universitario'],
-    'icyt': ['Química', 'Biología', 'Bioquímica', 'Temas relacionados']
-  };
+  let currentCategoryId = '';
+  let currentSubcategoryId = '';
+  let categoryTree = [];
+  let selectedCategory = null;
+  let selectedSubcategory = null;
 
-  // Cargar categorías
-  async function loadCategories() {
+  const container = document.getElementById('categorySelectorContainer');
+  const trigger = document.getElementById('categoryTrigger');
+  const dropdown = document.getElementById('categoryDropdown');
+  const treeContainer = document.getElementById('categoryTree');
+  const label = document.getElementById('categoryLabel');
+
+  // Toggle dropdown
+  trigger && trigger.addEventListener('click', (e) => {
+    e.stopPropagation();
+    container.classList.toggle('open');
+  });
+
+  // Close on outside click
+  document.addEventListener('click', (e) => {
+    if (!container || !container.contains(e.target)) {
+      if (container) container.classList.remove('open');
+    }
+  });
+
+  // Load category tree
+  async function loadCategoryTree() {
     try {
-      const res = await fetch(`${API}/api/articles/meta/categories`);
+      const res = await fetch(`${API}/api/articles/meta/categories/tree`);
       if (!res.ok) return;
-      const cats = await res.json();
-      const sel = document.getElementById('categoryFilter');
-      cats.forEach(c => {
-        const opt = document.createElement('option');
-        opt.value = c.slug;
-        opt.textContent = c.name;
-        sel.appendChild(opt);
-      });
+      categoryTree = await res.json();
+      renderCategoryTree();
     } catch (e) {}
+  }
 
-    const catSel = document.getElementById('categoryFilter');
-    const subSel = document.getElementById('subcategoryFilter');
-    if (catSel && subSel) {
-      catSel.addEventListener('change', function() {
-        currentCategory = this.value;
-        const subOpts = subcategoryRules[currentCategory];
-        if (!subOpts) {
-          subSel.innerHTML = '<option value="">Todas las subcategorías</option>';
-          subSel.disabled = true;
-          currentSubcategory = '';
-        } else {
-          subSel.innerHTML = '<option value="">Todas las subcategorías</option>';
-          subOpts.forEach(function(s) {
-            const opt = document.createElement('option');
-            opt.value = s;
-            opt.textContent = s;
-            subSel.appendChild(opt);
-          });
-          subSel.disabled = false;
+  function renderCategoryTree() {
+    if (!treeContainer) return;
+    treeContainer.innerHTML = renderCategoryItems(categoryTree);
+  }
+
+  function renderCategoryItems(cats, parentId = null) {
+    return cats.map(cat => {
+      const hasChildren = cat.children && cat.children.length > 0;
+      const isSelected = selectedCategory && selectedCategory.id === cat.id;
+      const childHtml = hasChildren ? `<div class="eu-category-children">${renderCategoryItems(cat.children, cat.id)}</div>` : '';
+      
+      return `<div class="eu-category-item ${isSelected ? 'selected' : ''}" data-id="${cat.id}" data-name="${escapeHtml(cat.name)}" data-parent-id="${parentId || ''}">
+        <span class="cat-dot" style="background:${cat.color || '#666'}"></span>
+        <span>${escapeHtml(cat.name)}</span>
+        ${hasChildren ? '<span class="cat-expand">▸</span>' : ''}
+      </div>${childHtml}`;
+    }).join('');
+  }
+
+  // Handle category selection
+  treeContainer && treeContainer.addEventListener('click', (e) => {
+    const item = e.target.closest('.eu-category-item');
+    if (!item) return;
+
+    const catId = item.dataset.id;
+    const catName = item.dataset.name;
+    const parentId = item.dataset.parentId;
+
+    if (parentId) {
+      selectedCategory = categoryTree.find(c => c.id === parseInt(parentId));
+      selectedSubcategory = { id: parseInt(catId), name: catName };
+      currentCategoryId = parentId;
+      currentSubcategoryId = catId;
+    } else {
+      selectedCategory = categoryTree.find(c => c.id === parseInt(catId));
+      selectedSubcategory = null;
+      currentCategoryId = catId;
+      currentSubcategoryId = '';
+    }
+
+    updateLabel();
+    container.classList.remove('open');
+    currentPage = 1;
+    loadArticles(1);
+  });
+
+  function updateLabel() {
+    if (!selectedCategory) {
+      label.textContent = 'Todas las categorías';
+    } else if (selectedSubcategory) {
+      label.textContent = `${selectedCategory.name} / ${selectedSubcategory.name}`;
+    } else {
+      label.textContent = selectedCategory.name;
+    }
+  }
+
+  // Check URL params for category
+  function getCategoryFromUrl() {
+    const params = new URLSearchParams(window.location.search);
+    const catSlug = params.get('category');
+    const catId = params.get('categoryId');
+    const subId = params.get('subcategoryId');
+    return { catSlug, catId, subId };
+  }
+
+  async function initCategoryFromUrl() {
+    const { catSlug, catId, subId } = getCategoryFromUrl();
+    if (catId && categoryTree.length) {
+      if (subId) {
+        const parent = categoryTree.find(c => c.id === parseInt(catId));
+        if (parent && parent.children) {
+          const child = parent.children.find(s => s.id === parseInt(subId));
+          if (child) {
+            selectedCategory = parent;
+            selectedSubcategory = child;
+            currentCategoryId = catId;
+            currentSubcategoryId = subId;
+          }
         }
-        loadArticles(1);
-      });
-      subSel.addEventListener('change', function() {
-        currentSubcategory = this.value;
-        loadArticles(1);
-      });
+      } else {
+        selectedCategory = categoryTree.find(c => c.id === parseInt(catId));
+        if (selectedCategory) {
+          currentCategoryId = catId;
+        }
+      }
+      updateLabel();
+    } else if (catSlug && categoryTree.length) {
+      const cat = categoryTree.find(c => c.slug === catSlug);
+      if (cat) {
+        selectedCategory = cat;
+        currentCategoryId = String(cat.id);
+        updateLabel();
+      }
     }
   }
 
@@ -263,8 +431,8 @@ description: Enciclopedia colaborativa universitaria en español
     url.searchParams.set('limit', '12');
     url.searchParams.set('sort', sort);
     if (includePending) url.searchParams.set('includePending', 'true');
-    if (currentCategory) url.searchParams.set('category', currentCategory);
-    if (currentSubcategory) url.searchParams.set('subcategory', currentSubcategory);
+    if (currentCategoryId) url.searchParams.set('categoryId', currentCategoryId);
+    if (currentSubcategoryId) url.searchParams.set('subcategoryId', currentSubcategoryId);
 
     try {
       const res = await fetch(url);
@@ -299,9 +467,18 @@ description: Enciclopedia colaborativa universitaria en español
     const statusBadge = a.status !== 'APPROVED'
       ? `<span class="eu-status-badge eu-status-${a.status}">${a.status === 'PENDING' ? '⏳ Pendiente' : '✕ Rechazado'}</span>`
       : '';
-    const catBadge = a.category ? `<span class="eu-category-tag">${escapeHtml(a.category)}</span>` : '';
+    const categoryLabel = a.subcategory ? `${a.category} / ${a.subcategory}` : (a.category || '');
+    const catBadge = categoryLabel ? `<span class="eu-category-tag">${escapeHtml(categoryLabel)}</span>` : '';
+
+    const coverImageUrl = a.coverImageUrl || (a.coverImage && a.coverImage.public_url);
+    const coverImageHtml = coverImageUrl
+      ? `<div class="eu-card-image">
+          <img src="${escapeHtml(coverImageUrl)}" alt="" loading="lazy">
+        </div>`
+      : '';
 
     return `<a href="${BASE}/articulo.html?slug=${encodeURIComponent(a.slug)}" class="eu-article-card">
+      ${coverImageHtml}
       <div class="eu-card-meta">
         ${statusBadge}${catBadge}
       </div>
@@ -340,13 +517,7 @@ description: Enciclopedia colaborativa universitaria en español
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  // Eventos
-  document.getElementById('categoryFilter')?.addEventListener('change', e => {
-    currentCategory = e.target.value;
-    currentPage = 1;
-    loadArticles(1);
-  });
-
+  // Sort filter
   document.getElementById('sortFilter')?.addEventListener('change', () => loadArticles(1));
 
   window.addEventListener('eu:pending-toggle', () => loadArticles(currentPage));
@@ -382,7 +553,8 @@ description: Enciclopedia colaborativa universitaria en español
       .replace(/\n/g,'<br>');
   }
 
-  await loadCategories();
+  await loadCategoryTree();
+  await initCategoryFromUrl();
   await loadArticles(1);
 })();
 </script>

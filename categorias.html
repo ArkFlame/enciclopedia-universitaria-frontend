@@ -11,14 +11,24 @@ description: Explora los artículos de la enciclopedia por categoría temática
     <p class="text-muted" style="font-size:1.05rem">Explora el conocimiento organizado por área temática</p>
   </div>
 
-  <!-- Grid de categorías -->
-  <div id="categoriesGrid" class="row g-4 mb-5">
-    <!-- cargando... -->
-    <div class="col-12 text-center py-5">
-      <div class="eu-spinner mx-auto mb-3"></div>
-      <p class="text-muted">Cargando categorías...</p>
+  <!-- Category filter selector -->
+  <div class="d-flex align-items-center gap-3 mb-4">
+    <div class="eu-category-selector" id="categorySelectorContainer" style="max-width:280px">
+      <button type="button" class="eu-category-trigger" id="categoryTrigger">
+        <span id="categoryLabel">Todas las categorías</span>
+        <i class="bi bi-chevron-down"></i>
+      </button>
+      <div class="eu-category-dropdown" id="categoryDropdown">
+        <div class="eu-category-tree" id="categoryTree"></div>
+      </div>
     </div>
+    <button class="eu-btn-outline btn-sm" id="clearCategoryFilter" style="display:none" onclick="clearCategoryFilter()">
+      <i class="bi bi-x"></i> Limpiar
+    </button>
   </div>
+
+  <!-- Grid de categorías -->
+  <div id="categoriesGrid" class="row g-4 mb-5"></div>
 
   <!-- Vista de artículos de categoría seleccionada -->
   <div id="categoryView" class="d-none">
@@ -67,6 +77,92 @@ description: Explora los artículos de la enciclopedia por categoría temática
   text-decoration: none; color: inherit; transition: background .15s;
 }
 .eu-cat-article:hover { background: var(--eu-bg-secondary); padding-left: 8px; border-radius: var(--eu-radius-sm); }
+/* Hierarchical category selector */
+.eu-category-selector {
+  position: relative;
+}
+.eu-category-trigger {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  background: var(--eu-surface);
+  border: 1px solid var(--eu-border);
+  border-radius: var(--eu-radius-sm);
+  color: var(--eu-text);
+  font-size: 0.9rem;
+  cursor: pointer;
+  min-width: 180px;
+  justify-content: space-between;
+  transition: border-color 0.2s;
+}
+.eu-category-trigger:hover {
+  border-color: var(--eu-text-muted);
+}
+.eu-category-trigger i {
+  font-size: 0.75rem;
+  transition: transform 0.2s;
+}
+.eu-category-selector.open .eu-category-trigger i {
+  transform: rotate(180deg);
+}
+.eu-category-dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  min-width: 220px;
+  background: var(--eu-surface);
+  border: 1px solid var(--eu-border);
+  border-radius: var(--eu-radius);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+  z-index: 1000;
+  display: none;
+  max-height: 320px;
+  overflow-y: auto;
+}
+.eu-category-selector.open .eu-category-dropdown {
+  display: block;
+}
+.eu-category-tree {
+  padding: 8px 0;
+}
+.eu-category-item {
+  padding: 8px 16px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--eu-text);
+  font-size: 0.9rem;
+  transition: background 0.15s;
+}
+.eu-category-item:hover {
+  background: var(--eu-bg-secondary);
+}
+.eu-category-item.selected {
+  background: var(--eu-accent);
+  color: #fff;
+}
+.eu-category-item .cat-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.eu-category-item .cat-expand {
+  margin-left: auto;
+  font-size: 0.75rem;
+  opacity: 0.6;
+}
+.eu-category-children {
+  padding-left: 24px;
+  border-left: 1px solid var(--eu-border);
+  margin-left: 16px;
+}
+.eu-category-children .eu-category-item {
+  padding: 6px 12px;
+  font-size: 0.85rem;
+}
 </style>
 
 <script>
@@ -74,7 +170,11 @@ description: Explora los artículos de la enciclopedia por categoría temática
   const API  = window.EU_CONFIG.backendUrl;
   const BASE = window.EU_CONFIG.baseUrl;
   let catPage = 1;
-  let currentCatSlug = '';
+  let currentCatId = '';
+  let currentSubcategoryId = '';
+  let categoryTree = [];
+  let selectedCategory = null;
+  let selectedSubcategory = null;
 
   const ICONS = {
     'ciencias-naturales': '🌿', 'historia': '📜', 'matematicas': '📐',
@@ -82,26 +182,171 @@ description: Explora los artículos de la enciclopedia por categoría temática
     'biologia': '🔬', 'filosofia': '💭', 'arte-cultura': '🎨', 'sociologia': '🏛️'
   };
 
-  document.addEventListener('DOMContentLoaded', loadCategories);
+  // Category selector elements
+  const container = document.getElementById('categorySelectorContainer');
+  const trigger = document.getElementById('categoryTrigger');
+  const dropdown = document.getElementById('categoryDropdown');
+  const treeContainer = document.getElementById('categoryTree');
+  const label = document.getElementById('categoryLabel');
+  const clearBtn = document.getElementById('clearCategoryFilter');
+
+  // Toggle dropdown
+  trigger && trigger.addEventListener('click', (e) => {
+    e.stopPropagation();
+    container.classList.toggle('open');
+  });
+
+  // Close on outside click
+  document.addEventListener('click', (e) => {
+    if (!container || !container.contains(e.target)) {
+      container.classList.remove('open');
+    }
+  });
+
+  // Load category tree
+  async function loadCategoryTree() {
+    try {
+      const res = await fetch(`${API}/api/articles/meta/categories/tree`);
+      if (!res.ok) return;
+      categoryTree = await res.json();
+      renderCategoryTree();
+    } catch (e) {}
+  }
+
+  function renderCategoryTree() {
+    if (!treeContainer) return;
+    treeContainer.innerHTML = renderCategoryItems(categoryTree);
+  }
+
+  function renderCategoryItems(cats, parentId = null) {
+    return cats.map(cat => {
+      const hasChildren = cat.children && cat.children.length > 0;
+      const isSelected = selectedCategory && selectedCategory.id === cat.id;
+      const childHtml = hasChildren ? `<div class="eu-category-children">${renderCategoryItems(cat.children, cat.id)}</div>` : '';
+      
+      return `<div class="eu-category-item ${isSelected ? 'selected' : ''}" data-id="${cat.id}" data-name="${escapeHtml(cat.name)}" data-parent-id="${parentId || ''}">
+        <span class="cat-dot" style="background:${cat.color || '#666'}"></span>
+        <span>${escapeHtml(cat.name)}</span>
+        ${hasChildren ? '<span class="cat-expand">▸</span>' : ''}
+      </div>${childHtml}`;
+    }).join('');
+  }
+
+  // Handle category selection
+  treeContainer && treeContainer.addEventListener('click', (e) => {
+    const item = e.target.closest('.eu-category-item');
+    if (!item) return;
+
+    const catId = item.dataset.id;
+    const catName = item.dataset.name;
+    const parentId = item.dataset.parentId;
+
+    if (parentId) {
+      selectedCategory = categoryTree.find(c => c.id === parseInt(parentId));
+      selectedSubcategory = { id: parseInt(catId), name: catName };
+      currentCatId = parentId;
+      currentSubcategoryId = catId;
+    } else {
+      selectedCategory = categoryTree.find(c => c.id === parseInt(catId));
+      selectedSubcategory = null;
+      currentCatId = catId;
+      currentSubcategoryId = '';
+    }
+
+    updateLabel();
+    container.classList.remove('open');
+    clearBtn.style.display = 'inline-flex';
+    filterByCategory();
+  });
+
+  function updateLabel() {
+    if (!selectedCategory) {
+      label.textContent = 'Todas las categorías';
+    } else if (selectedSubcategory) {
+      label.textContent = `${selectedCategory.name} / ${selectedSubcategory.name}`;
+    } else {
+      label.textContent = selectedCategory.name;
+    }
+  }
+
+  window.clearCategoryFilter = function() {
+    selectedCategory = null;
+    selectedSubcategory = null;
+    currentCatId = '';
+    currentSubcategoryId = '';
+    updateLabel();
+    clearBtn.style.display = 'none';
+    filterByCategory();
+  };
+
+  function filterByCategory() {
+    if (!selectedCategory) {
+      document.getElementById('categoriesGrid').classList.remove('d-none');
+      const catView = document.getElementById('categoryView');
+      if (catView) catView.classList.add('d-none');
+      return;
+    }
+    openCategory(currentCatId, selectedCategory.name, selectedCategory.color);
+  }
+
+  // Init with URL params
+  async function init() {
+    await loadCategoryTree();
+    const params = new URLSearchParams(window.location.search);
+    const catId = params.get('categoryId');
+    const subId = params.get('subcategoryId');
+    const catSlug = params.get('category');
+
+    if (catId && categoryTree.length) {
+      if (subId) {
+        const parent = categoryTree.find(c => c.id === parseInt(catId));
+        if (parent && parent.children) {
+          const child = parent.children.find(s => s.id === parseInt(subId));
+          if (child) {
+            selectedCategory = parent;
+            selectedSubcategory = child;
+            currentCatId = catId;
+            currentSubcategoryId = subId;
+          }
+        }
+      } else {
+        selectedCategory = categoryTree.find(c => c.id === parseInt(catId));
+        if (selectedCategory) {
+          currentCatId = catId;
+        }
+      }
+      updateLabel();
+      clearBtn.style.display = 'inline-flex';
+    } else if (catSlug && categoryTree.length) {
+      const cat = categoryTree.find(c => c.slug === catSlug);
+      if (cat) {
+        selectedCategory = cat;
+        currentCatId = String(cat.id);
+        updateLabel();
+        clearBtn.style.display = 'inline-flex';
+      }
+    }
+
+    loadCategories();
+  }
 
   async function loadCategories() {
+    const grid = document.getElementById('categoriesGrid');
+    grid.innerHTML = '<div class="col-12 text-center py-5"><div class="eu-spinner mx-auto mb-3"></div><p class="text-muted">Cargando categorías...</p></div>';
+
     try {
-      const [catsRes, articlesRes] = await Promise.all([
-        fetch(`${API}/api/articles/meta/categories`),
-        fetch(`${API}/api/articles?limit=1`) // just to get total
-      ]);
-      const cats = await catsRes.json();
+      const res = await fetch(`${API}/api/articles/meta/categories`);
+      const cats = await res.json();
 
       // Fetch article counts per category in parallel
       const counts = await Promise.all(cats.map(c =>
-        fetch(`${API}/api/articles?category=${c.slug}&limit=1`)
+        fetch(`${API}/api/articles?categoryId=${c.id}&limit=1`)
           .then(r => r.json())
-          .then(d => ({ slug: c.slug, count: d.total || 0 }))
-          .catch(() => ({ slug: c.slug, count: 0 }))
+          .then(d => ({ id: c.id, slug: c.slug, count: d.total || 0 }))
+          .catch(() => ({ id: c.id, slug: c.slug, count: 0 }))
       ));
-      const countMap = Object.fromEntries(counts.map(c => [c.slug, c.count]));
+      const countMap = Object.fromEntries(counts.map(c => [c.id, c.count]));
 
-      const grid = document.getElementById('categoriesGrid');
       if (!cats.length) {
         grid.innerHTML = '<div class="col-12"><div class="eu-empty-state"><i class="bi bi-tag"></i><p>No hay categorías definidas</p></div></div>';
         return;
@@ -109,51 +354,63 @@ description: Explora los artículos de la enciclopedia por categoría temática
 
       grid.innerHTML = cats.map(c => `
         <div class="col-6 col-md-4 col-lg-3">
-          <div class="eu-cat-card" style="--cat-color:${c.color}" onclick="openCategory('${c.slug}', '${escHtml(c.name)}', '${c.color}')">
+          <div class="eu-cat-card" style="--cat-color:${c.color}" onclick="openCategory(${c.id}, '${escHtml(c.name)}', '${c.color}')">
             <span class="eu-cat-icon">${ICONS[c.slug] || '📁'}</span>
             <div class="eu-cat-name">${escHtml(c.name)}</div>
-            <div class="eu-cat-count">${countMap[c.slug] || 0} artículo${countMap[c.slug] !== 1 ? 's' : ''}</div>
+            <div class="eu-cat-count">${countMap[c.id] || 0} artículo${countMap[c.id] !== 1 ? 's' : ''}</div>
           </div>
         </div>`).join('');
+
+      // If category selected from URL, open it
+      if (selectedCategory) {
+        openCategory(currentCatId, selectedCategory.name, selectedCategory.color);
+      }
     } catch(e) {
-      document.getElementById('categoriesGrid').innerHTML =
-        '<div class="col-12"><div class="alert alert-danger">Error al cargar categorías</div></div>';
+      grid.innerHTML = '<div class="col-12"><div class="alert alert-danger">Error al cargar categorías</div></div>';
     }
   }
 
-  window.openCategory = async function(slug, name, color) {
-    currentCatSlug = slug;
+  window.openCategory = async function(catId, name, color) {
+    currentCatId = catId;
     catPage = 1;
-    document.getElementById('categoriesGrid').closest('div.mb-5').classList.add('d-none');
+    document.getElementById('categoriesGrid').classList.add('d-none');
     const view = document.getElementById('categoryView');
     view.classList.remove('d-none');
     document.getElementById('categoryTitle').innerHTML =
       `<span style="color:${color}">${escHtml(name)}</span>`;
-    await loadCategoryArticles(slug, 1);
+    await loadCategoryArticles(catId, 1);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   window.closeCategoryView = function() {
     document.getElementById('categoryView').classList.add('d-none');
-    document.getElementById('categoriesGrid').closest('div.mb-5').classList.remove('d-none');
-    currentCatSlug = '';
+    document.getElementById('categoriesGrid').classList.remove('d-none');
+    currentCatId = '';
+    currentSubcategoryId = '';
   };
 
-  async function loadCategoryArticles(slug, page) {
+  async function loadCategoryArticles(catId, page) {
     const container = document.getElementById('categoryArticles');
     container.innerHTML = '<div class="py-4 text-center"><div class="eu-spinner mx-auto"></div></div>';
     try {
-      const res  = await fetch(`${API}/api/articles?category=${slug}&page=${page}&limit=20`);
+      const url = new URL(`${API}/api/articles`);
+      url.searchParams.set('page', page);
+      url.searchParams.set('limit', '20');
+      url.searchParams.set('categoryId', catId);
+      if (currentSubcategoryId) url.searchParams.set('subcategoryId', currentSubcategoryId);
+      
+      const res = await fetch(url);
       const data = await res.json();
       document.getElementById('categoryCount').textContent =
         `${data.total} artículo${data.total !== 1 ? 's' : ''}`;
 
-      if (!data.articles?.length) {
+      const articles = data.articles || [];
+      if (!articles.length) {
         container.innerHTML = '<div class="eu-empty-state"><i class="bi bi-journal-x"></i><p>No hay artículos en esta categoría aún</p></div>';
         return;
       }
 
-      container.innerHTML = data.articles.map(a => `
+      container.innerHTML = articles.map(a => `
         <a href="${BASE}/articulo.html?slug=${encodeURIComponent(a.slug)}" class="eu-cat-article">
           <div>
             <div style="font-family:var(--eu-font-display);font-size:1rem;font-weight:700;margin-bottom:3px">${escHtml(a.title)}</div>
@@ -184,11 +441,13 @@ description: Explora los artículos de la enciclopedia por categoría temática
 
   window.catGoPage = function(p) {
     catPage = p;
-    loadCategoryArticles(currentCatSlug, p);
+    loadCategoryArticles(currentCatId, p);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   function fmtDate(d) { return new Date(d).toLocaleDateString('es-AR', { day:'2-digit', month:'short', year:'numeric' }); }
   function escHtml(s) { return String(s||'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+  init();
 })();
 </script>

@@ -39,48 +39,12 @@
     }
 
     document.getElementById('cancelLink').href = BASE + '/';
-    await loadCategories();
+    if (window.HierarchicalCategorySelector) HierarchicalCategorySelector.init();
     setupEventListeners();
   });
 
-  async function loadCategories() {
-    try {
-      var res = await fetch(API + '/api/articles/meta/categories');
-      if (!res.ok) return;
-      var cats = await res.json();
-      var select = document.getElementById('artCategory');
-      if (!select) return;
-      cats.forEach(function(c) {
-        var opt = document.createElement('option');
-        opt.value = c.slug;
-        opt.textContent = c.name;
-        select.appendChild(opt);
-      });
-    } catch(e) {
-      console.warn('Failed to load categories:', e);
-    }
-
-    var catSelect = document.getElementById('artCategory');
-    var subSelect = document.getElementById('artSubcategory');
-    if (catSelect && subSelect) {
-      catSelect.addEventListener('change', function() {
-        var cat = this.value;
-        var subOpts = subcategoryRules[cat];
-        if (!subOpts) {
-          subSelect.innerHTML = '<option value="">Selecciona una categoria primero</option>';
-          subSelect.disabled = true;
-        } else {
-          subSelect.innerHTML = '<option value="">Sin subcategoria</option>';
-          subOpts.forEach(function(s) {
-            var opt = document.createElement('option');
-            opt.value = s;
-            opt.textContent = s;
-            subSelect.appendChild(opt);
-          });
-          subSelect.disabled = false;
-        }
-      });
-    }
+  function loadCategories() {
+    // Categories now loaded via HierarchicalCategorySelector.init()
   }
 
   function setupEventListeners() {
@@ -420,16 +384,17 @@
     var title = document.getElementById('artTitle').value.trim();
     var summary = document.getElementById('artSummary').value.trim();
     var content = document.getElementById('artContent').value.trim();
-    var category = document.getElementById('artCategory').value;
-    var subcategory = document.getElementById('artSubcategory').value;
+    var categorySel = window.HierarchicalCategorySelector ? window.HierarchicalCategorySelector.getSelection() : { categoryId: null, subcategoryId: null };
+    var categoryId = categorySel.categoryId;
+    var subcategoryId = categorySel.subcategoryId;
     var coverImageId = document.getElementById('artCoverImage').value;
     var btn = document.getElementById('publishBtn');
     var alertEl = document.getElementById('publishAlert');
 
-    if (!title || !summary || !content) {
+    if (!title || !summary || !content || !categoryId) {
       if (alertEl) {
         alertEl.className = 'alert alert-danger';
-        alertEl.textContent = 'El título, resumen y contenido son obligatorios';
+        alertEl.textContent = 'El título, resumen, contenido y categoría son obligatorios';
         alertEl.classList.remove('d-none');
       }
       window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -442,7 +407,7 @@
     try {
       var res = await Auth.authFetch(API + '/api/articles', {
         method: 'POST',
-        body: JSON.stringify({ title: title, summary: summary, content: content, category: category, subcategory: subcategory, coverImageId: coverImageId || null })
+        body: JSON.stringify({ title: title, summary: summary, content: content, categoryId: categoryId, subcategoryId: subcategoryId, coverImageId: coverImageId || null })
       });
       var data = await res.json();
       if (!res.ok) throw new Error(data.error);

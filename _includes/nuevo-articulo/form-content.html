@@ -24,17 +24,8 @@ Main form content for new article
   </div>
   
   <div class="row g-3">
-    <div class="col-md-6">
-      <label class="eu-label" for="artCategory">Categoria</label>
-      <select id="artCategory" class="eu-select">
-        <option value="">Sin categoria</option>
-      </select>
-    </div>
-    <div class="col-md-6">
-      <label class="eu-label" for="artSubcategory">Subcategoria</label>
-      <select id="artSubcategory" class="eu-select" disabled>
-        <option value="">Selecciona una categoria primero</option>
-      </select>
+    <div class="col-12">
+      {% include article-editor/category-selector.html %}
     </div>
   </div>
 

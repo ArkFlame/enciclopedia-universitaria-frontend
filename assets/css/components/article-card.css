@@ -57,6 +57,26 @@
   flex-wrap: wrap;
 }
 
+.eu-card-image {
+  width: 100%;
+  height: 160px;
+  margin-bottom: 12px;
+  border-radius: var(--eu-radius);
+  overflow: hidden;
+  background: var(--eu-bg-secondary);
+}
+
+.eu-card-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s ease;
+}
+
+.eu-article-card:hover .eu-card-image img {
+  transform: scale(1.05);
+}
+
 .eu-status-badge {
   display: inline-flex;
   align-items: center;

@@ -38,18 +38,8 @@
   </div>
 
   <div class="mb-3">
-    <label class="eu-label" for="editCategorySelect">Categoría <span class="text-muted fw-normal small">— deja en blanco para mantener la actual</span></label>
-    <select id="editCategorySelect" class="eu-input w-100" aria-label="Categoría propuesta">
-      <option value="">Selecciona una categoría...</option>
-    </select>
-    <small class="text-muted d-block mt-1">Puedes sugerir mover el artículo a otra categoría; el cambio también quedará pendiente de aprobación.</small>
-  </div>
-
-  <div class="mb-3">
-    <label class="eu-label" for="editSubcategorySelect">Subcategoría <span class="text-muted fw-normal small">— deja en blanco para mantener la actual</span></label>
-    <select id="editSubcategorySelect" class="eu-input w-100" aria-label="Subcategoría propuesta" disabled>
-      <option value="">Selecciona una categoría primero</option>
-    </select>
+    {% include article-editor/category-selector.html %}
+    <small class="text-muted d-block mt-1">Puedes sugerir mover el artículo a otra categoría; el cambio también quedarán pendiente de aprobación.</small>
   </div>
 
   <div class="mb-4">
