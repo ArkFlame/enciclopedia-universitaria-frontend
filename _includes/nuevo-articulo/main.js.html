@@ -39,7 +39,7 @@
     }
 
     document.getElementById('cancelLink').href = BASE + '/';
-    if (window.HierarchicalCategorySelector) HierarchicalCategorySelector.init();
+    if (window.HierarchicalCategorySelector) await HierarchicalCategorySelector.init();
     setupEventListeners();
   });
 

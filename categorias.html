@@ -163,6 +163,31 @@ description: Explora los artículos de la enciclopedia por categoría temática
   padding: 6px 12px;
   font-size: 0.85rem;
 }
+.eu-cat-parent { position: relative; }
+.eu-submenu {
+  position: absolute;
+  left: calc(100% + 4px);
+  top: 0;
+  min-width: 180px;
+  background: var(--eu-surface);
+  border: 1px solid var(--eu-border);
+  border-radius: var(--eu-radius);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+  z-index: 1001;
+  padding: 6px 0;
+}
+.eu-submenu-item {
+  padding: 7px 14px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--eu-text);
+  font-size: 0.875rem;
+  transition: background 0.15s;
+}
+.eu-submenu-item:hover { background: var(--eu-bg-secondary); }
+.eu-submenu-item.selected { background: var(--eu-accent); color: #fff; }
 </style>
 
 <script>
@@ -200,6 +225,8 @@ description: Explora los artículos de la enciclopedia por categoría temática
   document.addEventListener('click', (e) => {
     if (!container || !container.contains(e.target)) {
       container.classList.remove('open');
+      openSubmenuId = null;
+      renderCategoryTree();
     }
   });
 
@@ -213,50 +240,91 @@ description: Explora los artículos de la enciclopedia por categoría temática
     } catch (e) {}
   }
 
+  let openSubmenuId = null;
+
   function renderCategoryTree() {
     if (!treeContainer) return;
-    treeContainer.innerHTML = renderCategoryItems(categoryTree);
-  }
-
-  function renderCategoryItems(cats, parentId = null) {
-    return cats.map(cat => {
+    treeContainer.innerHTML = categoryTree.map(cat => {
       const hasChildren = cat.children && cat.children.length > 0;
       const isSelected = selectedCategory && selectedCategory.id === cat.id;
-      const childHtml = hasChildren ? `<div class="eu-category-children">${renderCategoryItems(cat.children, cat.id)}</div>` : '';
-      
-      return `<div class="eu-category-item ${isSelected ? 'selected' : ''}" data-id="${cat.id}" data-name="${escapeHtml(cat.name)}" data-parent-id="${parentId || ''}">
+      const isOpen = openSubmenuId === cat.id;
+      const childrenClass = hasChildren ? (isOpen ? ' eu-cat-parent open' : ' eu-cat-parent') : '';
+      return `<div class="eu-category-item${isSelected ? ' selected' : ''}${childrenClass}" data-id="${cat.id}" data-name="${escapeHtml(cat.name)}" data-has-children="${hasChildren}">
         <span class="cat-dot" style="background:${cat.color || '#666'}"></span>
         <span>${escapeHtml(cat.name)}</span>
-        ${hasChildren ? '<span class="cat-expand">▸</span>' : ''}
-      </div>${childHtml}`;
+        ${hasChildren ? '<span class="cat-expand">' + (isOpen ? '▾' : '▸') + '</span>' : ''}
+      </div>`;
     }).join('');
   }
 
-  // Handle category selection
+  // Handle category selection (contextual submenu)
   treeContainer && treeContainer.addEventListener('click', (e) => {
     const item = e.target.closest('.eu-category-item');
     if (!item) return;
 
     const catId = item.dataset.id;
     const catName = item.dataset.name;
-    const parentId = item.dataset.parentId;
+    const hasChildren = item.dataset.hasChildren === 'true';
 
-    if (parentId) {
-      selectedCategory = categoryTree.find(c => c.id === parseInt(parentId));
-      selectedSubcategory = { id: parseInt(catId), name: catName };
-      currentCatId = parentId;
-      currentSubcategoryId = catId;
+    if (hasChildren) {
+      e.stopPropagation();
+      if (openSubmenuId === catId) {
+        openSubmenuId = null;
+      } else {
+        openSubmenuId = catId;
+      }
+      renderCategoryTree();
+      if (openSubmenuId !== null) {
+        renderSubmenu(catId);
+      }
     } else {
       selectedCategory = categoryTree.find(c => c.id === parseInt(catId));
       selectedSubcategory = null;
       currentCatId = catId;
       currentSubcategoryId = '';
+      openSubmenuId = null;
+      updateLabel();
+      container.classList.remove('open');
+      clearBtn.style.display = 'inline-flex';
+      filterByCategory();
     }
+  });
 
-    updateLabel();
-    container.classList.remove('open');
-    clearBtn.style.display = 'inline-flex';
-    filterByCategory();
+  function renderSubmenu(parentId) {
+    const parent = categoryTree.find(c => c.id === parseInt(parentId));
+    if (!parent || !parent.children) return;
+    const existing = treeContainer.querySelector('.eu-submenu');
+    if (existing) existing.remove();
+    const parentItem = treeContainer.querySelector(`[data-id="${parentId}"]`);
+    if (!parentItem) return;
+    const submenu = document.createElement('div');
+    submenu.className = 'eu-submenu';
+    submenu.innerHTML = parent.children.map(child => {
+      const isSelected = selectedSubcategory && selectedSubcategory.id === child.id;
+      return `<div class="eu-submenu-item${isSelected ? ' selected' : ''}" data-id="${child.id}" data-name="${escapeHtml(child.name)}" data-parent-id="${parentId}">
+        <span class="cat-dot" style="background:${child.color || '#888'}"></span>
+        <span>${escapeHtml(child.name)}</span>
+      </div>`;
+    }).join('');
+    parentItem.appendChild(submenu);
+  }
+
+  treeContainer && treeContainer.addEventListener('click', (e) => {
+    const submenuItem = e.target.closest('.eu-submenu-item');
+    if (submenuItem) {
+      const catId = submenuItem.dataset.id;
+      const catName = submenuItem.dataset.name;
+      const parentId = submenuItem.dataset.parentId;
+      selectedCategory = categoryTree.find(c => c.id === parseInt(parentId));
+      selectedSubcategory = { id: parseInt(catId), name: catName };
+      currentCatId = parentId;
+      currentSubcategoryId = catId;
+      openSubmenuId = null;
+      updateLabel();
+      container.classList.remove('open');
+      clearBtn.style.display = 'inline-flex';
+      filterByCategory();
+    }
   });
 
   function updateLabel() {
@@ -274,8 +342,10 @@ description: Explora los artículos de la enciclopedia por categoría temática
     selectedSubcategory = null;
     currentCatId = '';
     currentSubcategoryId = '';
+    openSubmenuId = null;
     updateLabel();
     clearBtn.style.display = 'none';
+    renderCategoryTree();
     filterByCategory();
   };
 
@@ -316,6 +386,7 @@ description: Explora los artículos de la enciclopedia por categoría temática
         }
       }
       updateLabel();
+      renderCategoryTree();
       clearBtn.style.display = 'inline-flex';
     } else if (catSlug && categoryTree.length) {
       const cat = categoryTree.find(c => c.slug === catSlug);

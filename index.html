@@ -191,12 +191,28 @@ description: Enciclopedia colaborativa universitaria en español
   font-size: 0.75rem;
   opacity: 0.6;
 }
-.eu-category-children {
-  padding-left: 24px;
-  border-left: 1px solid var(--eu-border);
-  margin-left: 16px;
+.eu-category-submenu {
+  position: absolute;
+  left: calc(100% + 4px);
+  top: 0;
+  min-width: 180px;
+  background: var(--eu-surface);
+  border: 1px solid var(--eu-border);
+  border-radius: var(--eu-radius);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+  padding: 8px 0;
+  opacity: 0;
+  transform: translateX(-8px);
+  transition: opacity 0.15s ease, transform 0.15s ease;
+  pointer-events: none;
+  z-index: 1001;
 }
-.eu-category-children .eu-category-item {
+.eu-category-submenu.visible {
+  opacity: 1;
+  transform: translateX(0);
+  pointer-events: auto;
+}
+.eu-category-submenu .eu-category-item {
   padding: 6px 12px;
   font-size: 0.85rem;
 }
@@ -328,24 +344,69 @@ description: Enciclopedia colaborativa universitaria en español
 
   function renderCategoryTree() {
     if (!treeContainer) return;
-    treeContainer.innerHTML = renderCategoryItems(categoryTree);
-  }
-
-  function renderCategoryItems(cats, parentId = null) {
-    return cats.map(cat => {
-      const hasChildren = cat.children && cat.children.length > 0;
+    treeContainer.innerHTML = categoryTree.map(cat => {
       const isSelected = selectedCategory && selectedCategory.id === cat.id;
-      const childHtml = hasChildren ? `<div class="eu-category-children">${renderCategoryItems(cat.children, cat.id)}</div>` : '';
-      
-      return `<div class="eu-category-item ${isSelected ? 'selected' : ''}" data-id="${cat.id}" data-name="${escapeHtml(cat.name)}" data-parent-id="${parentId || ''}">
+      return `<div class="eu-category-item ${isSelected ? 'selected' : ''}" data-id="${cat.id}" data-name="${escapeHtml(cat.name)}" data-has-children="${cat.children && cat.children.length > 0 ? 'true' : 'false'}">
         <span class="cat-dot" style="background:${cat.color || '#666'}"></span>
         <span>${escapeHtml(cat.name)}</span>
-        ${hasChildren ? '<span class="cat-expand">▸</span>' : ''}
-      </div>${childHtml}`;
+      </div>`;
     }).join('');
   }
 
-  // Handle category selection
+  let openSubmenu = null;
+
+  function showSubmenu(item) {
+    const catId = item.dataset.id;
+    const cat = categoryTree.find(c => c.id === parseInt(catId));
+    if (!cat || !cat.children || !cat.children.length) return;
+
+    if (openSubmenu && openSubmenu.dataset.id === catId) return;
+
+    closeSubmenu();
+    openSubmenu = item;
+
+    const submenu = document.createElement('div');
+    submenu.className = 'eu-category-submenu';
+    submenu.dataset.parentId = catId;
+    submenu.innerHTML = cat.children.map(child => {
+      const isSelected = selectedSubcategory && selectedSubcategory.id === child.id;
+      return `<div class="eu-category-item ${isSelected ? 'selected' : ''}" data-id="${child.id}" data-name="${escapeHtml(child.name)}" data-parent-id="${catId}">
+        <span>${escapeHtml(child.name)}</span>
+      </div>`;
+    }).join('');
+
+    item.parentNode.appendChild(submenu);
+    requestAnimationFrame(() => submenu.classList.add('visible'));
+  }
+
+  function closeSubmenu() {
+    if (!openSubmenu) return;
+    const existing = document.querySelector('.eu-category-submenu');
+    if (existing) {
+      existing.classList.remove('visible');
+      setTimeout(() => existing.remove(), 150);
+    }
+    openSubmenu = null;
+  }
+
+  function handleParentHover(e) {
+    const item = e.target.closest('.eu-category-item');
+    if (!item || item.dataset.hasChildren !== 'true') {
+      closeSubmenu();
+      return;
+    }
+    showSubmenu(item);
+  }
+
+  // Handle category hover for submenu
+  treeContainer && treeContainer.addEventListener('mouseover', handleParentHover);
+  treeContainer && treeContainer.addEventListener('mouseleave', (e) => {
+    if (!e.relatedTarget?.closest('.eu-category-submenu')) {
+      closeSubmenu();
+    }
+  });
+
+  // Handle category click
   treeContainer && treeContainer.addEventListener('click', (e) => {
     const item = e.target.closest('.eu-category-item');
     if (!item) return;
@@ -366,6 +427,7 @@ description: Enciclopedia colaborativa universitaria en español
       currentSubcategoryId = '';
     }
 
+    closeSubmenu();
     updateLabel();
     container.classList.remove('open');
     currentPage = 1;

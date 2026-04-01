@@ -1,33 +1,28 @@
 {% comment %}
 Hierarchical category selector component
-Provides single selector with expand/collapse for subcategories
+Provides contextual parent->child selector with hover/click expansion
 {% endcomment %}
 
 <div class="hierarchical-category-selector" id="categorySelector">
-  <label class="eu-label" for="categorySelect">Categoría</label>
-  <div class="category-selector-wrapper">
-    <select id="categorySelect" class="eu-select w-100">
-      <option value="">Sin categoría</option>
-    </select>
-  </div>
-  <div class="subcategory-dropdown mt-2" id="subcategoryDropdown" style="display: none;">
-    <label class="eu-label" for="subcategorySelect">Subcategoría</label>
-    <select id="subcategorySelect" class="eu-select w-100">
-      <option value="">Sin subcategoría</option>
-    </select>
+  <label class="eu-label">Categoría</label>
+  <div class="category-picker-layout">
+    <div class="category-column" id="categoryColumn"></div>
+    <div class="subcategory-column" id="subcategoryColumn" style="display: none;"></div>
   </div>
 </div>
 
 <script data-cfasync="false">
 (function() {
   var HierarchicalCategorySelector = window.HierarchicalCategorySelector || {};
-  
+
   var currentCategoryId = null;
   var currentSubcategoryId = null;
   var categoryTree = [];
   var selectedCategory = null;
   var selectedSubcategory = null;
-  var initialized = false;
+  var initPromise = null;
+  var pendingSelection = null;
+  var activeParentId = null;
 
   function getApi() {
     if (typeof API !== 'undefined') return API;
@@ -37,99 +32,193 @@ Provides single selector with expand/collapse for subcategories
   }
 
   HierarchicalCategorySelector.init = function() {
-    if (initialized) return;
-    initialized = true;
-    loadCategoryTree();
-    setupEventListeners();
+    if (initPromise) return initPromise;
+    initPromise = loadCategoryTree().then(function() {
+      setupEventListeners();
+    });
+    return initPromise;
   };
 
-  async function loadCategoryTree() {
+  HierarchicalCategorySelector.ready = function() {
+    return this.init();
+  };
+
+  function loadCategoryTree() {
     var api = getApi();
-    try {
-      var res = await fetch(api + '/api/articles/meta/categories/tree');
-      if (!res.ok) {
-        console.warn('Failed to load category tree:', res.status);
-        return;
-      }
-      categoryTree = await res.json();
-      renderMainSelector();
-    } catch(e) {
-      console.warn('Failed to load category tree:', e);
-    }
+    return fetch(api + '/api/articles/meta/categories/tree')
+      .then(function(res) {
+        if (!res.ok) throw new Error('Failed to load category tree: ' + res.status);
+        return res.json();
+      })
+      .then(function(data) {
+        categoryTree = data;
+        renderCategoryColumn();
+      })
+      .catch(function(e) {
+        console.warn(e.message);
+      });
   }
 
-  function renderMainSelector() {
-    var select = document.getElementById('categorySelect');
-    if (!select) return;
-    
-    select.innerHTML = '<option value="">Sin categoría</option>';
-    
+  function renderCategoryColumn() {
+    var column = document.getElementById('categoryColumn');
+    if (!column) return;
+
+    column.innerHTML = '';
+
+    var noCat = document.createElement('div');
+    noCat.className = 'category-option' + (currentCategoryId === null ? ' active' : '');
+    noCat.textContent = 'Sin categoría';
+    noCat.dataset.categoryId = '';
+    column.appendChild(noCat);
+
     categoryTree.forEach(function(cat) {
-      var opt = document.createElement('option');
-      opt.value = cat.id;
-      opt.textContent = cat.name;
-      opt.dataset.slug = cat.slug;
+      var el = document.createElement('div');
+      el.className = 'category-option';
+      el.dataset.categoryId = cat.id;
+      el.textContent = cat.name;
       if (cat.children && cat.children.length > 0) {
-        opt.dataset.hasChildren = 'true';
+        el.classList.add('has-children');
+        el.dataset.hasChildren = 'true';
       }
-      select.appendChild(opt);
+      if (currentCategoryId === cat.id) {
+        el.classList.add('active');
+      }
+      column.appendChild(el);
     });
+  }
+
+  function renderSubcategoryColumn(parentId) {
+    var column = document.getElementById('subcategoryColumn');
+    if (!column) return;
+
+    var parent = categoryTree.find(function(c) { return c.id === parentId; });
+    if (!parent || !parent.children || parent.children.length === 0) {
+      column.style.display = 'none';
+      return;
+    }
+
+    column.innerHTML = '';
+
+    var header = document.createElement('div');
+    header.className = 'subcategory-header';
+    header.textContent = parent.name;
+    column.appendChild(header);
+
+    var back = document.createElement('div');
+    back.className = 'category-option back-option';
+    back.dataset.categoryId = parentId;
+    back.textContent = '← ' + parent.name;
+    column.appendChild(back);
+
+    parent.children.forEach(function(sub) {
+      var el = document.createElement('div');
+      el.className = 'category-option sub-option';
+      el.dataset.categoryId = parentId;
+      el.dataset.subcategoryId = sub.id;
+      el.textContent = sub.name;
+      if (currentCategoryId === parentId && currentSubcategoryId === sub.id) {
+        el.classList.add('active');
+      }
+      column.appendChild(el);
+    });
+
+    column.style.display = 'flex';
+  }
+
+  function closeSubcategory() {
+    var column = document.getElementById('subcategoryColumn');
+    if (column) {
+      column.style.display = 'none';
+      column.innerHTML = '';
+    }
+    activeParentId = null;
+  }
+
+  function showSubcategory(parentId) {
+    activeParentId = parentId;
+    renderSubcategoryColumn(parentId);
+  }
+
+  function selectCategory(categoryId, subcategoryId) {
+    currentCategoryId = categoryId;
+    currentSubcategoryId = subcategoryId || null;
+
+    selectedCategory = null;
+    selectedSubcategory = null;
+
+    if (categoryId) {
+      selectedCategory = categoryTree.find(function(c) { return c.id === categoryId; });
+      if (selectedCategory && subcategoryId && selectedCategory.children) {
+        selectedSubcategory = selectedCategory.children.find(function(s) { return s.id === subcategoryId; });
+      }
+    }
+
+    renderCategoryColumn();
+
+    if (activeParentId && activeParentId !== categoryId) {
+      if (categoryId && selectedCategory && selectedCategory.children && selectedCategory.children.length > 0) {
+        renderSubcategoryColumn(categoryId);
+      } else {
+        closeSubcategory();
+      }
+    }
+
+    triggerChange();
   }
 
   function setupEventListeners() {
-    var catSelect = document.getElementById('categorySelect');
-    var subSelect = document.getElementById('subcategorySelect');
-    var subDropdown = document.getElementById('subcategoryDropdown');
-    
-    if (catSelect) {
-      catSelect.addEventListener('change', function() {
-        var categoryId = this.value ? parseInt(this.value) : null;
-        currentCategoryId = categoryId;
-        currentSubcategoryId = null;
-        
-        var selected = categoryTree.find(function(c) { return c.id === categoryId; });
-        selectedCategory = selected || null;
-        selectedSubcategory = null;
-        
-        if (selected && selected.children && selected.children.length > 0) {
-          renderSubcategorySelector(selected.children);
-          subDropdown.style.display = 'block';
-        } else {
-          subDropdown.style.display = 'none';
-        }
-        
-        triggerChange();
-      });
-    }
-    
-    if (subSelect) {
-      subSelect.addEventListener('change', function() {
-        var subcategoryId = this.value ? parseInt(this.value) : null;
-        currentSubcategoryId = subcategoryId;
-        
-        if (selectedCategory && selectedCategory.children) {
-          var sub = selectedCategory.children.find(function(s) { return s.id === subcategoryId; });
-          selectedSubcategory = sub || null;
-        }
-        
-        triggerChange();
-      });
-    }
-  }
+    var column = document.getElementById('categoryColumn');
 
-  function renderSubcategorySelector(subcategories) {
-    var subSelect = document.getElementById('subcategorySelect');
-    if (!subSelect) return;
-    
-    subSelect.innerHTML = '<option value="">Sin subcategoría</option>';
-    
-    subcategories.forEach(function(sub) {
-      var opt = document.createElement('option');
-      opt.value = sub.id;
-      opt.textContent = sub.name;
-      opt.dataset.slug = sub.slug;
-      subSelect.appendChild(opt);
-    });
+    if (column) {
+      column.addEventListener('click', function(e) {
+        var option = e.target.closest('.category-option');
+        if (!option) return;
+
+        var catId = option.dataset.categoryId ? parseInt(option.dataset.categoryId) : null;
+
+        if (option.dataset.hasChildren === 'true') {
+          if (activeParentId === catId) {
+            selectCategory(catId, null);
+          } else {
+            showSubcategory(catId);
+          }
+        } else {
+          selectCategory(catId, null);
+        }
+      });
+
+      column.addEventListener('mouseover', function(e) {
+        var option = e.target.closest('.category-option');
+        if (!option || !option.dataset.hasChildren) return;
+        var catId = option.dataset.categoryId ? parseInt(option.dataset.categoryId) : null;
+        if (catId && catId !== activeParentId) {
+          showSubcategory(catId);
+        }
+      });
+    }
+
+    var subColumn = document.getElementById('subcategoryColumn');
+
+    if (subColumn) {
+      subColumn.addEventListener('click', function(e) {
+        var option = e.target.closest('.category-option');
+        if (!option) return;
+
+        if (option.classList.contains('back-option')) {
+          selectCategory(parseInt(option.dataset.categoryId), null);
+          return;
+        }
+
+        var catId = option.dataset.categoryId ? parseInt(option.dataset.categoryId) : null;
+        var subId = option.dataset.subcategoryId ? parseInt(option.dataset.subcategoryId) : null;
+        selectCategory(catId, subId);
+      });
+
+      subColumn.addEventListener('mouseover', function(e) {
+        var option = e.target.closest('.category-option');
+        if (!option || option.classList.contains('back-option')) return;
+      });
+    }
   }
 
   function triggerChange() {
@@ -145,39 +234,33 @@ Provides single selector with expand/collapse for subcategories
   }
 
   HierarchicalCategorySelector.setSelection = function(categoryId, subcategoryId) {
-    currentCategoryId = categoryId;
-    currentSubcategoryId = subcategoryId;
-    
-    var catSelect = document.getElementById('categorySelect');
-    var subSelect = document.getElementById('subcategorySelect');
-    var subDropdown = document.getElementById('subcategoryDropdown');
-    
-    if (categoryId) {
-      catSelect.value = categoryId;
-      selectedCategory = categoryTree.find(function(c) { return c.id === categoryId; });
-      
-      if (selectedCategory && selectedCategory.children && selectedCategory.children.length > 0) {
-        renderSubcategorySelector(selectedCategory.children);
-        subDropdown.style.display = 'block';
-        
-        if (subcategoryId) {
-          subSelect.value = subcategoryId;
-          selectedSubcategory = selectedCategory.children.find(function(s) { return s.id === subcategoryId; });
-        } else {
-          selectedSubcategory = null;
-          subSelect.value = '';
+    var doSet = function() {
+      selectCategory(categoryId, subcategoryId);
+    };
+
+    if (!initPromise) {
+      pendingSelection = { categoryId: categoryId, subcategoryId: subcategoryId };
+      this.init().then(function() {
+        if (pendingSelection && pendingSelection.categoryId === categoryId && pendingSelection.subcategoryId === subcategoryId) {
+          pendingSelection = null;
         }
-      } else {
-        subDropdown.style.display = 'none';
-        selectedSubcategory = null;
-      }
-    } else {
-      catSelect.value = '';
-      subSelect.value = '';
-      subDropdown.style.display = 'none';
-      selectedCategory = null;
-      selectedSubcategory = null;
+        doSet();
+      });
+      return;
     }
+
+    if (initPromise && categoryTree.length === 0) {
+      pendingSelection = { categoryId: categoryId, subcategoryId: subcategoryId };
+      this.init().then(function() {
+        if (pendingSelection && pendingSelection.categoryId === categoryId && pendingSelection.subcategoryId === subcategoryId) {
+          pendingSelection = null;
+        }
+        doSet();
+      });
+      return;
+    }
+
+    doSet();
   };
 
   HierarchicalCategorySelector.getSelection = function() {
@@ -192,3 +275,84 @@ Provides single selector with expand/collapse for subcategories
   window.HierarchicalCategorySelector = HierarchicalCategorySelector;
 })();
 </script>
+
+<style>
+.hierarchical-category-selector .category-picker-layout {
+  display: flex;
+  gap: 0;
+}
+
+.hierarchical-category-selector .category-column,
+.hierarchical-category-selector .subcategory-column {
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+  border: 1px solid #ced4da;
+  border-radius: 0.375rem;
+  overflow: hidden;
+}
+
+.hierarchical-category-selector .category-column {
+  min-width: 180px;
+  max-height: 280px;
+  overflow-y: auto;
+}
+
+.hierarchical-category-selector .subcategory-column {
+  min-width: 180px;
+  max-height: 280px;
+  overflow-y: auto;
+  border-left: none;
+  border-top-right-radius: 0.375rem;
+  border-bottom-right-radius: 0.375rem;
+}
+
+.hierarchical-category-selector .category-option {
+  padding: 0.5rem 0.75rem;
+  cursor: pointer;
+  border-bottom: 1px solid #e9ecef;
+  transition: background-color 0.15s;
+  font-size: 0.9rem;
+}
+
+.hierarchical-category-selector .category-option:last-child {
+  border-bottom: none;
+}
+
+.hierarchical-category-selector .category-option:hover {
+  background-color: #f8f9fa;
+}
+
+.hierarchical-category-selector .category-option.active {
+  background-color: #e7f1ff;
+  color: #0d6efd;
+  font-weight: 500;
+}
+
+.hierarchical-category-selector .category-option.has-children::after {
+  content: '▶';
+  float: right;
+  font-size: 0.6rem;
+  margin-top: 0.25rem;
+  color: #adb5bd;
+}
+
+.hierarchical-category-selector .subcategory-header {
+  padding: 0.4rem 0.75rem;
+  background: #f8f9fa;
+  border-bottom: 1px solid #e9ecef;
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: #495057;
+}
+
+.hierarchical-category-selector .back-option {
+  background-color: #f8f9fa;
+  font-style: italic;
+  color: #6c757d;
+}
+
+.hierarchical-category-selector .sub-option {
+  padding-left: 1.25rem;
+}
+</style>

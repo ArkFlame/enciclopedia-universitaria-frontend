@@ -151,18 +151,9 @@
     updateCharCount();
 
     if (window.HierarchicalCategorySelector) {
-      window.HierarchicalCategorySelector.init();
-      if (article.categoryId || article.subcategoryId) {
-        window.HierarchicalCategorySelector.setSelection(article.categoryId, article.subcategoryId);
-      } else if (article.category) {
-        var catSel = window.HierarchicalCategorySelector.getSelection();
-        if (catSel.category) {
-          var cat = catSel.category;
-          if (cat.children && cat.children.length > 0) {
-            var sub = cat.children.find(function(s) { return s.name === article.subcategory; });
-            if (sub) window.HierarchicalCategorySelector.setSelection(cat.id, sub.id);
-          }
-        }
+      await window.HierarchicalCategorySelector.init();
+      if (article.category_id || article.subcategory_id) {
+        window.HierarchicalCategorySelector.setSelection(article.category_id, article.subcategory_id);
       }
     }
 

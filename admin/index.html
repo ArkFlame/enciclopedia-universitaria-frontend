@@ -57,7 +57,7 @@ title: Panel de Moderación
             <a href="#" onclick="showSection('approved');return false"><i class="bi bi-check-circle"></i> Aprobados</a>
             <a href="#" onclick="showSection('rejected');return false"><i class="bi bi-x-circle"></i> Rechazados</a>
             <a href="#" onclick="showSection('edits');return false"><i class="bi bi-pencil-square"></i> Ediciones</a>
-            ${user.role==='ADMIN'?`<a href="#" onclick="showSection('users');return false"><i class="bi bi-people"></i> Usuarios</a><a href="#" onclick="showSection('logs');return false"><i class="bi bi-list-check"></i> Logs</a>`:''}
+            ${user.role==='ADMIN'?`<a href="#" onclick="showSection('users');return false"><i class="bi bi-people"></i> Usuarios</a><a href="#" onclick="showSection('logs');return false"><i class="bi bi-list-check"></i> Logs</a><a href="#" onclick="showSection('categories');return false"><i class="bi bi-tags"></i> Categorías</a>`:''}
             <div class="eu-sidebar-divider mx-3"></div>
             <a href="${BASE}/"><i class="bi bi-house"></i> Ver sitio</a>
           </nav>
@@ -75,7 +75,7 @@ title: Panel de Moderación
     });
     const main = document.getElementById('adminMain');
     main.innerHTML = '<div class="eu-loading"><div class="eu-spinner"></div></div>';
-    const fns = { dashboard: loadDashboard, pending: () => loadArticles('PENDING'), approved: () => loadArticles('APPROVED'), rejected: () => loadArticles('REJECTED'), edits: loadEdits, users: loadUsers, logs: loadLogs };
+    const fns = { dashboard: loadDashboard, pending: () => loadArticles('PENDING'), approved: () => loadArticles('APPROVED'), rejected: () => loadArticles('REJECTED'), edits: loadEdits, users: loadUsers, logs: loadLogs, categories: loadCategoriesAdmin };
     (fns[section] || loadDashboard)();
   };
 
@@ -342,6 +342,312 @@ title: Panel de Moderación
     }
   }
 
+  // ── CATEGORÍAS ─────────────────────────────────────────────────
+  let categoriesData = [];
+
+  async function loadCategoriesAdmin() {
+    try {
+      const res = await Auth.authFetch(`${API}/api/admin/categories/tree`);
+      if (!res.ok) { const d = await res.json().catch(()=>({})); throw new Error(d.error || `Error ${res.status}`); }
+      categoriesData = await res.json();
+      renderCategoriesList();
+    } catch (err) {
+      document.getElementById('adminMain').innerHTML = `<div class="alert alert-danger"><strong>Error:</strong> ${escapeHtml(err.message)}</div>`;
+    }
+  }
+
+  function renderCategoriesList() {
+    const html = `
+      <h2 class="eu-section-title mb-1">Categorías</h2>
+      <p class="eu-section-subtitle mb-4">Gestión de categorías de artículos</p>
+
+      <div class="card mb-4" style="background:var(--eu-bg-secondary);border-color:var(--eu-border)">
+        <div class="card-body">
+          <h5 class="mb-3"><i class="bi bi-plus-circle"></i> Nueva categoría</h5>
+          <form id="catCreateForm" class="row g-2" onsubmit="createCategory(event)">
+            <div class="col-md-2">
+              <input type="text" class="form-control form-control-sm" name="name" placeholder="Nombre" required>
+            </div>
+            <div class="col-md-2">
+              <input type="text" class="form-control form-control-sm" name="slug" placeholder="slug-url" pattern="[a-z0-9-]+" title="Solo minúsculas, números y guiones">
+            </div>
+            <div class="col-md-2">
+              <input type="color" class="form-control form-control-sm" name="color" value="#6366f1" title="Color">
+            </div>
+            <div class="col-md-3">
+              <input type="text" class="form-control form-control-sm" name="description" placeholder="Descripción (opcional)">
+            </div>
+            <div class="col-md-1">
+              <input type="number" class="form-control form-control-sm" name="sort_order" placeholder="Orden" value="0">
+            </div>
+            <div class="col-md-2">
+              <button type="submit" class="btn btn-sm btn-primary w-100"><i class="bi bi-plus-lg"></i> Crear</button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <div class="table-responsive">
+        <table class="eu-admin-table">
+          <thead>
+            <tr><th>Color</th><th>Nombre</th><th>Slug</th><th>Descripción</th><th>Orden</th><th>Activo</th><th>Acciones</th></tr>
+          </thead>
+          <tbody id="catTableBody">
+            ${categoriesData.length === 0 ? '<tr><td colspan="7" class="text-center text-muted py-4">Sin categorías</td></tr>' : categoriesData.map(c => renderCategoryRow(c)).join('')}
+          </tbody>
+        </table>
+      </div>`;
+
+    document.getElementById('adminMain').innerHTML = html;
+  }
+
+  function renderCategoryRow(c) {
+    const inactive = c.is_active === 0 || c.is_active === false;
+    return `<tr id="cat-row-${c.id}">
+      <td><span style="display:inline-block;width:20px;height:20px;border-radius:4px;background:${escapeHtml(c.color || '#6366f1')}"></span></td>
+      <td>
+        <span id="cat-name-${c.id}">${escapeHtml(c.name)}</span>
+        <button class="btn btn-sm text-primary p-0 ms-2" onclick="toggleSubcats(${c.id})" title="Subcategorías" id="subcat-toggle-${c.id}">
+          <i class="bi bi-caret-right-fill" id="subcat-icon-${c.id}"></i>
+        </button>
+      </td>
+      <td><code class="small">${escapeHtml(c.slug)}</code></td>
+      <td class="small text-muted" style="max-width:200px">${escapeHtml(c.description || '—')}</td>
+      <td>${c.sort_order ?? 0}</td>
+      <td>${inactive ? '<span class="badge bg-secondary">Inactivo</span>' : '<span class="badge bg-success">Activo</span>'}</td>
+      <td>
+        <div class="d-flex gap-1 flex-nowrap">
+          <button class="btn btn-sm btn-outline-primary" onclick="editCategoryInline(${c.id})" title="Editar"><i class="bi bi-pencil"></i></button>
+          <button class="btn btn-sm btn-outline-danger" onclick="deleteCategory(${c.id})" title="Desactivar"><i class="bi bi-trash"></i></button>
+        </div>
+        <div id="cat-edit-${c.id}" class="d-none mt-2 p-2 border rounded" style="background:var(--eu-bg-secondary);border-color:var(--eu-border)!important">
+          <div class="row g-2">
+            <div class="col-md-2"><input type="text" class="form-control form-control-sm" id="e-name-${c.id}" value="${escapeHtml(c.name)}"></div>
+            <div class="col-md-2"><input type="text" class="form-control form-control-sm" id="e-slug-${c.id}" value="${escapeHtml(c.slug)}"></div>
+            <div class="col-md-1"><input type="color" class="form-control form-control-sm" id="e-color-${c.id}" value="${escapeHtml(c.color || '#6366f1')}"></div>
+            <div class="col-md-3"><input type="text" class="form-control form-control-sm" id="e-desc-${c.id}" value="${escapeHtml(c.description || '')}"></div>
+            <div class="col-md-1"><input type="number" class="form-control form-control-sm" id="e-sort-${c.id}" value="${c.sort_order ?? 0}"></div>
+            <div class="col-md-1"><button class="btn btn-sm btn-success w-100" onclick="saveCategory(${c.id})"><i class="bi bi-check-lg"></i></button></div>
+            <div class="col-md-1"><button class="btn btn-sm btn-secondary w-100" onclick="cancelEditCategory(${c.id})"><i class="bi bi-x-lg"></i></button></div>
+          </div>
+        </div>
+      </td>
+    </tr>
+    <tr id="subcat-row-${c.id}" class="d-none">
+      <td colspan="7" class="p-0">
+        <div id="subcat-container-${c.id}" class="px-4 py-2" style="background:var(--eu-bg-secondary);border-top:1px solid var(--eu-border)">
+          <div id="subcat-list-${c.id}"></div>
+        </div>
+      </td>
+    </tr>`;
+  }
+
+  window.toggleSubcats = async function(catId) {
+    const row = document.getElementById(`subcat-row-${catId}`);
+    const icon = document.getElementById(`subcat-icon-${catId}`);
+    if (row.classList.contains('d-none')) {
+      row.classList.remove('d-none');
+      icon.classList.replace('bi-caret-right-fill', 'bi-caret-down-fill');
+      const list = document.getElementById(`subcat-list-${catId}`);
+      if (!list.dataset.loaded) {
+        list.innerHTML = '<div class="text-muted small"><i class="bi bi-hourglass-split"></i> Cargando...</div>';
+        try {
+          const res = await Auth.authFetch(`${API}/api/admin/categories/${catId}/subcategories`);
+          if (!res.ok) throw new Error((await res.json().catch(()=>({}))).error || `Error ${res.status}`);
+          const subcats = await res.json();
+          list.innerHTML = renderSubcatList(catId, subcats);
+          list.dataset.loaded = '1';
+        } catch (err) {
+          list.innerHTML = `<div class="text-danger small">Error: ${escapeHtml(err.message)}</div>`;
+        }
+      }
+    } else {
+      row.classList.add('d-none');
+      icon.classList.replace('bi-caret-down-fill', 'bi-caret-right-fill');
+    }
+  };
+
+  function renderSubcatList(catId, subcats) {
+    const inactive = s => s.is_active === 0 || s.is_active === false;
+    const html = subcats.length === 0
+      ? '<div class="text-muted small mb-2">Sin subcategorías</div>'
+      : `<table class="table table-sm table-borderless mb-2" style="table-layout:fixed">
+           <thead><tr><th style="width:30%">Nombre</th><th style="width:20%">Slug</th><th style="width:25%">Descripción</th><th style="width:10%">Orden</th><th style="width:15%">Acciones</th></tr></thead>
+           <tbody>
+             ${subcats.map(s => `<tr id="subcat-row-${s.id}">
+               <td>${inactive(s) ? `<del class="text-muted">${escapeHtml(s.name)}</del>` : escapeHtml(s.name)}</td>
+               <td><code class="small">${escapeHtml(s.slug)}</code></td>
+               <td class="small text-muted">${escapeHtml(s.description || '—')}</td>
+               <td>${s.sort_order ?? 0}</td>
+               <td>
+                 <button class="btn btn-sm btn-outline-primary py-0 px-1" onclick="editSubcatInline(${s.id})" title="Editar"><i class="bi bi-pencil"></i></button>
+                 <button class="btn btn-sm btn-outline-danger py-0 px-1" onclick="deleteSubcat(${s.id}, ${catId})" title="Desactivar"><i class="bi bi-trash"></i></button>
+               </td>
+             </tr>
+             <tr id="subcat-edit-${s.id}" class="d-none">
+               <td colspan="5">
+                 <div class="row g-2 align-items-center">
+                   <div class="col-md-3"><input type="text" class="form-control form-control-sm" id="s-name-${s.id}" value="${escapeHtml(s.name)}"></div>
+                   <div class="col-md-2"><input type="text" class="form-control form-control-sm" id="s-slug-${s.id}" value="${escapeHtml(s.slug)}"></div>
+                   <div class="col-md-3"><input type="text" class="form-control form-control-sm" id="s-desc-${s.id}" value="${escapeHtml(s.description || '')}"></div>
+                   <div class="col-md-1"><input type="number" class="form-control form-control-sm" id="s-sort-${s.id}" value="${s.sort_order ?? 0}"></div>
+                   <div class="col-md-1"><button class="btn btn-sm btn-success py-0 px-1" onclick="saveSubcat(${s.id}, ${catId})"><i class="bi bi-check-lg"></i></button></div>
+                   <div class="col-md-1"><button class="btn btn-sm btn-secondary py-0 px-1" onclick="cancelEditSubcat(${s.id})"><i class="bi bi-x-lg"></i></button></div>
+                 </div>
+               </td>
+             </tr>`).join('')}
+           </tbody>
+         </table>`;
+    return html + `<form class="row g-2 align-items-end" onsubmit="createSubcat(event, ${catId})">
+      <div class="col-md-3"><input type="text" class="form-control form-control-sm" name="name" placeholder="Nueva subcategoría" required></div>
+      <div class="col-md-2"><input type="text" class="form-control form-control-sm" name="slug" placeholder="slug-url" pattern="[a-z0-9-]+"></div>
+      <div class="col-md-3"><input type="text" class="form-control form-control-sm" name="description" placeholder="Descripción"></div>
+      <div class="col-md-1"><input type="number" class="form-control form-control-sm" name="sort_order" placeholder="Orden" value="0"></div>
+      <div class="col-md-1"><button type="submit" class="btn btn-sm btn-primary py-0 px-1"><i class="bi bi-plus-lg"></i> Agregar</button></div>
+    </form>`;
+  }
+
+  window.editSubcatInline = function(id) {
+    document.querySelectorAll('[id^="subcat-edit-"]').forEach(el => el.classList.add('d-none'));
+    document.getElementById(`subcat-edit-${id}`).classList.remove('d-none');
+  };
+
+  window.cancelEditSubcat = function(id) {
+    document.getElementById(`subcat-edit-${id}`).classList.add('d-none');
+  };
+
+  window.createSubcat = async function(e, catId) {
+    e.preventDefault();
+    const form = e.target;
+    const body = {
+      category_id: catId,
+      name: form.name.value.trim(),
+      slug: form.slug.value.trim() || undefined,
+      description: form.description.value.trim() || undefined,
+      sort_order: parseInt(form.sort_order.value) || 0
+    };
+    try {
+      const res = await Auth.authFetch(`${API}/api/admin/subcategories`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+      const data = await res.json().catch(()=>({}));
+      if (!res.ok) throw new Error(data.error || `Error ${res.status}`);
+      window.showToast('Subcategoría creada', 'success');
+      form.reset();
+      refreshSubcatList(catId);
+    } catch (err) { window.showToast(err.message, 'error'); }
+  };
+
+  window.saveSubcat = async function(id, catId) {
+    const body = {
+      name: document.getElementById(`s-name-${id}`).value.trim(),
+      slug: document.getElementById(`s-slug-${id}`).value.trim(),
+      description: document.getElementById(`s-desc-${id}`).value.trim(),
+      sort_order: parseInt(document.getElementById(`s-sort-${id}`).value) || 0
+    };
+    try {
+      const res = await Auth.authFetch(`${API}/api/admin/subcategories/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+      const data = await res.json().catch(()=>({}));
+      if (!res.ok) throw new Error(data.error || `Error ${res.status}`);
+      window.showToast('Subcategoría actualizada', 'success');
+      document.getElementById(`subcat-edit-${id}`).classList.add('d-none');
+      refreshSubcatList(catId);
+    } catch (err) { window.showToast(err.message, 'error'); }
+  };
+
+  window.deleteSubcat = async function(id, catId) {
+    if (!confirm('¿Desactivar esta subcategoría?')) return;
+    try {
+      const res = await Auth.authFetch(`${API}/api/admin/subcategories/${id}`, { method: 'DELETE' });
+      const data = await res.json().catch(()=>({}));
+      if (!res.ok) throw new Error(data.error || `Error ${res.status}`);
+      window.showToast('Subcategoría desactivada', 'warning');
+      refreshSubcatList(catId);
+    } catch (err) { window.showToast(err.message, 'error'); }
+  };
+
+  async function refreshSubcatList(catId) {
+    try {
+      const res = await Auth.authFetch(`${API}/api/admin/categories/${catId}/subcategories`);
+      if (!res.ok) throw new Error((await res.json().catch(()=>({}))).error || `Error ${res.status}`);
+      const subcats = await res.json();
+      document.getElementById(`subcat-list-${catId}`).innerHTML = renderSubcatList(catId, subcats);
+    } catch (err) { window.showToast(err.message, 'error'); }
+  }
+
+  window.editCategoryInline = function(id) {
+    document.querySelectorAll('[id^="cat-edit-"]').forEach(el => el.classList.add('d-none'));
+    document.getElementById(`cat-edit-${id}`).classList.remove('d-none');
+  };
+
+  window.cancelEditCategory = function(id) {
+    document.getElementById(`cat-edit-${id}`).classList.add('d-none');
+  };
+
+  window.createCategory = async function(e) {
+    e.preventDefault();
+    const form = e.target;
+    const body = {
+      name: form.name.value.trim(),
+      slug: form.slug.value.trim() || undefined,
+      color: form.color.value,
+      description: form.description.value.trim() || undefined,
+      sort_order: parseInt(form.sort_order.value) || 0
+    };
+    try {
+      const res = await Auth.authFetch(`${API}/api/admin/categories`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+      const data = await res.json().catch(()=>({}));
+      if (!res.ok) throw new Error(data.error || `Error ${res.status}`);
+      window.showToast('Categoría creada', 'success');
+      form.reset();
+      form.color.value = '#6366f1';
+      loadCategoriesAdmin();
+    } catch (err) { window.showToast(err.message, 'error'); }
+  };
+
+  window.saveCategory = async function(id) {
+    const body = {
+      name: document.getElementById(`e-name-${id}`).value.trim(),
+      slug: document.getElementById(`e-slug-${id}`).value.trim(),
+      color: document.getElementById(`e-color-${id}`).value,
+      description: document.getElementById(`e-desc-${id}`).value.trim(),
+      sort_order: parseInt(document.getElementById(`e-sort-${id}`).value) || 0
+    };
+    try {
+      const res = await Auth.authFetch(`${API}/api/admin/categories/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+      const data = await res.json().catch(()=>({}));
+      if (!res.ok) throw new Error(data.error || `Error ${res.status}`);
+      window.showToast('Categoría actualizada', 'success');
+      document.getElementById(`cat-edit-${id}`).classList.add('d-none');
+      loadCategoriesAdmin();
+    } catch (err) { window.showToast(err.message, 'error'); }
+  };
+
+  window.deleteCategory = async function(id) {
+    if (!confirm('¿Desactivar esta categoría?')) return;
+    try {
+      const res = await Auth.authFetch(`${API}/api/admin/categories/${id}`, { method: 'DELETE' });
+      const data = await res.json().catch(()=>({}));
+      if (!res.ok) throw new Error(data.error || `Error ${res.status}`);
+      window.showToast('Categoría desactivada', 'warning');
+      loadCategoriesAdmin();
+    } catch (err) { window.showToast(err.message, 'error'); }
+  };
+
   // ── LOGS ──────────────────────────────────────────────────────
   async function loadLogs() {
     try {
@@ -437,10 +743,16 @@ title: Panel de Moderación
 
       const data = await res.json();
       // ... rest of preview code
-      const { originalContent, proposedContent: markdown, original_title, title, edit_note } = data;
+      const { originalContent, proposedContent: markdown, original_title, title, edit_note,
+              category_name, subcategory_name,
+              original_category_name, original_subcategory_name } = data;
 
       // FIX: html variable was undefined in original code
       const html = markdown ? marked.parse(markdown) : '(sin contenido)';
+
+      const sameCat = original_category_name === category_name || (!original_category_name && !category_name);
+      const sameSubcat = original_subcategory_name === subcategory_name || (!original_subcategory_name && !subcategory_name);
+      const catChanged = !sameCat || !sameSubcat;
 
       const modal = document.createElement('div');
       modal.innerHTML = `
@@ -452,6 +764,28 @@ title: Panel de Moderación
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
               </div>
               <div class="modal-body">
+                <div class="mb-3 p-3 rounded" style="background:var(--eu-bg-secondary);border:1px solid var(--eu-border)">
+                  <div class="row g-3">
+                    <div class="col-md-6">
+                      <div class="small text-muted mb-1">Artículo original</div>
+                      <div class="fw-semibold">${escapeHtml(original_title)}</div>
+                      <div class="small text-muted">
+                        Categoría: <span class="${sameCat ? 'text-muted' : 'text-warning fw-semibold'}">${escapeHtml(original_category_name || '—')}</span>
+                        ${!sameCat ? '<i class="bi bi-arrow-right mx-1"></i>' : ''}
+                        Subcategoría: <span class="${sameSubcat ? 'text-muted' : 'text-warning fw-semibold'}">${escapeHtml(original_subcategory_name || '—')}</span>
+                      </div>
+                    </div>
+                    <div class="col-md-6">
+                      <div class="small text-muted mb-1">Propuesta de edición</div>
+                      <div class="fw-semibold ${title && title !== original_title ? 'text-success' : ''}">${escapeHtml(title || original_title)}</div>
+                      <div class="small text-muted">
+                        Categoría: <span class="${sameCat ? 'text-muted' : 'text-success fw-semibold'}">${escapeHtml(category_name || '—')}</span>
+                        ${!sameCat ? '<i class="bi bi-arrow-left mx-1"></i>' : ''}
+                        Subcategoría: <span class="${sameSubcat ? 'text-muted' : 'text-success fw-semibold'}">${escapeHtml(subcategory_name || '—')}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
                 <ul class="nav nav-tabs mb-3" role="tablist">
                   <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#previewTab">Renderizado</button></li>
                   <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#markdownTab">Markdown</button></li>
