@@ -46,6 +46,9 @@ description: Enciclopedia colaborativa universitaria en español
     <select class="eu-select" id="categoryFilter" style="width:auto;padding:6px 12px">
       <option value="">Todas las categorías</option>
     </select>
+    <select class="eu-select" id="subcategoryFilter" style="width:auto;padding:6px 12px" disabled>
+      <option value="">Todas las subcategorías</option>
+    </select>
     <select class="eu-select" id="sortFilter" style="width:auto;padding:6px 12px">
       <option value="recent">Más recientes</option>
       <option value="popular">Más vistos</option>
@@ -195,6 +198,12 @@ description: Enciclopedia colaborativa universitaria en español
   const BASE = window.EU_CONFIG.baseUrl;
   let currentPage = 1;
   let currentCategory = '';
+  let currentSubcategory = '';
+  const subcategoryRules = {
+    'irp': ['Física', 'Matemáticas', 'Programación'],
+    'ieu': ['Lenguaje', 'Comunicación', 'Literatura', 'Prácticas de estudio universitario'],
+    'icyt': ['Química', 'Biología', 'Bioquímica', 'Temas relacionados']
+  };
 
   // Cargar categorías
   async function loadCategories() {
@@ -210,20 +219,52 @@ description: Enciclopedia colaborativa universitaria en español
         sel.appendChild(opt);
       });
     } catch (e) {}
+
+    const catSel = document.getElementById('categoryFilter');
+    const subSel = document.getElementById('subcategoryFilter');
+    if (catSel && subSel) {
+      catSel.addEventListener('change', function() {
+        currentCategory = this.value;
+        const subOpts = subcategoryRules[currentCategory];
+        if (!subOpts) {
+          subSel.innerHTML = '<option value="">Todas las subcategorías</option>';
+          subSel.disabled = true;
+          currentSubcategory = '';
+        } else {
+          subSel.innerHTML = '<option value="">Todas las subcategorías</option>';
+          subOpts.forEach(function(s) {
+            const opt = document.createElement('option');
+            opt.value = s;
+            opt.textContent = s;
+            subSel.appendChild(opt);
+          });
+          subSel.disabled = false;
+        }
+        loadArticles(1);
+      });
+      subSel.addEventListener('change', function() {
+        currentSubcategory = this.value;
+        loadArticles(1);
+      });
+    }
   }
 
   // Cargar artículos
   async function loadArticles(page = 1) {
     const container = document.getElementById('articlesContainer');
     const subtitle = document.getElementById('articlesSubtitle');
+    const sortFilter = document.getElementById('sortFilter');
+    const sort = sortFilter ? sortFilter.value : 'recent';
     container.innerHTML = '<div class="eu-loading"><div class="eu-spinner"></div><span>Cargando...</span></div>';
 
     const includePending = localStorage.getItem('eu_show_pending') === 'true';
     const url = new URL(`${API}/api/articles`);
     url.searchParams.set('page', page);
     url.searchParams.set('limit', '12');
+    url.searchParams.set('sort', sort);
     if (includePending) url.searchParams.set('includePending', 'true');
     if (currentCategory) url.searchParams.set('category', currentCategory);
+    if (currentSubcategory) url.searchParams.set('subcategory', currentSubcategory);
 
     try {
       const res = await fetch(url);

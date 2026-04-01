@@ -9,7 +9,12 @@
   var articleData = null;
   var existingSources = [];
   var pendingPdf = null;
- 
+  var subcategoryRules = {
+    'irp': ['Física', 'Matemáticas', 'Programación'],
+    'ieu': ['Lenguaje', 'Comunicación', 'Literatura', 'Prácticas de estudio universitario'],
+    'icyt': ['Química', 'Biología', 'Bioquímica', 'Temas relacionados']
+  };
+
   async function loadEditCategories(currentCategory) {
     var select = document.getElementById('editCategorySelect');
     if (!select) return;
@@ -27,6 +32,42 @@
       });
     } catch (err) {
       console.warn('Failed to load edit categories:', err);
+    }
+
+    select.addEventListener('change', function() {
+      var cat = this.value;
+      var subSelect = document.getElementById('editSubcategorySelect');
+      var subOpts = subcategoryRules[cat];
+      if (!subOpts) {
+        subSelect.innerHTML = '<option value="">Selecciona una categoría primero</option>';
+        subSelect.disabled = true;
+      } else {
+        subSelect.innerHTML = '<option value="">Sin subcategoría</option>';
+        subOpts.forEach(function(s) {
+          var opt = document.createElement('option');
+          opt.value = s;
+          opt.textContent = s;
+          subSelect.appendChild(opt);
+        });
+        subSelect.disabled = false;
+      }
+    });
+
+    if (currentCategory) {
+      var subOpts = subcategoryRules[currentCategory];
+      var subSelect = document.getElementById('editSubcategorySelect');
+      var currentSub = articleData && articleData.subcategory;
+      if (subOpts && subSelect) {
+        subSelect.innerHTML = '<option value="">Sin subcategoría</option>';
+        subOpts.forEach(function(s) {
+          var opt = document.createElement('option');
+          opt.value = s;
+          opt.textContent = s;
+          if (s === currentSub) opt.selected = true;
+          subSelect.appendChild(opt);
+        });
+        subSelect.disabled = false;
+      }
     }
   }
 
@@ -506,6 +547,7 @@
     var content = document.getElementById('editContent')?.value.trim();
     var note = document.getElementById('editNote')?.value.trim();
     var category = getSelectedEditCategory() || (articleData && articleData.category) || null;
+    var subcategory = document.getElementById('editSubcategorySelect')?.value || null;
     var msgEl = document.getElementById('submitMsg');
     var btn = document.getElementById('submitBtn');
     var spinner = document.getElementById('submitSpinner');
@@ -521,7 +563,7 @@
     try {
       var res = await Auth.authFetch(API + '/api/articles/' + articleId + '/edit', {
         method: 'POST',
-        body: JSON.stringify({ title:title, summary:summary, content:content, editNote:note, category:category })
+        body: JSON.stringify({ title:title, summary:summary, content:content, editNote:note, category:category, subcategory:subcategory })
       });
       var data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Error al enviar edición');

@@ -45,6 +45,13 @@
     <small class="text-muted d-block mt-1">Puedes sugerir mover el artículo a otra categoría; el cambio también quedará pendiente de aprobación.</small>
   </div>
 
+  <div class="mb-3">
+    <label class="eu-label" for="editSubcategorySelect">Subcategoría <span class="text-muted fw-normal small">— deja en blanco para mantener la actual</span></label>
+    <select id="editSubcategorySelect" class="eu-input w-100" aria-label="Subcategoría propuesta" disabled>
+      <option value="">Selecciona una categoría primero</option>
+    </select>
+  </div>
+
   <div class="mb-4">
     <label class="eu-label">Nota para moderadores <span class="text-muted fw-normal small">(opcional)</span></label>
     <textarea id="editNote" class="eu-input" rows="2" maxlength="1000" placeholder="Ej: Corregí el tercer párrafo con datos actualizados."></textarea>
