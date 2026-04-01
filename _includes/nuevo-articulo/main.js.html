@@ -384,9 +384,9 @@
     var title = document.getElementById('artTitle').value.trim();
     var summary = document.getElementById('artSummary').value.trim();
     var content = document.getElementById('artContent').value.trim();
-    var categorySel = window.HierarchicalCategorySelector ? window.HierarchicalCategorySelector.getSelection() : { categoryId: null, subcategoryId: null };
-    var categoryId = categorySel.categoryId;
-    var subcategoryId = categorySel.subcategoryId;
+    var selection = window.HierarchicalCategorySelector ? window.HierarchicalCategorySelector.getSelection() : null;
+    var categoryId = selection && selection.categoryId ? selection.categoryId : null;
+    var subcategoryId = selection && selection.subcategoryId ? selection.subcategoryId : null;
     var coverImageId = document.getElementById('artCoverImage').value;
     var btn = document.getElementById('publishBtn');
     var alertEl = document.getElementById('publishAlert');

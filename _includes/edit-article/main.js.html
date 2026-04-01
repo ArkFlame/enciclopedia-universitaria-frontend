@@ -116,13 +116,13 @@
         }
       } catch(e) {}
 
-      populateEditor(articleData, rawContent);
+      await populateEditor(articleData, rawContent);
     } catch(e) {
       renderError(e.message);
     }
   }
 
-  function populateEditor(article, rawContent) {
+  async function populateEditor(article, rawContent) {
     document.getElementById('editTitle').value = article.title;
     document.getElementById('editSummary').value = article.summary || '';
     document.getElementById('editContent').value = rawContent;
@@ -486,9 +486,9 @@
     var summary = document.getElementById('editSummary')?.value.trim();
     var content = document.getElementById('editContent')?.value.trim();
     var note = document.getElementById('editNote')?.value.trim();
-    var categorySel = window.HierarchicalCategorySelector ? window.HierarchicalCategorySelector.getSelection() : { categoryId: null, subcategoryId: null };
-    var categoryId = categorySel.categoryId || null;
-    var subcategoryId = categorySel.subcategoryId || null;
+    var selection = window.HierarchicalCategorySelector ? window.HierarchicalCategorySelector.getSelection() : null;
+    var categoryId = selection && selection.categoryId ? selection.categoryId : null;
+    var subcategoryId = selection && selection.subcategoryId ? selection.subcategoryId : null;
     var msgEl = document.getElementById('submitMsg');
     var btn = document.getElementById('submitBtn');
     var spinner = document.getElementById('submitSpinner');
