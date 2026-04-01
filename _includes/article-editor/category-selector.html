@@ -90,6 +90,15 @@ Provides contextual parent->child selector with hover/click expansion
       });
   }
 
+  function findCategoryById(categoryId) {
+    return categoryTree.find(function(c) { return c.id === categoryId; }) || null;
+  }
+
+  function findSubcategoryById(category, subcategoryId) {
+    if (!category || !category.children || !subcategoryId) return null;
+    return category.children.find(function(s) { return s.id === subcategoryId; }) || null;
+  }
+
   function renderCategoryColumn() {
     var column = document.getElementById('categoryColumn');
     if (!column) return;
@@ -127,7 +136,7 @@ Provides contextual parent->child selector with hover/click expansion
     var column = document.getElementById('subcategoryColumn');
     if (!column) return;
 
-    var parent = categoryTree.find(function(c) { return c.id === parentId; });
+    var parent = findCategoryById(parentId);
     if (!parent || !parent.children || parent.children.length === 0) {
       column.style.display = 'none';
       return;
@@ -177,17 +186,18 @@ Provides contextual parent->child selector with hover/click expansion
 
   function selectCategory(categoryId, subcategoryId) {
     currentCategoryId = categoryId;
-    currentSubcategoryId = subcategoryId || null;
 
     selectedCategory = null;
     selectedSubcategory = null;
 
     if (categoryId) {
-      selectedCategory = categoryTree.find(function(c) { return c.id === categoryId; });
+      selectedCategory = findCategoryById(categoryId);
       if (selectedCategory && subcategoryId && selectedCategory.children) {
-        selectedSubcategory = selectedCategory.children.find(function(s) { return s.id === subcategoryId; });
+        selectedSubcategory = findSubcategoryById(selectedCategory, subcategoryId);
       }
     }
+
+    currentSubcategoryId = selectedSubcategory ? subcategoryId : null;
 
     renderCategoryColumn();
 
