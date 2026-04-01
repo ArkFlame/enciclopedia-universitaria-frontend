@@ -279,8 +279,8 @@ Provides contextual parent->child selector with hover/click expansion
       this.init().then(function() {
         if (pendingSelection && pendingSelection.categoryId === categoryId && pendingSelection.subcategoryId === subcategoryId) {
           pendingSelection = null;
+          doSet();
         }
-        doSet();
       });
       return;
     }
@@ -290,8 +290,8 @@ Provides contextual parent->child selector with hover/click expansion
       this.init().then(function() {
         if (pendingSelection && pendingSelection.categoryId === categoryId && pendingSelection.subcategoryId === subcategoryId) {
           pendingSelection = null;
+          doSet();
         }
-        doSet();
       });
       return;
     }

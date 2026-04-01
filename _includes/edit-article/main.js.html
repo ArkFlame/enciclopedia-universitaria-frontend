@@ -151,12 +151,11 @@
     updateCharCount();
 
     if (window.HierarchicalCategorySelector) {
-      await window.HierarchicalCategorySelector.init();
+      var selector = window.HierarchicalCategorySelector;
+      await selector.init();
       var categoryId = article.category_id || article.categoryId || null;
       var subcategoryId = article.subcategory_id || article.subcategoryId || null;
-      if (categoryId || subcategoryId) {
-        window.HierarchicalCategorySelector.setSelection(categoryId, subcategoryId);
-      }
+      selector.setSelection(categoryId, subcategoryId);
     }
 
     document.getElementById('editorPage').style.display = 'none';

@@ -416,22 +416,39 @@ description: Enciclopedia colaborativa universitaria en español
     const parentId = item.dataset.parentId;
 
     if (parentId) {
-      selectedCategory = categoryTree.find(c => c.id === parseInt(parentId));
+      const parent = categoryTree.find(c => c.id === parseInt(parentId));
+      if (parent) {
+        selectedCategory = parent;
+        currentCategoryId = parentId;
+      }
       selectedSubcategory = { id: parseInt(catId), name: catName };
-      currentCategoryId = parentId;
       currentSubcategoryId = catId;
     } else {
+      const hasChildren = item.dataset.hasChildren === 'true';
+      if (hasChildren) {
+        if (openSubmenu && openSubmenu.dataset.id === catId) {
+          closeSubmenu();
+          openSubmenu = null;
+        } else {
+          showSubmenu(item);
+        }
+        return;
+      }
       selectedCategory = categoryTree.find(c => c.id === parseInt(catId));
-      selectedSubcategory = null;
+      if (currentSubcategoryId && currentCategoryId !== catId) {
+        const currentParent = categoryTree.find(c => c.children?.some(s => s.id === parseInt(currentSubcategoryId)));
+        if (!currentParent || currentParent.id !== parseInt(catId)) {
+          selectedSubcategory = null;
+          currentSubcategoryId = '';
+        }
+      }
       currentCategoryId = catId;
-      currentSubcategoryId = '';
+      closeSubmenu();
+      updateLabel();
+      container.classList.remove('open');
+      currentPage = 1;
+      loadArticles(1);
     }
-
-    closeSubmenu();
-    updateLabel();
-    container.classList.remove('open');
-    currentPage = 1;
-    loadArticles(1);
   });
 
   function updateLabel() {
@@ -471,6 +488,18 @@ description: Enciclopedia colaborativa universitaria en español
         selectedCategory = categoryTree.find(c => c.id === parseInt(catId));
         if (selectedCategory) {
           currentCategoryId = catId;
+        }
+      }
+      updateLabel();
+    } else if (subId && categoryTree.length) {
+      const parent = categoryTree.find(c => c.children?.some(s => s.id === parseInt(subId)));
+      if (parent) {
+        const child = parent.children.find(s => s.id === parseInt(subId));
+        if (child) {
+          selectedCategory = parent;
+          selectedSubcategory = child;
+          currentCategoryId = String(parent.id);
+          currentSubcategoryId = subId;
         }
       }
       updateLabel();

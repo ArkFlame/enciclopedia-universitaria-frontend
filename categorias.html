@@ -279,9 +279,17 @@ description: Explora los artículos de la enciclopedia por categoría temática
       }
     } else {
       selectedCategory = categoryTree.find(c => c.id === parseInt(catId));
-      selectedSubcategory = null;
+      if (currentSubcategoryId && currentCatId !== catId) {
+        const currentParent = categoryTree.find(c => c.children?.some(s => s.id === parseInt(currentSubcategoryId)));
+        if (!currentParent || currentParent.id !== parseInt(catId)) {
+          selectedSubcategory = null;
+          currentSubcategoryId = '';
+        }
+      } else if (!currentSubcategoryId) {
+        selectedSubcategory = null;
+        currentSubcategoryId = '';
+      }
       currentCatId = catId;
-      currentSubcategoryId = '';
       openSubmenuId = null;
       updateLabel();
       container.classList.remove('open');
@@ -318,6 +326,30 @@ description: Explora los artículos de la enciclopedia por categoría temática
       selectedCategory = categoryTree.find(c => c.id === parseInt(parentId));
       selectedSubcategory = { id: parseInt(catId), name: catName };
       currentCatId = parentId;
+      currentSubcategoryId = catId;
+      openSubmenuId = null;
+      updateLabel();
+      container.classList.remove('open');
+      clearBtn.style.display = 'inline-flex';
+      filterByCategory();
+    }
+  });
+
+  treeContainer && treeContainer.addEventListener('click', (e) => {
+    const item = e.target.closest('.eu-category-item');
+    if (!item || item.dataset.hasChildren === 'true') return;
+    if (item.dataset.parentId) return;
+
+    const catId = item.dataset.id;
+    const catName = item.dataset.name;
+    const hasChildren = item.dataset.hasChildren === 'true';
+    if (hasChildren) return;
+
+    const parent = categoryTree.find(c => c.children?.some(s => s.id === parseInt(catId)));
+    if (parent) {
+      selectedCategory = parent;
+      currentCatId = String(parent.id);
+      selectedSubcategory = { id: parseInt(catId), name: catName };
       currentSubcategoryId = catId;
       openSubmenuId = null;
       updateLabel();
@@ -383,6 +415,20 @@ description: Explora los artículos de la enciclopedia por categoría temática
         selectedCategory = categoryTree.find(c => c.id === parseInt(catId));
         if (selectedCategory) {
           currentCatId = catId;
+        }
+      }
+      updateLabel();
+      renderCategoryTree();
+      clearBtn.style.display = 'inline-flex';
+    } else if (subId && categoryTree.length) {
+      const parent = categoryTree.find(c => c.children?.some(s => s.id === parseInt(subId)));
+      if (parent) {
+        const child = parent.children.find(s => s.id === parseInt(subId));
+        if (child) {
+          selectedCategory = parent;
+          selectedSubcategory = child;
+          currentCatId = String(parent.id);
+          currentSubcategoryId = subId;
         }
       }
       updateLabel();
