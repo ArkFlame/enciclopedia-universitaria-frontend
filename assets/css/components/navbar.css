@@ -148,6 +148,8 @@
   gap: 8px;
   flex-shrink: 0;
   min-width: 0;
+  margin-left: auto;
+  justify-content: flex-end;
 }
 .eu-icon-btn {
   display: inline-flex;

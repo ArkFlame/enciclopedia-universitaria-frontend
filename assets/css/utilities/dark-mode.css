@@ -84,3 +84,30 @@
 }
 
 /* Dark mode adjustments */
+
+/* Fix: Bootstrap pagination in dark mode */
+[data-theme="dark"] .pagination .page-link {
+  background: var(--eu-surface) !important;
+  color: var(--eu-text) !important;
+  border-color: var(--eu-border) !important;
+}
+
+[data-theme="dark"] .pagination .page-link:hover,
+[data-theme="dark"] .pagination .page-link:focus {
+  background: var(--eu-bg-secondary) !important;
+  color: var(--eu-text) !important;
+  border-color: var(--eu-border) !important;
+  box-shadow: none !important;
+}
+
+[data-theme="dark"] .pagination .page-item.active .page-link {
+  background: var(--eu-text) !important;
+  color: var(--eu-surface) !important;
+  border-color: var(--eu-text) !important;
+}
+
+[data-theme="dark"] .pagination .page-item.disabled .page-link {
+  background: var(--eu-bg-secondary) !important;
+  color: var(--eu-text-muted) !important;
+  border-color: var(--eu-border) !important;
+}
