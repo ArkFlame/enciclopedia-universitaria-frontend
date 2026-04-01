@@ -534,8 +534,10 @@ description: Enciclopedia colaborativa universitaria en español
     const statusBadge = a.status !== 'APPROVED'
       ? `<span class="eu-status-badge eu-status-${a.status}">${a.status === 'PENDING' ? '⏳ Pendiente' : '✕ Rechazado'}</span>`
       : '';
-    const categoryLabel = a.subcategory ? `${a.category} / ${a.subcategory}` : (a.category || '');
-    const catBadge = categoryLabel ? `<span class="eu-category-tag">${escapeHtml(categoryLabel)}</span>` : '';
+    const categoryLabel = a.category
+      ? (a.subcategory ? `${a.category} / ${a.subcategory}` : a.category)
+      : (a.subcategory || 'Sin categoría');
+    const catBadge = `<span class="eu-category-tag">${escapeHtml(categoryLabel)}</span>`;
 
     const coverImageUrl = a.coverImageUrl || (a.coverImage && a.coverImage.public_url);
     const coverImageHtml = coverImageUrl

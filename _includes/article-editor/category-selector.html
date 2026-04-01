@@ -24,6 +24,30 @@ Provides contextual parent->child selector with hover/click expansion
   var pendingSelection = null;
   var activeParentId = null;
 
+  function renderEmptyState(message) {
+    var select = document.getElementById('categorySelect');
+    var subSelect = document.getElementById('subcategorySelect');
+    var subDropdown = document.getElementById('subcategoryDropdown');
+
+    currentCategoryId = null;
+    currentSubcategoryId = null;
+    selectedCategory = null;
+    selectedSubcategory = null;
+    categoryTree = Array.isArray(categoryTree) ? categoryTree : [];
+
+    if (select) {
+      select.innerHTML = '<option value="">' + message + '</option>';
+    }
+    if (subSelect) {
+      subSelect.innerHTML = '<option value="">Sin subcategoría</option>';
+    }
+    if (subDropdown) {
+      subDropdown.style.display = 'none';
+    }
+
+    triggerChange();
+  }
+
   function getApi() {
     if (typeof API !== 'undefined') return API;
     if (window.EU_CONFIG && window.EU_CONFIG.api) return window.EU_CONFIG.api;
@@ -51,17 +75,27 @@ Provides contextual parent->child selector with hover/click expansion
         return res.json();
       })
       .then(function(data) {
+        if (!data || !Array.isArray(data) || data.length === 0) {
+          renderEmptyState('No hay categorías');
+          return;
+        }
         categoryTree = data;
         renderCategoryColumn();
       })
       .catch(function(e) {
         console.warn(e.message);
+        renderEmptyState('No hay categorías');
       });
   }
 
   function renderCategoryColumn() {
     var column = document.getElementById('categoryColumn');
     if (!column) return;
+
+    if (!Array.isArray(categoryTree) || categoryTree.length === 0) {
+      renderEmptyState('No hay categorías');
+      return;
+    }
 
     column.innerHTML = '';
 

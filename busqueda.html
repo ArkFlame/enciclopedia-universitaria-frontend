@@ -458,7 +458,12 @@ title: Resultados de búsqueda
           <div class="eu-result-summary">${summary}</div>
           <div class="eu-result-meta">
             <span><i class="bi bi-person" style="margin-right:4px"></i>${escHtml(a.author_username)}</span>
-            ${a.category ? `<span><i class="bi bi-tag" style="margin-right:4px"></i>${escHtml(a.category)}</span>` : ''}
+            ${(() => {
+              const categoryLabel = a.category
+                ? (a.subcategory ? `${a.category} / ${a.subcategory}` : a.category)
+                : (a.subcategory || 'Sin categoría');
+              return `<span><i class="bi bi-tag" style="margin-right:4px"></i>${escHtml(categoryLabel)}</span>`;
+            })()}
             <span><i class="bi bi-calendar3" style="margin-right:4px"></i>${fmtDate(a.created_at)}</span>
           </div>
         </div>

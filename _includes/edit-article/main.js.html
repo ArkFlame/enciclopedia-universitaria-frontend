@@ -152,8 +152,10 @@
 
     if (window.HierarchicalCategorySelector) {
       await window.HierarchicalCategorySelector.init();
-      if (article.category_id || article.subcategory_id) {
-        window.HierarchicalCategorySelector.setSelection(article.category_id, article.subcategory_id);
+      var categoryId = article.category_id || article.categoryId || null;
+      var subcategoryId = article.subcategory_id || article.subcategoryId || null;
+      if (categoryId || subcategoryId) {
+        window.HierarchicalCategorySelector.setSelection(categoryId, subcategoryId);
       }
     }
 

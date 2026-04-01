@@ -141,9 +141,11 @@ title: Cargando artículo...
         </div>
       </div>` : '';
 
-    const categoryTag = data.category
-      ? `<span class="eu-category-tag">${escapeHtml(data.subcategory ? `${data.category} / ${data.subcategory}` : data.category)}</span>`
-      : '';
+    const categoryLabel = data.category
+      ? (data.subcategory ? `${data.category} / ${data.subcategory}` : data.category)
+      : (data.subcategory || 'Sin categoría');
+
+    const categoryTag = `<span class="eu-category-tag">${escapeHtml(categoryLabel)}</span>`;
 
     const coverImageUrl = data.coverImageUrl || (data.coverImage && data.coverImage.public_url);
     const coverImageHtml = coverImageUrl
@@ -205,7 +207,7 @@ title: Cargando artículo...
             <div class="small" style="color:var(--eu-text-secondary)">
               <div class="mb-1">Autor: <strong>${escapeHtml(data.author_username)}</strong></div>
               <div class="mb-1">Versión: <strong>${data.version}</strong></div>
-              ${data.category ? `<div class="mb-1">Categoría: <strong>${escapeHtml(data.subcategory ? `${data.category} / ${data.subcategory}` : data.category)}</strong></div>` : ''}
+              <div class="mb-1">Categoría: <strong>${escapeHtml(categoryLabel)}</strong></div>
               <div>Publicado: <strong>${formatDate(data.created_at)}</strong></div>
             </div>
           </div>

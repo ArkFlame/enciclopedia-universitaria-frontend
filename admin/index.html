@@ -393,7 +393,7 @@ title: Panel de Moderación
             <tr><th>Color</th><th>Nombre</th><th>Slug</th><th>Descripción</th><th>Orden</th><th>Activo</th><th>Acciones</th></tr>
           </thead>
           <tbody id="catTableBody">
-            ${categoriesData.length === 0 ? '<tr><td colspan="7" class="text-center text-muted py-4">Sin categorías</td></tr>' : categoriesData.map(c => renderCategoryRow(c)).join('')}
+            ${categoriesData.length === 0 ? '<tr><td colspan="7" class="text-center text-muted py-4">No hay categorías</td></tr>' : categoriesData.map(c => renderCategoryRow(c)).join('')}
           </tbody>
         </table>
       </div>`;
