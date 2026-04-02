@@ -28,6 +28,67 @@ title: Panel de Moderación
 .subcat-drop-zone tr { cursor: default; }
 .subcat-drop-zone tr.dragging { opacity: 0.5; cursor: grabbing; }
 .subcat-drop-zone tr.drag-over { background: var(--eu-bg-secondary); }
+
+.eu-taxonomy-shell {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.eu-taxonomy-card {
+  background: linear-gradient(180deg, color-mix(in srgb, var(--eu-surface) 92%, white 8%), var(--eu-surface));
+  border: 1px solid var(--eu-border);
+  border-radius: 18px;
+  box-shadow: 0 10px 30px rgba(0,0,0,.10);
+  overflow: hidden;
+}
+
+.eu-taxonomy-card .card-body {
+  padding: 1rem 1.1rem;
+}
+
+.eu-taxonomy-title {
+  display: flex;
+  align-items: center;
+  gap: .65rem;
+  margin-bottom: .35rem;
+}
+
+.eu-taxonomy-title i {
+  width: 36px;
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--eu-primary) 14%, transparent);
+  color: var(--eu-primary);
+}
+
+.eu-taxonomy-table-wrap {
+  background: var(--eu-surface);
+  border: 1px solid var(--eu-border);
+  border-radius: 18px;
+  overflow: hidden;
+  box-shadow: 0 10px 30px rgba(0,0,0,.08);
+}
+
+.eu-taxonomy-muted {
+  color: var(--eu-text-muted);
+}
+
+.eu-taxonomy-inline-editor {
+  background: color-mix(in srgb, var(--eu-bg-secondary) 80%, transparent);
+  border: 1px solid var(--eu-border) !important;
+  border-radius: 14px;
+}
+
+@media (max-width: 768px) {
+  .eu-taxonomy-card .card-body,
+  .eu-taxonomy-table-wrap {
+    border-radius: 14px;
+  }
+}
 </style>
 
 <script>
@@ -377,31 +438,32 @@ title: Panel de Moderación
       <h2 class="eu-section-title mb-1">Categorías</h2>
       <p class="eu-section-subtitle mb-4">Gestión de categorías de artículos</p>
 
-      <div class="card mb-4" style="background:var(--eu-bg-secondary);border-color:var(--eu-border)">
-        <div class="card-body">
-          <h5 class="mb-3"><i class="bi bi-plus-circle"></i> Nueva categoría</h5>
-          <form id="catCreateForm" class="row g-2" onsubmit="createCategory(event)">
-            <div class="col-12 col-sm-6 col-md-3">
-              <input type="text" class="form-control form-control-sm" name="name" placeholder="Nombre" required>
-            </div>
-            <div class="col-12 col-sm-6 col-md-3">
-              <input type="text" class="form-control form-control-sm" name="slug" placeholder="slug-url" autocapitalize="off" autocorrect="off" spellcheck="false">
-            </div>
-            <div class="col-6 col-sm-4 col-md-2">
-              <input type="color" class="form-control form-control-sm" name="color" value="#6366f1" title="Color">
-            </div>
-            <div class="col-12 col-md-3">
-              <input type="text" class="form-control form-control-sm" name="description" placeholder="Descripción (opcional)">
-            </div>
-            <div class="col-12 col-sm-4 col-md-1">
-              <button type="submit" class="btn btn-sm btn-primary w-100"><i class="bi bi-plus-lg"></i> Crear</button>
-            </div>
-          </form>
+      <div class="eu-taxonomy-shell">
+        <div class="eu-taxonomy-card">
+          <div class="card-body">
+            <div class="eu-taxonomy-title"><i class="bi bi-plus-circle"></i><h5 class="mb-0">Nueva categoría</h5></div>
+            <form id="catCreateForm" class="row g-2 mt-2" onsubmit="createCategory(event)">
+              <div class="col-12 col-sm-6 col-md-3">
+                <input type="text" class="form-control form-control-sm" name="name" placeholder="Nombre" required>
+              </div>
+              <div class="col-12 col-sm-6 col-md-3">
+                <input type="text" class="form-control form-control-sm" name="slug" placeholder="slug-url" autocapitalize="off" autocorrect="off" spellcheck="false">
+              </div>
+              <div class="col-6 col-sm-4 col-md-2">
+                <input type="color" class="form-control form-control-sm" name="color" value="#6366f1" title="Color">
+              </div>
+              <div class="col-12 col-md-3">
+                <input type="text" class="form-control form-control-sm" name="description" placeholder="Descripción (opcional)">
+              </div>
+              <div class="col-12 col-sm-4 col-md-1">
+                <button type="submit" class="btn btn-sm btn-primary w-100"><i class="bi bi-plus-lg"></i> Crear</button>
+              </div>
+            </form>
+          </div>
         </div>
-      </div>
 
-      <div class="table-responsive">
-        <table class="eu-admin-table">
+        <div class="eu-taxonomy-table-wrap">
+          <table class="eu-admin-table">
           <thead>
             <tr><th style="width:40px"></th><th>Color</th><th>Nombre</th><th>Slug</th><th>Descripción</th><th>Activo</th><th>Acciones</th></tr>
           </thead>
@@ -409,6 +471,7 @@ title: Panel de Moderación
             ${categoriesData.length === 0 ? '<tr><td colspan="7" class="text-center text-muted py-4">No hay categorías</td></tr>' : categoriesData.map(c => renderCategoryRow(c)).join('')}
           </tbody>
         </table>
+        </div>
       </div>`;
 
     document.getElementById('adminMain').innerHTML = html;
@@ -502,7 +565,7 @@ title: Panel de Moderación
           <button class="btn btn-sm btn-outline-primary" onclick="editCategoryInline(${c.id})" title="Editar"><i class="bi bi-pencil"></i></button>
           <button class="btn btn-sm btn-outline-danger" onclick="deleteCategory(${c.id})" title="Desactivar"><i class="bi bi-trash"></i></button>
         </div>
-        <div id="cat-edit-${c.id}" class="d-none mt-2 p-2 border rounded" style="background:var(--eu-bg-secondary);border-color:var(--eu-border)!important">
+        <div id="cat-edit-${c.id}" class="d-none mt-2 p-2 eu-taxonomy-inline-editor">
           <div class="row g-2">
             <div class="col-12 col-sm-6 col-md-3"><input type="text" class="form-control form-control-sm" id="e-name-${c.id}" value="${escapeHtml(c.name)}"></div>
             <div class="col-12 col-sm-6 col-md-3"><input type="text" class="form-control form-control-sm" id="e-slug-${c.id}" value="${escapeHtml(c.slug)}"></div>

@@ -155,6 +155,15 @@ Provides contextual parent->child selector with hover/click expansion
     back.textContent = '← ' + parent.name;
     column.appendChild(back);
 
+    var none = document.createElement('div');
+    none.className = 'category-option sub-option none-option';
+    none.dataset.categoryId = parentId;
+    none.textContent = 'Sin subcategoría';
+    if (currentCategoryId === parentId && currentSubcategoryId === null) {
+      none.classList.add('active');
+    }
+    column.appendChild(none);
+
     parent.children.forEach(function(sub) {
       var el = document.createElement('div');
       el.className = 'category-option sub-option';
@@ -197,7 +206,12 @@ Provides contextual parent->child selector with hover/click expansion
       }
     }
 
-    currentSubcategoryId = selectedSubcategory ? subcategoryId : null;
+    currentSubcategoryId = selectedSubcategory ? selectedSubcategory.id : null;
+
+    if (categoryId && !selectedCategory) {
+      currentCategoryId = null;
+      currentSubcategoryId = null;
+    }
 
     renderCategoryColumn();
 
@@ -223,11 +237,8 @@ Provides contextual parent->child selector with hover/click expansion
         var catId = option.dataset.categoryId ? parseInt(option.dataset.categoryId) : null;
 
         if (option.dataset.hasChildren === 'true') {
-          if (activeParentId === catId) {
-            selectCategory(catId, null);
-          } else {
-            showSubcategory(catId);
-          }
+          selectCategory(catId, null);
+          showSubcategory(catId);
         } else {
           selectCategory(catId, null);
         }
@@ -257,7 +268,7 @@ Provides contextual parent->child selector with hover/click expansion
 
         var catId = option.dataset.categoryId ? parseInt(option.dataset.categoryId) : null;
         var subId = option.dataset.subcategoryId ? parseInt(option.dataset.subcategoryId) : null;
-        selectCategory(catId, subId);
+        selectCategory(catId, subId || null);
       });
 
       subColumn.addEventListener('mouseover', function(e) {
