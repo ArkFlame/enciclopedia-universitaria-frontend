@@ -547,12 +547,12 @@ title: Panel de Moderación
   }
 
   function renderCategoryRow(c) {
-    const inactive = c.is_active === 0 || c.is_active === false;
+    const inactive = c.isActive === false || c.isActive === 'false' || c.isActive === 0;
     return `<tr id="cat-row-${c.id}" draggable="true" data-cat-id="${c.id}">
       <td><i class="bi bi-grip-vertical drag-handle"></i></td>
       <td><span style="display:inline-block;width:20px;height:20px;border-radius:4px;background:${escapeHtml(c.color || '#6366f1')}"></span></td>
       <td>
-        <span id="cat-name-${c.id}">${escapeHtml(c.name)}</span>
+        <span id="cat-name-${c.id}">${inactive ? `<del class="text-muted">${escapeHtml(c.name)}</del>` : escapeHtml(c.name)}</span>
         <button class="btn btn-sm text-primary p-0 ms-2" onclick="toggleSubcats(${c.id})" title="Subcategorías" id="subcat-toggle-${c.id}">
           <i class="bi bi-caret-right-fill" id="subcat-icon-${c.id}"></i>
         </button>
@@ -563,7 +563,7 @@ title: Panel de Moderación
       <td>
         <div class="d-flex gap-1 flex-wrap">
           <button class="btn btn-sm btn-outline-primary" onclick="editCategoryInline(${c.id})" title="Editar"><i class="bi bi-pencil"></i></button>
-          <button class="btn btn-sm btn-outline-danger" onclick="deleteCategory(${c.id})" title="Desactivar"><i class="bi bi-trash"></i></button>
+          <button class="btn btn-sm ${inactive ? 'btn-outline-success' : 'btn-outline-warning'}" onclick="toggleCategoryStatus(${c.id}, ${!inactive})" title="${inactive ? 'Activar' : 'Desactivar'}"><i class="bi ${inactive ? 'bi-check-circle' : 'bi-x-circle'}"></i></button>
         </div>
         <div id="cat-edit-${c.id}" class="d-none mt-2 p-2 eu-taxonomy-inline-editor">
           <div class="row g-2">
@@ -612,7 +612,7 @@ title: Panel de Moderación
   };
 
   function renderSubcatList(catId, subcats) {
-    const inactive = s => s.is_active === 0 || s.is_active === false;
+    const inactive = s => s.isActive === false || s.isActive === 'false' || s.isActive === 0;
     const html = subcats.length === 0
       ? '<div class="text-muted small mb-2">Sin subcategorías</div>'
       : `<table class="table table-sm table-borderless mb-2 subcat-drop-zone" id="subcat-table-${catId}" style="table-layout:fixed">
@@ -622,10 +622,10 @@ title: Panel de Moderación
                 <td style="width:30%">${inactive(s) ? `<del class="text-muted">${escapeHtml(s.name)}</del>` : escapeHtml(s.name)}</td>
                 <td style="width:25%"><code class="small">${escapeHtml(s.slug)}</code></td>
                 <td style="width:35%" class="small text-muted">${escapeHtml(s.description || '—')}</td>
-                <td style="width:10%">
-                  <button class="btn btn-sm btn-outline-primary py-0 px-1" onclick="editSubcatInline(${s.id})" title="Editar"><i class="bi bi-pencil"></i></button>
-                  <button class="btn btn-sm btn-outline-danger py-0 px-1" onclick="deleteSubcat(${s.id}, ${catId})" title="Desactivar"><i class="bi bi-trash"></i></button>
-                </td>
+                 <td style="width:10%">
+                   <button class="btn btn-sm btn-outline-primary py-0 px-1" onclick="editSubcatInline(${s.id})" title="Editar"><i class="bi bi-pencil"></i></button>
+                   <button class="btn btn-sm ${inactive(s) ? 'btn-outline-success' : 'btn-outline-warning'} py-0 px-1" onclick="toggleSubcatStatus(${s.id}, ${catId})" title="${inactive(s) ? 'Activar' : 'Desactivar'}"><i class="bi ${inactive(s) ? 'bi-check-circle' : 'bi-x-circle'}"></i></button>
+                 </td>
               </tr>
               <tr id="subcat-edit-${s.id}" class="d-none">
                  <td colspan="5">
@@ -663,7 +663,8 @@ title: Panel de Moderación
       categoryId: catId,
       name: form.name.value.trim(),
       slug: normalizeSlug(form.slug.value),
-      description: form.description.value.trim() || undefined
+      description: form.description.value.trim() || undefined,
+      isActive: true
     };
     try {
       const res = await Auth.authFetch(`${API}/api/admin/subcategories`, {
@@ -699,13 +700,20 @@ title: Panel de Moderación
     } catch (err) { window.showToast(err.message, 'error'); }
   };
 
-  window.deleteSubcat = async function(id, catId) {
-    if (!confirm('¿Desactivar esta subcategoría?')) return;
+  window.toggleSubcatStatus = async function(id, catId) {
+    const cat = categoriesData.find(c => c.id === catId);
+    const subcat = cat && cat.children && cat.children.find(s => s.id === id);
+    const currentlyActive = subcat ? (subcat.isActive === true || subcat.isActive === 'true' || subcat.isActive === 1) : true;
+    if (!confirm(currentlyActive ? '¿Desactivar esta subcategoría?' : '¿Activar esta subcategoría?')) return;
     try {
-      const res = await Auth.authFetch(`${API}/api/admin/subcategories/${id}`, { method: 'DELETE' });
+      const res = await Auth.authFetch(`${API}/api/admin/subcategories/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ isActive: !currentlyActive })
+      });
       const data = await res.json().catch(()=>({}));
       if (!res.ok) throw new Error(data.error || `Error ${res.status}`);
-      window.showToast('Subcategoría desactivada', 'warning');
+      window.showToast(currentlyActive ? 'Subcategoría desactivada' : 'Subcategoría activada', currentlyActive ? 'warning' : 'success');
       refreshSubcatList(catId);
     } catch (err) { window.showToast(err.message, 'error'); }
   };
@@ -817,7 +825,8 @@ title: Panel de Moderación
       name: form.name.value.trim(),
       slug: normalizeSlug(form.slug.value),
       color: form.color.value,
-      description: form.description.value.trim() || undefined
+      description: form.description.value.trim() || undefined,
+      isActive: true
     };
     try {
       const res = await Auth.authFetch(`${API}/api/admin/categories`, {
@@ -855,13 +864,17 @@ title: Panel de Moderación
     } catch (err) { window.showToast(err.message, 'error'); }
   };
 
-  window.deleteCategory = async function(id) {
-    if (!confirm('¿Desactivar esta categoría?')) return;
+  window.toggleCategoryStatus = async function(id, activate) {
+    if (!confirm(activate ? '¿Activar esta categoría?' : '¿Desactivar esta categoría?')) return;
     try {
-      const res = await Auth.authFetch(`${API}/api/admin/categories/${id}`, { method: 'DELETE' });
+      const res = await Auth.authFetch(`${API}/api/admin/categories/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ isActive: activate })
+      });
       const data = await res.json().catch(()=>({}));
       if (!res.ok) throw new Error(data.error || `Error ${res.status}`);
-      window.showToast('Categoría desactivada', 'warning');
+      window.showToast(activate ? 'Categoría activada' : 'Categoría desactivada', activate ? 'success' : 'warning');
       loadCategoriesAdmin();
     } catch (err) { window.showToast(err.message, 'error'); }
   };
