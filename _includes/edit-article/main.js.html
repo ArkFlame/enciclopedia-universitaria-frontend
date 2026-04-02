@@ -486,8 +486,8 @@
     var content = document.getElementById('editContent')?.value.trim();
     var note = document.getElementById('editNote')?.value.trim();
     var selection = window.HierarchicalCategorySelector ? window.HierarchicalCategorySelector.getSelection() : null;
-    var categoryId = selection && selection.categoryId ? selection.categoryId : null;
-    var subcategoryId = selection && selection.subcategoryId ? selection.subcategoryId : null;
+    var categoryId = selection && selection.category ? selection.category.id : null;
+    var subcategoryId = selection && selection.subcategory ? selection.subcategory.id : null;
     var msgEl = document.getElementById('submitMsg');
     var btn = document.getElementById('submitBtn');
     var spinner = document.getElementById('submitSpinner');

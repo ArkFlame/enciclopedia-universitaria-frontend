@@ -321,11 +321,16 @@ Provides contextual parent->child selector with hover/click expansion
   };
 
   HierarchicalCategorySelector.getSelection = function() {
+    var category = currentCategoryId ? findCategoryById(currentCategoryId) : null;
+    var subcategory = category && currentSubcategoryId
+      ? findSubcategoryById(category, currentSubcategoryId)
+      : null;
+
     return {
-      categoryId: currentCategoryId,
-      subcategoryId: currentSubcategoryId,
-      category: selectedCategory,
-      subcategory: selectedSubcategory
+      categoryId: category ? category.id : null,
+      subcategoryId: subcategory ? subcategory.id : null,
+      category: category,
+      subcategory: subcategory
     };
   };
 

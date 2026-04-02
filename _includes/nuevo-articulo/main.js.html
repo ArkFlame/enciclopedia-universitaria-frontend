@@ -385,8 +385,8 @@
     var summary = document.getElementById('artSummary').value.trim();
     var content = document.getElementById('artContent').value.trim();
     var selection = window.HierarchicalCategorySelector ? window.HierarchicalCategorySelector.getSelection() : null;
-    var categoryId = selection && selection.categoryId ? selection.categoryId : null;
-    var subcategoryId = selection && selection.subcategoryId ? selection.subcategoryId : null;
+    var categoryId = selection && selection.category ? selection.category.id : null;
+    var subcategoryId = selection && selection.subcategory ? selection.subcategory.id : null;
     var coverImageId = document.getElementById('artCoverImage').value;
     var btn = document.getElementById('publishBtn');
     var alertEl = document.getElementById('publishAlert');
